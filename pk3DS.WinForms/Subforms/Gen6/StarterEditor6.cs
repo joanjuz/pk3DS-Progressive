@@ -203,6 +203,8 @@ public partial class StarterEditor6 : Form
             }
         }
 
+        RandomizationSessionState.MarkAction("starters.randomize");
+
         if (blind)
         {
             SaveData();

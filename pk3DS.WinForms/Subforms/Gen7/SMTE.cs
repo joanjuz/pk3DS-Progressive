@@ -36,6 +36,7 @@ public partial class SMTE : Form
     private CheckBox CHK_LevelCaps;
     private Button B_SetLevelCaps;
     private Button B_SetTrainerMoveRules;
+    private Button B_TrainerTemplate;
     private CheckBox CHK_RandomDoubleBattles;
     private NumericUpDown NUD_DoubleBattleChance;
     private CheckBox CHK_BanBadItems;
@@ -107,6 +108,9 @@ public partial class SMTE : Form
         }
 
         RandSettings.GetFormSettings(this, Tab_Rand.Controls);
+
+        if (TrainerRandomizerTemplateFile.TryGetCurrent(CurrentTrainerTemplateGame, out var currentTemplate))
+            ApplyTrainerTemplate(currentTemplate, showMessage: false);
     }
     private sealed class ProgressiveBSTRule
     {
@@ -373,6 +377,202 @@ public partial class SMTE : Form
         string cls = trainer.TrainerClass < trClass.Length ? trClass[trainer.TrainerClass] : string.Empty;
 
         return string.IsNullOrWhiteSpace(cls) ? name : $"{cls} {name}";
+    }
+
+    private string CurrentTrainerTemplateGame => Main.Config.USUM ? "USUM" : "SM";
+
+    private void ShowTrainerTemplateMenu()
+    {
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Load template...", null, (_, _) => LoadTrainerTemplate());
+        menu.Items.Add("Save current template...", null, (_, _) => SaveTrainerTemplate());
+        menu.Show(B_TrainerTemplate, new Point(0, B_TrainerTemplate.Height));
+    }
+
+    private void LoadTrainerTemplate()
+    {
+        try
+        {
+            Directory.CreateDirectory(TrainerRandomizerTemplateFile.TemplateDirectory);
+            using var dialog = new OpenFileDialog
+            {
+                Title = "Load trainer randomizer template",
+                Filter = "Trainer template (*.json)|*.json|All files (*.*)|*.*",
+                InitialDirectory = TrainerRandomizerTemplateFile.TemplateDirectory,
+                CheckFileExists = true,
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var template = TrainerRandomizerTemplateFile.Load(dialog.FileName, CurrentTrainerTemplateGame);
+            TrainerRandomizerTemplateFile.SetCurrent(template, CurrentTrainerTemplateGame);
+            ApplyTrainerTemplate(template);
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert($"Could not load trainer template.\n\n{ex.Message}");
+        }
+    }
+
+    private void SaveTrainerTemplate()
+    {
+        try
+        {
+            Directory.CreateDirectory(TrainerRandomizerTemplateFile.TemplateDirectory);
+            using var dialog = new SaveFileDialog
+            {
+                Title = "Save trainer randomizer template",
+                Filter = "Trainer template (*.json)|*.json",
+                InitialDirectory = TrainerRandomizerTemplateFile.TemplateDirectory,
+                FileName = $"trainer_randomizer_{CurrentTrainerTemplateGame.ToLowerInvariant()}.json",
+                AddExtension = true,
+                DefaultExt = "json",
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var template = CaptureTrainerTemplate();
+            TrainerRandomizerTemplateFile.SetCurrent(template, CurrentTrainerTemplateGame);
+            TrainerRandomizerTemplateFile.Save(dialog.FileName, template, CurrentTrainerTemplateGame);
+            WinFormsUtil.Alert("Trainer template saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert($"Could not save trainer template.\n\n{ex.Message}");
+        }
+    }
+
+    private TrainerRandomizerTemplate CaptureTrainerTemplate()
+    {
+        return new TrainerRandomizerTemplate
+        {
+            Name = $"{CurrentTrainerTemplateGame} trainer randomizer",
+            Game = CurrentTrainerTemplateGame,
+            ProgressiveBST = new ProgressiveBSTTemplate
+            {
+                Enabled = CHK_ProgressiveBST.Checked,
+                Ranges = ProgressiveBSTRules.Select(r => new ProgressiveBSTTemplateRule
+                {
+                    MinLevel = r.MinLevel,
+                    MaxLevel = r.MaxLevel,
+                    MinBST = r.MinBST,
+                    MaxBST = r.MaxBST,
+                    FullRandom = r.FullRandom,
+                }).ToList(),
+            },
+            MoveSettings = new TrainerMoveSettingsTemplate
+            {
+                Source = (TrainerMoveSource)Math.Clamp(CB_Moves.SelectedIndex, 0, 3),
+                BetterMovesets = CHK_BetterMovesets.Checked,
+                ForceHighPower = CHK_ForceHighPower.Checked,
+                HighPowerLevel = (int)NUD_ForceHighPower.Value,
+                NoFixedDamage = CHK_NoFixedDamage.Checked,
+                EnsureDamagingMoves = CHK_Damage.Checked,
+                DamagingMoveCount = (int)NUD_Damage.Value,
+                EnsureSTABMoves = CHK_STAB.Checked,
+                STABMoveCount = (int)NUD_STAB.Value,
+            },
+            LevelCaps = new TrainerLevelCapsTemplate
+            {
+                Enabled = CHK_LevelCaps.Checked,
+                ApplyToPreviousTrainers = ApplyCapsToPreviousTrainers,
+                PreviousTrainerGap = PreviousTrainerGap,
+                ResetUnlistedTrainers = true,
+                Trainers = LevelCapRules.Where(r => r.Enabled).Select(r => new TrainerLevelCapTemplateEntry
+                {
+                    TrainerID = r.TrainerID,
+                    Use = true,
+                    LevelCap = r.LevelCap,
+                    Mega = r.GuaranteeMega,
+                    ZMove = r.GuaranteeZMove,
+                }).ToList(),
+            },
+            TrainerMoveRules = new TrainerMoveRulesTemplate
+            {
+                ResetUnlistedTrainers = true,
+                Trainers = MoveRules.Where(r => r.Enabled).Select(r => new TrainerMoveRuleTemplateEntry
+                {
+                    TrainerID = r.TrainerID,
+                    Use = true,
+                    MinMovePower = r.MinMovePower,
+                    StrongStat = r.UseStrongestAttackStat,
+                    MixedTolerance = r.MixedTolerance,
+                    AllowStatusMoves = r.AllowStatusMoves,
+                    BetterMovesets = r.BetterMovesets,
+                    SmartItems = r.SmartItems,
+                    EVs = r.OverrideEVs,
+                }).ToList(),
+            },
+        };
+    }
+
+    private void ApplyTrainerTemplate(TrainerRandomizerTemplate template, bool showMessage = true)
+    {
+        if (template.ProgressiveBST is not null)
+        {
+            ProgressiveBSTRules = (template.ProgressiveBST.Ranges ?? [])
+                .Select(r => new ProgressiveBSTRule
+                {
+                    MinLevel = r.MinLevel,
+                    MaxLevel = r.MaxLevel,
+                    MinBST = r.MinBST,
+                    MaxBST = r.MaxBST,
+                    FullRandom = r.FullRandom,
+                })
+                .OrderBy(r => r.MinLevel)
+                .ToList();
+
+            if (template.ProgressiveBST.Enabled)
+                CHK_RandomPKM.Checked = true;
+            CHK_ProgressiveBST.Checked = template.ProgressiveBST.Enabled;
+        }
+
+        if (template.MoveSettings is not null)
+        {
+            var moves = template.MoveSettings;
+            CB_Moves.SelectedIndex = Math.Clamp((int)moves.Source, 0, Math.Max(0, CB_Moves.Items.Count - 1));
+            CHK_BetterMovesets.Checked = moves.BetterMovesets;
+            CHK_ForceHighPower.Checked = moves.ForceHighPower;
+            SetTemplateNumericValue(NUD_ForceHighPower, moves.HighPowerLevel);
+            CHK_NoFixedDamage.Checked = moves.NoFixedDamage;
+            CHK_Damage.Checked = moves.EnsureDamagingMoves;
+            SetTemplateNumericValue(NUD_Damage, moves.DamagingMoveCount);
+            CHK_STAB.Checked = moves.EnsureSTABMoves;
+            SetTemplateNumericValue(NUD_STAB, moves.STABMoveCount);
+        }
+
+        var result = TrainerRandomizerTemplateFile.ApplyTrainerRules(template, LevelCapRules, MoveRules);
+
+        if (template.LevelCaps is not null)
+        {
+            ApplyCapsToPreviousTrainers = template.LevelCaps.ApplyToPreviousTrainers;
+            PreviousTrainerGap = template.LevelCaps.PreviousTrainerGap;
+            CHK_LevelCaps.Checked = template.LevelCaps.Enabled && LevelCapRules.Count > 0;
+        }
+
+        string warning = BuildTrainerTemplateWarning(result);
+        string message = $"Template loaded. BST ranges: {ProgressiveBSTRules.Count}; level caps applied: {result.LevelCapsApplied}; trainer move rules applied: {result.MoveRulesApplied}.";
+        if (warning.Length != 0)
+            message += $"\n\n{warning}";
+        if (showMessage)
+            WinFormsUtil.Alert(message);
+    }
+
+    private static void SetTemplateNumericValue(NumericUpDown control, int value)
+    {
+        control.Value = Math.Min(control.Maximum, Math.Max(control.Minimum, value));
+    }
+
+    private static string BuildTrainerTemplateWarning(TrainerTemplateApplyResult result)
+    {
+        var parts = new List<string>();
+        if (result.UnknownLevelCapTrainerIDs.Count != 0)
+            parts.Add($"Level Cap trainer IDs not found in this game: {string.Join(", ", result.UnknownLevelCapTrainerIDs)}");
+        if (result.UnknownMoveRuleTrainerIDs.Count != 0)
+            parts.Add($"Move Rule trainer IDs not found in this game: {string.Join(", ", result.UnknownMoveRuleTrainerIDs)}");
+        return string.Join("\n", parts);
     }
 
     private void ShowLevelCapDialog()
@@ -904,8 +1104,9 @@ public partial class SMTE : Form
         SaveEntry();
         if (TrainerNames.Modified)
             Main.Config.SetText(TextName.TrainerNames, TrainerNames.Lines);
-        base.OnFormClosing(e);
+        TrainerRandomizerTemplateFile.SetCurrent(CaptureTrainerTemplate(), CurrentTrainerTemplateGame);
         RandSettings.SetFormSettings(this, Tab_Rand.Controls);
+        base.OnFormClosing(e);
     }
 
     // Dumping
@@ -1079,7 +1280,7 @@ public partial class SMTE : Form
         { 1, 1, 1, 1, 1, 1 }, // Dark
     };
 
-    private static readonly int[] usualBan = [165, 621, 464];
+    private static readonly int[] usualBan = [165, 621, 166, 226];
 
     private List<TrainerLevelCapStage> BuildLevelCapStages()
     {
@@ -1611,6 +1812,7 @@ public partial class SMTE : Form
             }
             SaveData(tr, i);
         }
+        RandomizationSessionState.MarkAction("trainers.randomize");
         WinFormsUtil.Alert("Randomized all Trainers according to specification!", "Press the Dump to .TXT button to view the new Trainer information!");
     }
 
@@ -2056,6 +2258,14 @@ public partial class SMTE : Form
                 rulesTab.Controls.Add(B_SetTrainerMoveRules);
             }
 
+            if (B_TrainerTemplate is not null)
+            {
+                B_TrainerTemplate.Text = "Template...";
+                B_TrainerTemplate.Size = new Size(92, 23);
+                B_TrainerTemplate.Location = new Point(248, 12);
+                rulesTab.Controls.Add(B_TrainerTemplate);
+            }
+
             if (CHK_RandomDoubleBattles is not null)
             {
                 CHK_RandomDoubleBattles.Text = "Double battles";
@@ -2178,6 +2388,7 @@ public partial class SMTE : Form
             MoveToRules(CHK_LevelCaps, 12, 14);
             MoveToRules(B_SetLevelCaps, 115, 10, 62, 24);
             MoveToRules(B_SetTrainerMoveRules, 185, 10, 70, 24);
+            MoveToRules(B_TrainerTemplate, 263, 10, 100, 24);
             MoveToRules(CHK_RandomDoubleBattles, 12, 44);
             MoveToRules(NUD_DoubleBattleChance, 145, 42, 50, 22);
 
@@ -2309,12 +2520,24 @@ public partial class SMTE : Form
 
         B_SetTrainerMoveRules.Click += (_, _) => ShowTrainerMoveRulesDialog();
 
+        B_TrainerTemplate = new Button
+        {
+            Name = "B_TrainerTemplate",
+            Size = new Size(108, 23),
+            TabIndex = 1006,
+            Text = "Template...",
+            UseVisualStyleBackColor = true,
+        };
+        B_TrainerTemplate.Click += (_, _) => ShowTrainerTemplateMenu();
+
         Tab_PKM1.Controls.Add(CHK_LevelCaps);
         Tab_PKM1.Controls.Add(B_SetLevelCaps);
         Tab_PKM1.Controls.Add(B_SetTrainerMoveRules);
+        Tab_PKM1.Controls.Add(B_TrainerTemplate);
         CHK_LevelCaps.BringToFront();
         B_SetLevelCaps.BringToFront();
         B_SetTrainerMoveRules.BringToFront();
+        B_TrainerTemplate.BringToFront();
 
         int y2 = CHK_LevelCaps.Bottom + 6;
         CHK_RandomDoubleBattles = new CheckBox

@@ -20,6 +20,7 @@ public partial class MartEditor7 : Form
         }
         InitializeComponent();
         AddRareCandyButton();
+        AddEVItemsButton();
 
         data = File.ReadAllBytes(CROPath);
         offset = Util.IndexOfBytes(data, Signature, 0x5000, 0) + Signature.Length;
@@ -31,6 +32,7 @@ public partial class MartEditor7 : Form
         CB_LocationBP.Items.AddRange(locationsBP);
         CB_Location.SelectedIndex = 0;
         CB_LocationBP.SelectedIndex = 0;
+        RandSettings.GetFormSettings(this, Controls);
 
     }
     private void AddRareCandyButton()
@@ -64,6 +66,29 @@ public partial class MartEditor7 : Form
         if (requiredHeight > ClientSize.Height)
             ClientSize = new System.Drawing.Size(ClientSize.Width, requiredHeight);
     }
+    private void AddEVItemsButton()
+    {
+        const int gap = 8;
+
+        B_AddEVItems = new Button
+        {
+            Location = new System.Drawing.Point(B_AddRareCandies.Left, B_AddRareCandies.Bottom + gap),
+            Name = "B_AddEVItems",
+            Size = B_AddRareCandies.Size,
+            TabIndex = B_AddRareCandies.TabIndex + 1,
+            Text = "Add EV Items",
+            UseVisualStyleBackColor = true,
+        };
+
+        B_AddEVItems.Click += B_AddEVItems_Click;
+        Controls.Add(B_AddEVItems);
+        B_AddEVItems.BringToFront();
+
+        int requiredHeight = Math.Max(CHK_XItems.Bottom, B_AddEVItems.Bottom) + 12;
+        if (requiredHeight > ClientSize.Height)
+            ClientSize = new System.Drawing.Size(ClientSize.Width, requiredHeight);
+    }
+
     private void B_AddRareCandies_Click(object sender, EventArgs e)
     {
         if (DialogResult.Yes != WinFormsUtil.Prompt(
@@ -98,6 +123,191 @@ public partial class MartEditor7 : Form
             "Rare Candies added!",
             "Click Save to write Shop.cro and set Rare Candy price to 10.");
     }
+    private void B_AddEVItems_Click(object sender, EventArgs e)
+    {
+        if (DialogResult.Yes != WinFormsUtil.Prompt(
+            MessageBoxButtons.YesNo,
+            "Add EV/training items to regular marts?",
+            "This keeps each shop at its original size and replaces ONLY healing items. " +
+            "The six EV Wings are available immediately, Heart Scale replaces Super Potion, " +
+            "Rare Candy replaces Revive, and Mega Ring is guaranteed from the 5 Trials mart onward."))
+        {
+            return;
+        }
+
+        if (entry > -1)
+            SetList();
+
+        string[] requiredItems =
+        [
+            "Health Wing|Pluma Vigor",
+            "Muscle Wing|Pluma Músculo|Pluma Musculo",
+            "Resist Wing|Pluma Aguante",
+            "Genius Wing|Pluma Intelecto",
+            "Clever Wing|Pluma Mente",
+            "Swift Wing|Pluma Ímpetu|Pluma Impetu",
+            "Heart Scale|Escama Corazón|Escama Corazon",
+            "Rare Candy|Caramelo Raro",
+            "Mega Ring|Megaaro|Mega Aro|Mega-Aro",
+        ];
+
+        var missing = new List<string>();
+        foreach (string group in requiredItems)
+        {
+            string[] aliases = group.Split('|');
+            if (FindItemID(aliases) <= 0)
+                missing.Add(aliases[0]);
+        }
+
+        if (missing.Count != 0)
+        {
+            WinFormsUtil.Error(
+                "Could not resolve the EV shop items from this ROM's item table.",
+                "Missing: " + string.Join(", ", missing));
+            return;
+        }
+
+        int[] megaRingSlots = new int[RegularMartCount];
+        Array.Fill(megaRingSlots, -1);
+        for (int mart = MegaRingTrial; mart < RegularMartCount; mart++)
+        {
+            GetDataOffset(mart);
+            megaRingSlots[mart] = FindMegaRingTargetSlot(dataoffset, entries[mart]);
+            if (megaRingSlots[mart] >= 0)
+                continue;
+
+            WinFormsUtil.Error(
+                $"Could not reserve a healing-item slot for Mega Ring in '{locations[mart]}'.",
+                "Mega Ring must be available starting at 5 Trials. No compatible healing slot was found.");
+            return;
+        }
+
+        int changed = 0;
+        for (int mart = 0; mart < RegularMartCount; mart++)
+        {
+            GetDataOffset(mart);
+            for (int slot = 0; slot < entries[mart]; slot++)
+            {
+                int writeOffset = dataoffset + (2 * slot);
+                int current = BitConverter.ToUInt16(data, writeOffset);
+                int replacement = slot == megaRingSlots[mart]
+                    ? GetMegaRingItemID()
+                    : GetEVItemReplacement(current, mart);
+                if (replacement <= 0 || replacement == current)
+                    continue;
+
+                Array.Copy(BitConverter.GetBytes((ushort)replacement), 0, data, writeOffset, 2);
+                changed++;
+            }
+        }
+
+        setEVItemsOnSave = changed > 0;
+        if (entry > -1)
+            GetList();
+
+        WinFormsUtil.Alert(
+            "EV/training items added!",
+            $"{changed} healing-item slots were replaced. Click Save to write Shop.cro.");
+    }
+
+    private int GetEVItemReplacement(int itemID, int trialCount)
+    {
+        int potion = FindItemID("Potion", "Poción", "Pocion");
+        int antidote = FindItemID("Antidote", "Antídoto", "Antidoto");
+        int paralyzeHeal = FindItemID("Paralyze Heal", "Antiparalizador");
+        int awakening = FindItemID("Awakening", "Despertar");
+        int burnHeal = FindItemID("Burn Heal", "Antiquemar");
+        int iceHeal = FindItemID("Ice Heal", "Antihielo");
+        int superPotion = FindItemID("Super Potion", "Superpoción", "Superpocion");
+        int revive = FindItemID("Revive", "Revivir");
+
+        // Repair shops written by the first Add EV Items patch. Those numeric IDs
+        // belonged to another item table and show up in Gen 7 as Data Cards/other items.
+        if (itemID == 517)
+            return FindItemID("Health Wing", "Pluma Vigor");
+        if (itemID == 518)
+            return FindItemID("Muscle Wing", "Pluma Músculo", "Pluma Musculo");
+        if (itemID == 519)
+            return FindItemID("Resist Wing", "Pluma Aguante");
+        if (itemID == 520)
+            return FindItemID("Genius Wing", "Pluma Intelecto");
+        if (itemID == 521)
+            return FindItemID("Clever Wing", "Pluma Mente");
+        if (itemID == 522)
+            return FindItemID("Swift Wing", "Pluma Ímpetu", "Pluma Impetu");
+        if (itemID == 111)
+        {
+            if (trialCount >= 3)
+                return FindItemID("Heart Scale", "Escama Corazón", "Escama Corazon");
+
+            return superPotion;
+        }
+
+        if (itemID == potion)
+            return FindItemID("Health Wing", "Pluma Vigor");
+        if (itemID == antidote)
+            return FindItemID("Muscle Wing", "Pluma Músculo", "Pluma Musculo");
+        if (itemID == paralyzeHeal)
+            return FindItemID("Resist Wing", "Pluma Aguante");
+        if (itemID == awakening)
+            return FindItemID("Genius Wing", "Pluma Intelecto");
+        if (itemID == burnHeal)
+            return FindItemID("Clever Wing", "Pluma Mente");
+        if (itemID == iceHeal)
+            return FindItemID("Swift Wing", "Pluma Ímpetu", "Pluma Impetu");
+        if (itemID == superPotion && trialCount >= 3)
+            return FindItemID("Heart Scale", "Escama Corazón", "Escama Corazon");
+        if (itemID == revive)
+            return GetRareCandyItemID();
+
+        return 0;
+    }
+
+    private int FindMegaRingTargetSlot(int offset, int count)
+    {
+        int megaRing = GetMegaRingItemID();
+        int[] preferredHealingItems =
+        [
+            megaRing,
+            696, // Legacy value written by the first EV-items patch; repair it in-place.
+            FindItemID("Hyper Potion", "Hiperpoción", "Hiperpocion"),
+            FindItemID("Full Heal", "Cura Total"),
+            FindItemID("Max Potion", "Poción Máxima", "Pocion Maxima"),
+            FindItemID("Full Restore", "Restaurar Todo", "Restaurar todo"),
+        ];
+
+        foreach (int candidate in preferredHealingItems)
+        {
+            if (candidate <= 0)
+                continue;
+
+            for (int slot = 0; slot < count; slot++)
+            {
+                int current = BitConverter.ToUInt16(data, offset + (2 * slot));
+                if (current == candidate)
+                    return slot;
+            }
+        }
+
+        return -1;
+    }
+
+    private int FindItemID(params string[] names)
+    {
+        foreach (string name in names)
+        {
+            int item = Array.FindIndex(itemlist, z =>
+                string.Equals(z, name, StringComparison.OrdinalIgnoreCase));
+            if (item > 0)
+                return item;
+        }
+
+        return -1;
+    }
+
+    private int GetMegaRingItemID() =>
+        FindItemID("Mega Ring", "Megaaro", "Mega Aro", "Mega-Aro");
+
     private int GetRareCandyItemID()
     {
         int item = Array.FindIndex(itemlist, z =>
@@ -113,7 +323,7 @@ public partial class MartEditor7 : Form
 
         if (itemID <= 0 || itemID >= files.Length)
         {
-            WinFormsUtil.Alert("Could not set Rare Candy price.", $"Invalid item ID: {itemID}");
+            WinFormsUtil.Alert("Could not set item price.", $"Invalid item ID: {itemID}");
             return;
         }
 
@@ -131,8 +341,18 @@ public partial class MartEditor7 : Form
     private const int RareCandyPrice = 10;
     private const int RegularMartCount = 8;
 
+    // Resolve item IDs from the ROM's own item-name table. Hardcoded IDs from
+    // other generations/versions can point to unrelated entries (for example Data Cards).
+    private const int MegaRingPrice = 10;
+    private const int MegaRingTrial = 5;
+
     private bool setRareCandyPriceOnSave;
+    private bool setEVItemsOnSave;
+    private bool randomizeMartsOnSave;
+    private bool randomizeBPMartsOnSave;
+    private bool randomizeMartsSpecialOnly;
     private Button B_AddRareCandies;
+    private Button B_AddEVItems;
 
     #region Tables
     private readonly byte[] Signature = // Leadup to the Shop Data, the shop arrays are the 3rd data array in the rodata section.
@@ -217,11 +437,45 @@ public partial class MartEditor7 : Form
 
         if (entryBP > -1) SetListBP();
 
-        if (setRareCandyPriceOnSave)
+        if (setRareCandyPriceOnSave || setEVItemsOnSave)
             SetItemPrice(GetRareCandyItemID(), RareCandyPrice);
+        if (setEVItemsOnSave)
+        {
+            int megaRing = GetMegaRingItemID();
+            if (megaRing > 0)
+                SetItemPrice(megaRing, MegaRingPrice);
+        }
 
         File.WriteAllBytes(CROPath, data);
+
+        if (setRareCandyPriceOnSave)
+            RandomizationSessionState.MarkAction("marts.add-rare-candies", ("price", RareCandyPrice.ToString()));
+        if (setEVItemsOnSave)
+        {
+            RandomizationSessionState.MarkAction(
+                "marts.add-ev-items",
+                ("mode", "replace-healing-only"),
+                ("megaRingFromTrial", MegaRingTrial.ToString()),
+                ("megaRingPrice", MegaRingPrice.ToString()),
+                ("rareCandyPrice", RareCandyPrice.ToString()));
+        }
+        if (randomizeMartsOnSave)
+        {
+            RandomizationSessionState.MarkAction(
+                "marts.randomize",
+                ("specialOnly", randomizeMartsSpecialOnly.ToString()),
+                ("keepXItems", CHK_XItems.Checked.ToString()));
+        }
+        if (randomizeBPMartsOnSave)
+            RandomizationSessionState.MarkAction("marts.randomize-bp");
+
         Close();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        RandSettings.SetFormSettings(this, Controls);
+        base.OnFormClosing(e);
     }
 
     private void B_Cancel_Click(object sender, EventArgs e)
@@ -319,6 +573,8 @@ public partial class MartEditor7 : Form
                 Util.Shuffle(validItems); ctr = 0;
             }
         }
+        randomizeMartsOnSave = true;
+        randomizeMartsSpecialOnly = specialOnly;
         WinFormsUtil.Alert("Randomized!");
     }
 
@@ -387,6 +643,7 @@ public partial class MartEditor7 : Form
                 Util.Shuffle(validItems); ctr = 0;
             }
         }
+        randomizeBPMartsOnSave = true;
         WinFormsUtil.Alert("Randomized!");
     }
 }

@@ -130,7 +130,7 @@ public partial class LevelUpEditor7 : Form
     }
 
     // Struggle, Hyperspace Fury, Dark Void
-    private static readonly int[] usualBan = [165, 621, 464];
+    private static readonly int[] usualBan = [165, 621, 166, 226];
 
     private void B_RandAll_Click(object sender, EventArgs e)
     {
@@ -155,6 +155,7 @@ public partial class LevelUpEditor7 : Form
         rand.Execute();
         sets.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         GetList();
+        RandomizationSessionState.MarkAction("level-up-moves.randomize");
         WinFormsUtil.Alert("All Pokémon's Level Up Moves have been randomized!", "Press the Dump button to see the new Level Up Moves!");
     }
 
@@ -173,6 +174,7 @@ public partial class LevelUpEditor7 : Form
             dgv.Rows[0].Cells[1].Value = movelist[118];
         }
         CB_Species.SelectedIndex = 0;
+        RandomizationSessionState.MarkAction("level-up-moves.metronome");
         WinFormsUtil.Alert("All Pokémon now only know the move Metronome!");
     }
 

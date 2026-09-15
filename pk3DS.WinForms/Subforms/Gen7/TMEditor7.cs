@@ -118,7 +118,7 @@ public partial class TMEditor7 : Form
         int[] randomMoves = Enumerable.Range(1, movelist.Length - 1).Select(i => i).ToArray();
         Util.Shuffle(randomMoves);
 
-        int[] banned = [.. Legal.Z_Moves, .. new[] { 165, 464, 621 }];
+        int[] banned = [.. Legal.Z_Moves, .. new[] { 165, 621, 166, 226 }];
         int ctr = 0;
 
         for (int i = 0; i < dgvTM.Rows.Count; i++)
@@ -129,6 +129,7 @@ public partial class TMEditor7 : Form
 
             dgvTM.Rows[i].Cells[1].Value = movelist[randomMoves[ctr++]];
         }
+        RandomizationSessionState.MarkAction("tms.randomize");
         WinFormsUtil.Alert("Randomized!");
     }
 

@@ -86,6 +86,7 @@ public partial class MoveEditor7 : Form
         SetEntry();
 
         int changed = ApplyBalancedMoves();
+        RandomizationSessionState.MarkAction("moves.balance");
 
         GetEntry();
 
@@ -140,6 +141,7 @@ public partial class MoveEditor7 : Form
 
         public int? ZEffect { get; init; }
         public string BattlePatch { get; init; } = string.Empty;
+        public string InGameDescription { get; init; } = string.Empty;
     }
     private MoveBalancePatch[] GetBalancedMovePatchesFromTemplate()
     {
@@ -194,6 +196,7 @@ public partial class MoveEditor7 : Form
             UnsetFlags = z.UnsetFlags,
             KingShieldAttackMinusOne = z.KingShieldAttackMinusOne,
             BattlePatch = z.BattlePatch,
+            InGameDescription = z.InGameDescription,
 
             ZEffect = z.ZEffect,
         }).ToArray();
@@ -202,6 +205,7 @@ public partial class MoveEditor7 : Form
     {
         int changed = 0;
         var battlePatchRequests = new List<CustomBattleEffectPatcher.BattlePatchRequest>();
+        var appliedPatches = new List<MoveBalancePatch>();
 
         foreach (var patch in GetBalancedMovePatchesFromTemplate())
         {
@@ -234,12 +238,156 @@ public partial class MoveEditor7 : Form
             }
 
             files[patch.Move] = data;
+            appliedPatches.Add(patch);
             changed++;
         }
 
-        CustomBattleEffectPatcher.ApplyExternalPatches(7, battlePatchRequests, (title, message) => WinFormsUtil.Alert(title, message));
+        int externalPatchResult = CustomBattleEffectPatcher.ApplyExternalPatches(
+            7,
+            battlePatchRequests,
+            (title, message) => WinFormsUtil.Alert(title, message));
+
+        if (externalPatchResult < 0)
+        {
+            WinFormsUtil.Alert(
+                "Move descriptions skipped",
+                "At least one Battle.cro patch failed, so in-game move descriptions were not changed. This prevents the game text from describing behavior that was not applied.");
+        }
+        else
+        {
+            ApplyInGameMoveDescriptions(appliedPatches);
+        }
 
         return changed;
+    }
+
+    private void ApplyInGameMoveDescriptions(IEnumerable<MoveBalancePatch> patches)
+    {
+        // The CSV descriptions in this project are Spanish. GameText is language-specific;
+        // in USUM the Spanish GameText GARC is language index 6 (a/0/3/6).
+        const int spanishLanguage = 6;
+
+        var descriptionPatches = patches
+            .Where(z => !string.IsNullOrWhiteSpace(z.InGameDescription))
+            .Where(z => z.Move > 0)
+            .GroupBy(z => z.Move)
+            .Select(z => z.Last())
+            .ToArray();
+
+        if (descriptionPatches.Length == 0)
+            return;
+
+        int originalLanguage = Main.Config.Language;
+        bool switchedLanguage = originalLanguage != spanishLanguage;
+        string gameTextPath = string.Empty;
+        int verifiedCount = 0;
+        Exception failure = null;
+
+        try
+        {
+            // Save the description into the Spanish bank regardless of the language
+            // currently selected in pk3DS.
+            if (switchedLanguage)
+            {
+                Main.Config.Language = spanishLanguage;
+                Main.Config.InitializeGameText();
+            }
+
+            gameTextPath = Path.Combine(
+                Main.Config.RomFS,
+                Main.Config.GetGARCFileName("gametext"));
+
+            string[] spanishMoveFlavor = Main.Config.GetText(TextName.MoveFlavor);
+            bool changed = false;
+
+            foreach (var patch in descriptionPatches)
+            {
+                if (patch.Move >= spanishMoveFlavor.Length)
+                    continue;
+
+                string description = patch.InGameDescription.Trim()
+                    .Replace("\\r\\n", "\n")
+                    .Replace("\\n", "\n");
+                if (spanishMoveFlavor[patch.Move] == description)
+                    continue;
+
+                spanishMoveFlavor[patch.Move] = description;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                Main.Config.SetText(TextName.MoveFlavor, spanishMoveFlavor);
+                Main.SaveGameText();
+            }
+
+            // Re-open the GARC from disk and verify the exact text. This distinguishes
+            // a memory-only edit from a real RomFS write.
+            Main.Config.InitializeGameText();
+            string[] persistedMoveFlavor = Main.Config.GetText(TextName.MoveFlavor);
+
+            foreach (var patch in descriptionPatches)
+            {
+                if (patch.Move >= persistedMoveFlavor.Length)
+                    continue;
+
+                string expected = patch.InGameDescription.Trim();
+                if (!string.Equals(persistedMoveFlavor[patch.Move], expected, StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        $"Move {patch.Move} description was not persisted to the Spanish GameText bank.");
+                }
+
+                verifiedCount++;
+            }
+
+            // If the editor itself was opened in Spanish, keep its local display cache
+            // synchronized with the text that was just verified on disk.
+            if (!switchedLanguage)
+            {
+                foreach (var patch in descriptionPatches)
+                {
+                    if (patch.Move > 0 && patch.Move < moveflavor.Length)
+                        moveflavor[patch.Move] = patch.InGameDescription.Trim();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            failure = ex;
+        }
+        finally
+        {
+            try
+            {
+                if (switchedLanguage)
+                {
+                    Main.Config.Language = originalLanguage;
+                    Main.Config.InitializeGameText();
+                }
+                else if (failure is not null)
+                {
+                    // Discard any unsaved/in-memory text after an error.
+                    Main.Config.InitializeGameText();
+                }
+            }
+            catch (Exception restoreEx)
+            {
+                failure ??= restoreEx;
+            }
+        }
+
+        if (failure is not null)
+        {
+            WinFormsUtil.Alert(
+                "Move descriptions could not be saved",
+                failure.Message);
+            return;
+        }
+
+        WinFormsUtil.Alert(
+            "Move descriptions saved",
+            $"Spanish GameText verified on disk for {verifiedCount} move(s).{Environment.NewLine}{gameTextPath}");
     }
 
     private void ApplyCoreMovePatch(byte[] data, MoveBalancePatch patch)
@@ -998,6 +1146,7 @@ public partial class MoveEditor7 : Form
             if (CHK_Type.Checked)
                 CB_Type.SelectedIndex = rnd.Next(0, 18);
         }
+        RandomizationSessionState.MarkAction("moves.randomize");
         WinFormsUtil.Alert("All Moves have been randomized!");
     }
 
@@ -1016,6 +1165,7 @@ public partial class MoveEditor7 : Form
                 NUD_PP.Value = 1;
         }
         CB_Move.SelectedIndex = 0;
+        RandomizationSessionState.MarkAction("moves.metronome");
         WinFormsUtil.Alert("All Moves have had their Base PP values modified!");
     }
 

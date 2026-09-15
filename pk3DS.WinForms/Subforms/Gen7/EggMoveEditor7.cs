@@ -140,6 +140,7 @@ public partial class EggMoveEditor7 : Form
         rand.Execute();
         // sets.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         GetList();
+        RandomizationSessionState.MarkAction("egg-moves.randomize");
         WinFormsUtil.Alert("All Pokémon's Egg Moves have been randomized!", "Press the Dump All button to see the new Egg Moves!");
     }
 

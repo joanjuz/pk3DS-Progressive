@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using pk3DS.Core.Structures.PersonalInfo;
 
 namespace pk3DS.WinForms;
 
@@ -58,6 +59,7 @@ internal static class CustomBalanceTemplates
 
         public int? ZEffect { get; init; }
         public string BattlePatch { get; init; } = string.Empty;
+        public string InGameDescription { get; init; } = string.Empty;
     }
 
     internal sealed class EvolutionPatchRow
@@ -72,11 +74,30 @@ internal static class CustomBalanceTemplates
         public string AltItemName { get; init; } = string.Empty;
     }
 
+    internal sealed class PokemonStatPatchRow
+    {
+        public int Entry { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public int? HP { get; init; }
+        public int? ATK { get; init; }
+        public int? DEF { get; init; }
+        public int? SPA { get; init; }
+        public int? SPD { get; init; }
+        public int? SPE { get; init; }
+        public string Notes { get; init; } = string.Empty;
+    }
+
     internal static string GetMoveTemplatePath(int generation)
         => Path.Combine(GetTemplateRoot(), $"moves_gen{generation}.csv");
 
     internal static string GetEvolutionTemplatePath(int generation)
         => Path.Combine(GetTemplateRoot(), $"evolutions_gen{generation}.csv");
+
+    internal static string GetPokemonStatsTemplatePath(int generation)
+        => Path.Combine(GetTemplateRoot(), $"pokemon_stats_gen{generation}.csv");
+
+    internal static string GetTemplateDirectory()
+        => GetTemplateRoot();
 
     internal static MovePatchRow[] LoadMovePatches(int generation, string[] moveNames)
     {
@@ -156,6 +177,7 @@ internal static class CustomBalanceTemplates
 
                 ZEffect = ParseNullableInt(GetField(fields, header, -1, "ZEffect", "ZMoveEffect", "ZStatusEffect")),
                 BattlePatch = GetField(fields, header, -1, "BattlePatch", "SpecialPatch", "BattleEffectPatch"),
+                InGameDescription = GetField(fields, header, -1, "InGameDescription", "MoveDescription", "MoveFlavor", "FlavorText"),
             });
         }
 
@@ -223,6 +245,110 @@ internal static class CustomBalanceTemplates
         return [.. rows];
     }
 
+    internal static PokemonStatPatchRow[] LoadPokemonStatPatches(int generation, string[] entryNames)
+    {
+        string path = GetPokemonStatsTemplatePath(generation);
+        if (!File.Exists(path))
+            return [];
+
+        var rows = new List<PokemonStatPatchRow>();
+        Dictionary<string, int> header = null;
+
+        foreach (var fields in ReadCsv(path))
+        {
+            if (fields.Length == 0)
+                continue;
+
+            string first = Get(fields, 0);
+            
+            if (first.StartsWith('#'))
+                continue;
+
+            if (IsHeader(first, "Entry") || IsHeader(first, "Pokemon") || IsHeader(first, "Species"))
+            {
+                header = BuildHeaderMap(fields);
+                continue;
+            }
+
+            string entryToken = GetField(fields, header, 0, "Entry", "PersonalEntry", "ID");
+            string pokemonToken = GetField(fields, header, 1, "Pokemon", "Species", "Name");
+
+            int entry = ResolvePokemonStatEntry(entryToken, pokemonToken, entryNames);
+            if (entry <= 0 || entry >= entryNames.Length)
+                continue;
+
+            rows.Add(new PokemonStatPatchRow
+            {
+                Entry = entry,
+                Name = entryNames[entry],
+                HP = ParseNullableInt(GetField(fields, header, 2, "HP")),
+                ATK = ParseNullableInt(GetField(fields, header, 3, "ATK", "Attack")),
+                DEF = ParseNullableInt(GetField(fields, header, 4, "DEF", "Defense")),
+                SPA = ParseNullableInt(GetField(fields, header, 5, "SPA", "SpA", "SpecialAttack")),
+                SPD = ParseNullableInt(GetField(fields, header, 6, "SPD", "SpD", "SpecialDefense")),
+                SPE = ParseNullableInt(GetField(fields, header, 7, "SPE", "Speed")),
+                Notes = GetField(fields, header, 8, "Notes", "Note"),
+            });
+        }
+
+        return [.. rows];
+    }
+
+    internal static int ApplyPokemonStatPatches(int generation, PersonalInfo[] personal, string[] entryNames)
+    {
+        if (personal is null)
+            throw new ArgumentNullException(nameof(personal));
+        if (entryNames is null)
+            throw new ArgumentNullException(nameof(entryNames));
+
+        var rows = LoadPokemonStatPatches(generation, entryNames);
+        int applied = 0;
+
+        foreach (var row in rows)
+        {
+            if (row.Entry <= 0 || row.Entry >= personal.Length)
+                continue;
+
+            var pkm = personal[row.Entry];
+            pkm.HP = ResolveBaseStat(pkm.HP, row.HP, row, "HP");
+            pkm.ATK = ResolveBaseStat(pkm.ATK, row.ATK, row, "ATK");
+            pkm.DEF = ResolveBaseStat(pkm.DEF, row.DEF, row, "DEF");
+            pkm.SPA = ResolveBaseStat(pkm.SPA, row.SPA, row, "SPA");
+            pkm.SPD = ResolveBaseStat(pkm.SPD, row.SPD, row, "SPD");
+            pkm.SPE = ResolveBaseStat(pkm.SPE, row.SPE, row, "SPE");
+            applied++;
+        }
+
+        return applied;
+    }
+
+    private static int ResolvePokemonStatEntry(string entryToken, string pokemonToken, string[] entryNames)
+    {
+        if (!string.IsNullOrWhiteSpace(entryToken))
+        {
+            if (int.TryParse(entryToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out int id))
+                return id;
+
+            int byEntryName = ResolveToken(entryToken, entryNames);
+            if (byEntryName >= 0)
+                return byEntryName;
+        }
+
+        return string.IsNullOrWhiteSpace(pokemonToken) ? -1 : ResolveToken(pokemonToken, entryNames);
+    }
+
+    private static int ResolveBaseStat(int current, int? value, PokemonStatPatchRow row, string stat)
+    {
+        if (!value.HasValue)
+            return current;
+
+        int v = value.Value;
+        if (v is < 1 or > 255)
+            throw new InvalidDataException($"Invalid {stat} value {v} for Pokémon entry {row.Entry} ({row.Name}). Base stats must be between 1 and 255.");
+
+        return v;
+    }
+
     internal static void WriteExampleTemplatesIfMissing()
     {
         string root = GetTemplateRoot();
@@ -232,6 +358,7 @@ internal static class CustomBalanceTemplates
 
         WriteIfMissing(Path.Combine(root, "moves_gen6.csv"), ExampleMoves());
         WriteIfMissing(gen7Moves, ExampleMoves());
+        EnsureGen7InGameDescriptionColumn(gen7Moves);
         EnsureGen7NightmareSleepV76TemplateRow(gen7Moves);
         EnsureGen7WishPivotTemplateRow(gen7Moves);
         Gen7MeditateV73Patcher.EnsureTemplateRow(gen7Moves);
@@ -239,12 +366,14 @@ internal static class CustomBalanceTemplates
         Gen7FairyLockV11Patcher.EnsureTemplateRow(gen7Moves);
         WriteIfMissing(Path.Combine(root, "evolutions_gen6.csv"), ExampleEvolutions());
         WriteIfMissing(Path.Combine(root, "evolutions_gen7.csv"), ExampleEvolutions());
+        WriteIfMissing(Path.Combine(root, "pokemon_stats_gen6.csv"), ExamplePokemonStats());
+        WriteIfMissing(Path.Combine(root, "pokemon_stats_gen7.csv"), ExamplePokemonStats());
     
         Gen7LuckyChantCritPatcher.EnsureTemplateRow(
             Path.Combine(root, "moves_gen7.csv"));}
 
     private static string ExampleMoves() =>
-        "Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStage,Flinch,Effect,Param0x0B,Inflict,InflictChance,Heal,Recoil,TurnMin,TurnMax,Targeting,ClearStatEffects,UserStat,UserStatChange,UserStatChance,TargetStat,TargetStatChange,TargetStatChance,Stat1,Stat1Change,Stat1Chance,Stat2,Stat2Change,Stat2Chance,Stat3,Stat3Change,Stat3Chance,ClearFlags,SetFlags,UnsetFlags,KingShieldAttackMinusOne,BattlePatch,Notes,ZEffect" + Environment.NewLine +
+        "Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStage,Flinch,Effect,Param0x0B,Inflict,InflictChance,Heal,Recoil,TurnMin,TurnMax,Targeting,ClearStatEffects,UserStat,UserStatChange,UserStatChance,TargetStat,TargetStatChange,TargetStatChance,Stat1,Stat1Change,Stat1Chance,Stat2,Stat2Change,Stat2Chance,Stat3,Stat3Change,Stat3Chance,ClearFlags,SetFlags,UnsetFlags,KingShieldAttackMinusOne,BattlePatch,Notes,ZEffect,InGameDescription" + Environment.NewLine +
         "# Move can be an ID or exact move name. Empty cells keep the current value." + Environment.NewLine +
         "# Type/Category/Targeting/Inflict/Stats accept IDs or names. Flags accept enum names, numeric masks, or tokens separated by ; | ," + Environment.NewLine +
         "15,Grass,Physical,,70,100,15,,,,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Cut / Corte" + Environment.NewLine +
@@ -264,6 +393,14 @@ internal static class CustomBalanceTemplates
         "25,26,Level,30,,, ," + Environment.NewLine +
         "44,182,Friendship,,,,," + Environment.NewLine +
         "356,477,UsedItem,,,,Reaper Cloth,Tela Terrible" + Environment.NewLine;
+
+    private static string ExamplePokemonStats() =>
+        "Entry,Pokemon,HP,ATK,DEF,SPA,SPD,SPE,Notes" + Environment.NewLine +
+        "# Change only the Pokémon listed here. Empty stat cells keep the current value." + Environment.NewLine +
+        "# Entry is the Personal entry ID and is the safest option for alternate forms. Pokemon can be used instead when Entry is blank." + Environment.NewLine +
+        "# Example rows are commented out so a new template never changes the ROM by accident." + Environment.NewLine +
+        "# 25,Pikachu,35,60,40,50,50,100,Example: raise Attack and Speed" + Environment.NewLine +
+        "# ,Butterfree,,45,,,,,Example: change only Attack; all blank stats stay unchanged" + Environment.NewLine;
 
     private static void EnsureGen7WishPivotTemplateRow(string path)
     {
@@ -291,6 +428,34 @@ internal static class CustomBalanceTemplates
         File.AppendAllText(path, separator + row + Environment.NewLine);
     }
 
+    private static void EnsureGen7InGameDescriptionColumn(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        string[] lines = File.ReadAllLines(path);
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string trimmed = lines[i].Trim();
+            if (trimmed.Length == 0 || trimmed.StartsWith('#'))
+                continue;
+
+            string[] fields = SplitCsvLine(lines[i]);
+            if (fields.Length == 0 || NormalizeToken(Get(fields, 0)) != "move")
+                continue;
+
+            if (fields.Any(z => NormalizeToken(z) == "ingamedescription"))
+                return;
+
+            Array.Resize(ref fields, fields.Length + 1);
+            fields[^1] = "InGameDescription";
+            lines[i] = NightmareV76JoinCsvLine(fields);
+            File.WriteAllLines(path, lines);
+            return;
+        }
+    }
+
     private static void EnsureGen7NightmareSleepV76TemplateRow(string path)
     {
         if (!File.Exists(path))
@@ -298,6 +463,7 @@ internal static class CustomBalanceTemplates
 
         const string token = "Gen7NightmareSleepV76";
         const string finalNote = "Pesadilla / Nightmare: target awake -> stock Sleep only; target already asleep -> vanilla Nightmare.";
+        const string finalDescription = "Si está despierto, duerme al objetivo.\\nSi ya duerme, pierde 1/4 de sus PS máximos por turno";
 
         string[] lines = File.ReadAllLines(path);
         int headerLine = -1;
@@ -524,7 +690,7 @@ internal static class CustomBalanceTemplates
     }
 
     private static string Get(string[] fields, int index)
-        => index < fields.Length ? fields[index].Trim() : string.Empty;
+        => index >= 0 && index < fields.Length ? fields[index]?.Trim() ?? string.Empty : string.Empty;
 
     private static bool IsHeader(string value, string header)
         => string.Equals(value, header, StringComparison.OrdinalIgnoreCase);

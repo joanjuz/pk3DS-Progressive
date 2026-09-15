@@ -18,6 +18,7 @@ public partial class TutorEditor7 : Form
             Close();
         }
         InitializeComponent();
+        AddFreeTutorsButton();
 
         data = File.ReadAllBytes(CROPath);
         len_BPTutor = data.Skip(0x52D2).Take(4).ToArray();
@@ -27,11 +28,31 @@ public partial class TutorEditor7 : Form
         CB_LocationBPMove.SelectedIndex = 0;
     }
 
+    private void AddFreeTutorsButton()
+    {
+        B_FreeTutors = new Button
+        {
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+            Location = new System.Drawing.Point(B_Randomize.Right + 6, B_Randomize.Top),
+            Name = "B_FreeTutors",
+            Size = new System.Drawing.Size(80, B_Randomize.Height),
+            TabIndex = B_Randomize.TabIndex + 1,
+            Text = "Free Tutors",
+            UseVisualStyleBackColor = true,
+        };
+
+        B_FreeTutors.Click += B_FreeTutors_Click;
+        Controls.Add(B_FreeTutors);
+        B_FreeTutors.BringToFront();
+    }
+
     private const int ofs_BPTutor = 0x54DE;
     private readonly byte[] len_BPTutor;
 
     private readonly string[] movelist = Main.Config.GetText(TextName.MoveNames);
     private readonly byte[] data;
+    private Button B_FreeTutors;
+    private bool freeTutorsOnSave;
 
     private readonly string[] locationsTutor =
     [
@@ -45,6 +66,10 @@ public partial class TutorEditor7 : Form
     {
         if (entryBPMove > -1) SetListBPMove();
         File.WriteAllBytes(CROPath, data);
+
+        if (freeTutorsOnSave)
+            RandomizationSessionState.MarkAction("move-tutors.free", ("price", "0"));
+
         Close();
     }
 
@@ -90,6 +115,40 @@ public partial class TutorEditor7 : Form
             if (int.TryParse(p, out var price))
                 Array.Copy(BitConverter.GetBytes((ushort)price), 0, data, ofs + (4 * i) + 2, 2);
         }
+    }
+
+    private void B_FreeTutors_Click(object sender, EventArgs e)
+    {
+        if (DialogResult.Yes != WinFormsUtil.Prompt(
+            MessageBoxButtons.YesNo,
+            "Set every USUM Move Tutor price to 0 BP?",
+            "All four Move Tutor locations will become free. Move selections are not changed."))
+        {
+            return;
+        }
+
+        if (entryBPMove > -1)
+            SetListBPMove();
+
+        for (int location = 0; location < len_BPTutor.Length; location++)
+        {
+            int count = len_BPTutor[location];
+            int ofs = ofs_BPTutor + (len_BPTutor.Take(location).Sum(z => z) * 4);
+            for (int i = 0; i < count; i++)
+            {
+                data[ofs + (4 * i) + 2] = 0;
+                data[ofs + (4 * i) + 3] = 0;
+            }
+        }
+
+        freeTutorsOnSave = true;
+
+        if (entryBPMove > -1)
+            GetListBPMove();
+
+        WinFormsUtil.Alert(
+            "Move Tutors are now free!",
+            "Every Move Tutor price was set to 0 BP. Click Save to write Shop.cro.");
     }
 
     private void B_Randomize_Click(object sender, EventArgs e)

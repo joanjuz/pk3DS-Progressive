@@ -697,6 +697,7 @@ public partial class RSWE : Form
             B_Save_Click(sender, e);
         }
         Enabled = true;
+        RandomizationSessionState.MarkAction("wild-encounters.randomize");
         WinFormsUtil.Alert("Randomized all Wild Encounters according to specification!", "Press the Dump Tables button to view the new Wild Encounter information!");
     }
 
@@ -826,6 +827,7 @@ public partial class RSWE : Form
         }
         // Enable Interface... modification complete.
         Enabled = true;
+        RandomizationSessionState.MarkAction("wild-encounters.modify-levels");
         WinFormsUtil.Alert("Modified all Level ranges according to specification!", "Press the Dump Tables button to view the new Level ranges!");
     }
     private Button? B_AdvancedWildLevels;
@@ -941,6 +943,11 @@ public partial class RSWE : Form
         }
 
         Enabled = true;
+        RandomizationSessionState.MarkAction(
+            "wild-encounters.scale-levels",
+            ("flat", (NUD_WildLevelFlat?.Value ?? 0).ToString()),
+            ("multiplier", (NUD_WildLevelMultiplier?.Value ?? 100).ToString()),
+            ("keepRange", (CHK_WildLevelKeepRange?.Checked ?? true).ToString()));
         WinFormsUtil.Alert("Wild levels scaled!", $"Updated {changed} encounter slots.");
     }
 
@@ -1120,6 +1127,11 @@ public partial class RSWE : Form
             Enabled = true;
         }
 
+        RandomizationSessionState.MarkAction(
+            "wild-encounters.scale-levels",
+            ("flat", (NUD_WildLevelFlatVisible?.Value ?? 0).ToString()),
+            ("multiplier", (NUD_WildLevelMultiplierVisible?.Value ?? 100).ToString()),
+            ("keepRange", (CHK_WildLevelKeepRangeVisible?.Checked ?? true).ToString()));
         WinFormsUtil.Alert("Wild levels scaled!", $"Updated {changed} encounter slots.");
     }
 

@@ -68,6 +68,7 @@ public partial class MoveEditor6 : Form
         SetEntry();
 
         int changed = ApplyBalancedMoves();
+        RandomizationSessionState.MarkAction("moves.balance");
 
         GetEntry();
 
@@ -861,6 +862,7 @@ public partial class MoveEditor6 : Form
             if (CHK_Type.Checked)
                 CB_Type.SelectedIndex = rnd.Next(0, 18);
         }
+        RandomizationSessionState.MarkAction("moves.randomize");
         WinFormsUtil.Alert("All Moves have been randomized!");
     }
 
@@ -879,6 +881,7 @@ public partial class MoveEditor6 : Form
                 NUD_PP.Value = 1;
         }
         CB_Move.SelectedIndex = 0;
+        RandomizationSessionState.MarkAction("moves.metronome");
         WinFormsUtil.Alert("All Moves have had their Base PP values modified!");
     }
 }

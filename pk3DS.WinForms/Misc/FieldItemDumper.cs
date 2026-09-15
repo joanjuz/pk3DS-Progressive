@@ -54,7 +54,7 @@ internal static class FieldItemDumper
         if (candidates.Count < 2)
             return new FieldItemRandomizeResult(entries.Count, candidates.Count, 0, "Not enough safe field items were found to randomize.");
 
-        var random = new Random();
+        Random random = Util.Rand;
         int changed = template.Mode == FieldItemRandomizeMode.RandomPool
             ? ApplyRandomPool(candidates, template, options, itemNames, itemData, random)
             : ApplyShuffle(candidates, random);
@@ -889,6 +889,7 @@ internal enum FieldItemPoolMode
 internal sealed class FieldItemRandomizerTemplate
 {
     private const string TemplateFileName = "field_items.txt";
+    internal static string DefaultPath => GetTemplatePath();
     private readonly Dictionary<string, int[]> Pools;
     private readonly Dictionary<string, int[]> Blacklists;
 
@@ -1102,9 +1103,21 @@ internal sealed class FieldItemRandomizerTemplate
 
     private static string GetTemplatePath()
     {
-        string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Templates");
+        string dir = CustomBalanceTemplates.GetTemplateDirectory();
         Directory.CreateDirectory(dir);
-        return Path.Combine(dir, TemplateFileName);
+        string path = Path.Combine(dir, TemplateFileName);
+
+        // Preserve an existing field-item template from older builds. The first
+        // time this version runs, copy it into custom_balance_templates so the
+        // global ROM template and future batch builder use one canonical file.
+        if (!File.Exists(path))
+        {
+            string legacyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Templates", TemplateFileName);
+            if (File.Exists(legacyPath))
+                File.Copy(legacyPath, path, overwrite: false);
+        }
+
+        return path;
     }
 
     private static void EnsureDefaultTemplate(string path)

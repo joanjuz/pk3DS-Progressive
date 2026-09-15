@@ -1,4 +1,5 @@
-﻿using pk3DS.Core.Structures;
+﻿using System.CodeDom;
+using pk3DS.Core.Structures;
 
 namespace pk3DS.WinForms;
 
@@ -12,13 +13,22 @@ internal static class EconomyFixer
     private const int MaxRepel = 77;
     private const int Repel = 79;
 
+    private const int PlumaVigor = 565;
+    private const int PlumaMusculo = 566;
+    private const int PlumaAguante = 567;
+    private const int PlumaIntelecto = 568;
+    private const int PlumaMente = 569;
+    private const int PlumaImpetu = 570;
+    private const int EscamaCorazon = 93;
+
+
     internal static int Apply(byte[][] files)
     {
         int changed = 0;
 
         // Technical Machines / Hidden Machines used by pk3DS as the protected TM/HM set.
         foreach (int itemID in MartEditor7.BannedItems)
-            changed += SetBuyPrice(files, itemID, 1000);
+        changed += SetBuyPrice(files, itemID, 1000);
 
         changed += SetBuyPrice(files, PokeBall, 100);
         changed += SetBuyPrice(files, GreatBall, 150);
@@ -27,6 +37,16 @@ internal static class EconomyFixer
         changed += SetBuyPrice(files, Repel, 50);
         changed += SetBuyPrice(files, SuperRepel, 50);
         changed += SetBuyPrice(files, MaxRepel, 50);
+
+        changed += SetBuyPrice(files, PlumaAguante, 10);
+        changed += SetBuyPrice(files, PlumaImpetu, 10);
+        changed += SetBuyPrice(files, EscamaCorazon, 7500);
+        changed += SetBuyPrice(files, PlumaVigor, 10);
+        changed += SetBuyPrice(files, PlumaMusculo, 10);
+        changed += SetBuyPrice(files, PlumaMente, 10);
+        changed += SetBuyPrice(files, PlumaIntelecto, 10);
+
+        
 
         return changed;
     }

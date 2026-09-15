@@ -399,6 +399,7 @@ public partial class SMWE : Form
         ExecuteRandomization();
         UpdatePanel(null, null);
         Enabled = true;
+        RandomizationSessionState.MarkAction("wild-encounters.randomize");
 
         WinFormsUtil.Alert("Randomized all Wild Encounters according to specification!", "Press the Dump Tables button to view the new Wild Encounter information!");
     }
@@ -580,6 +581,11 @@ public partial class SMWE : Form
 
         Enabled = true;
         UpdatePanel(sender, e);
+        RandomizationSessionState.MarkAction(
+            "wild-encounters.scale-levels",
+            ("flat", (NUD_WildLevelFlat?.Value ?? 0).ToString()),
+            ("multiplier", (NUD_WildLevelMultiplier?.Value ?? 100).ToString()),
+            ("keepRange", (CHK_WildLevelKeepRange?.Checked ?? true).ToString()));
         WinFormsUtil.Alert("Wild levels scaled!", $"Updated {changed} encounter slots.");
     }
 
@@ -605,6 +611,7 @@ public partial class SMWE : Form
                 cb_spec[i][s].SelectedIndex = cb_spec[0][s].SelectedIndex;
             }
         }
+        RandomizationSessionState.MarkAction("wild-encounters.copy-sos");
         WinFormsUtil.Alert("All initial species copied to SOS slots!");
     }
 
@@ -632,6 +639,7 @@ public partial class SMWE : Form
 
         // Enable Interface... modification complete.
         Enabled = true;
+        RandomizationSessionState.MarkAction("wild-encounters.modify-levels");
         WinFormsUtil.Alert("Modified all Level ranges according to specification!", "Press the Dump Tables button to view the new Level ranges!");
 
         UpdatePanel(sender, e);

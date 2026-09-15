@@ -24,11 +24,14 @@ public partial class MartEditor6 : Form
         SetupDGV();
         CB_Location.Items.AddRange(locations);
         CB_Location.SelectedIndex = 0;
+        RandSettings.GetFormSettings(this, Controls);
     }
     private const int RareCandyItemID = 50;
     private const int RareCandyPrice = 10;
 
     private bool setRareCandyPriceOnSave;
+    private bool randomizeMartsOnSave;
+    private bool randomizeMartsSpecialOnly;
     private Button B_AddRareCandies;
     private static int RegularMartCount => Main.Config.ORAS ? 10 : 9;
     private void AddRareCandyButton()
@@ -303,7 +306,24 @@ public partial class MartEditor6 : Form
             SetItemPrice(GetRareCandyItemID(), RareCandyPrice);
 
         File.WriteAllBytes(codebin, data);
+
+        if (setRareCandyPriceOnSave)
+            RandomizationSessionState.MarkAction("marts.add-rare-candies", ("price", RareCandyPrice.ToString()));
+        if (randomizeMartsOnSave)
+        {
+            RandomizationSessionState.MarkAction(
+                "marts.randomize",
+                ("specialOnly", randomizeMartsSpecialOnly.ToString()),
+                ("keepXItems", CHK_XItems.Checked.ToString()));
+        }
+
         Close();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        RandSettings.SetFormSettings(this, Controls);
+        base.OnFormClosing(e);
     }
 
     private void B_Cancel_Click(object sender, EventArgs e)
@@ -338,6 +358,8 @@ public partial class MartEditor6 : Form
                 Util.Shuffle(validItems); ctr = 0;
             }
         }
+        randomizeMartsOnSave = true;
+        randomizeMartsSpecialOnly = specialOnly;
         WinFormsUtil.Alert("Randomized!");
     }
 }

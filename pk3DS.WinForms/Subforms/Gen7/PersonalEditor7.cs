@@ -36,6 +36,7 @@ public partial class PersonalEditor7 : Form
         Setup();
         CB_Species.SelectedIndex = 1;
         RandSettings.GetFormSettings(this, TP_Randomizer.Controls);
+        AddPokemonStatsTemplateButton();
     }
     #region Global Variables
     private readonly byte[][] files;
@@ -328,6 +329,62 @@ public partial class PersonalEditor7 : Form
         files[entry] = edits;
     }
 
+    private void AddPokemonStatsTemplateButton()
+    {
+        var button = new Button
+        {
+            Name = "B_PokemonStatsTemplate",
+            Text = "Balance",
+            Location = new Point(B_Randomize.Left, B_Randomize.Bottom + 8),
+            Size = B_Randomize.Size,
+            UseVisualStyleBackColor = true,
+        };
+        button.Click += B_PokemonStatsTemplate_Click;
+        TP_Randomizer.Controls.Add(button);
+        button.BringToFront();
+    }
+
+    private void B_PokemonStatsTemplate_Click(object sender, EventArgs e)
+    {
+        SaveEntry();
+        CustomBalanceTemplates.WriteExampleTemplatesIfMissing();
+
+        string path = CustomBalanceTemplates.GetPokemonStatsTemplatePath(7);
+        var patches = CustomBalanceTemplates.LoadPokemonStatPatches(7, entryNames);
+        if (patches.Length == 0)
+        {
+            WinFormsUtil.Alert(
+                "No Pokémon stat changes were found in the template.",
+                $"Edit {Path.GetFileName(path)} in custom_balance_templates and add the Pokémon you want to change.");
+            return;
+        }
+
+        if (WinFormsUtil.Prompt(
+                MessageBoxButtons.YesNo,
+                $"Apply {patches.Length} Pokémon stat change(s)?",
+                Path.GetFileName(path)) != DialogResult.Yes)
+            return;
+
+        try
+        {
+            int applied = CustomBalanceTemplates.ApplyPokemonStatPatches(7, Main.SpeciesStat, entryNames);
+            Main.SpeciesStat.Select(z => z.Write()).ToArray().CopyTo(files, 0);
+            ReadEntry();
+
+            RandomizationSessionState.MarkAction(
+                "pokemon-stats.apply",
+                ("template", Path.GetFileName(path)),
+                ("entries", applied.ToString()));
+
+            WinFormsUtil.Alert(
+                $"Applied Pokémon stat template to {applied} entr{(applied == 1 ? "y" : "ies")}.",
+                "This action is now included in the Global ROM Template recipe.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Error("Unable to apply Pokémon stat template.", ex.Message);
+        }
+    }
     private void B_Randomize_Click(object sender, EventArgs e)
     {
         if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Randomize all? Cannot undo.", "Double check Randomization settings in the Enhancements tab.") != DialogResult.Yes)
@@ -360,6 +417,7 @@ public partial class PersonalEditor7 : Form
         Main.SpeciesStat.Select(z => z.Write()).ToArray().CopyTo(files, 0);
 
         ReadEntry();
+        RandomizationSessionState.MarkAction("personal.randomize");
         WinFormsUtil.Alert("Randomized all Pokémon Personal data entries according to specification!", "Press the Dump All button to view the new Personal data!");
     }
 
@@ -418,6 +476,7 @@ public partial class PersonalEditor7 : Form
                 TB_CatchRate.Text = ((int)NUD_CatchRateMod.Value).ToString();
         }
         CB_Species.SelectedIndex = 1;
+        RandomizationSessionState.MarkAction("personal.modify-all");
         WinFormsUtil.Alert("Modified all Pokémon Personal data entries according to specification!", "Press the Dump All button to view the new Personal data!");
     }
 

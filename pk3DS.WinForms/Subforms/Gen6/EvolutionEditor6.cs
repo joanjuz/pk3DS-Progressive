@@ -165,6 +165,7 @@ public partial class EvolutionEditor6 : Form
         SetList();
 
         int changed = ApplyNormalizedEvolutions();
+        RandomizationSessionState.MarkAction("evolutions.normalize");
 
         GetList();
 
@@ -607,6 +608,7 @@ public partial class EvolutionEditor6 : Form
         evoRand.Execute();
         evos.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         GetList();
+        RandomizationSessionState.MarkAction("evolutions.randomize");
 
         WinFormsUtil.Alert("All Pokémon's Evolutions have been randomized!");
     }
@@ -623,6 +625,7 @@ public partial class EvolutionEditor6 : Form
         evoRand.ExecuteTrade();
         evos.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         GetList();
+        RandomizationSessionState.MarkAction("evolutions.remove-trade");
 
         WinFormsUtil.Alert("All trade evolutions have been removed!", "Trade evolutions will now occur after reaching a certain Level, or after leveling up while holding its appropriate trade item.");
     }
@@ -650,6 +653,7 @@ public partial class EvolutionEditor6 : Form
         evoRand.Execute(); // randomize right after
         evos.Select(z => z.Write()).ToArray().CopyTo(files, 0);
         GetList();
+        RandomizationSessionState.MarkAction("evolutions.every-level");
         SystemSounds.Asterisk.Play();
     }
 

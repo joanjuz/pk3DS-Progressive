@@ -48,6 +48,10 @@ internal sealed class TrainerRandomizeProgress : IDisposable
 
         form.Controls.Add(label);
         form.Controls.Add(progressBar);
+
+        if (BatchRuntime.IsActive)
+            return;
+
         form.Show(owner);
         form.Refresh();
         Application.DoEvents();
@@ -65,6 +69,16 @@ internal sealed class TrainerRandomizeProgress : IDisposable
             return;
 
         lastValue = current;
+        if (BatchRuntime.IsActive)
+        {
+            if (current == total || current == 1 || current % 50 == 0)
+            {
+                string name = string.IsNullOrWhiteSpace(trainerName) ? string.Empty : $" ({trainerName})";
+                BatchRuntime.Log($"Trainers: {current}/{total}{name}");
+            }
+            return;
+        }
+
         progressBar.Maximum = total;
         progressBar.Value = Math.Min(current, progressBar.Maximum);
         label.Text = string.IsNullOrWhiteSpace(trainerName)
@@ -77,7 +91,8 @@ internal sealed class TrainerRandomizeProgress : IDisposable
 
     public void Dispose()
     {
-        form.Close();
+        if (!BatchRuntime.IsActive)
+            form.Close();
         form.Dispose();
     }
 }

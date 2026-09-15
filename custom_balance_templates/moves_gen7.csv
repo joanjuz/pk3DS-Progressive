@@ -1,69 +1,58 @@
-# Custom Move Balance Template - Gen7 active balance preset
-# ------------------------------------------------------------
-# Lines starting with # are comments.
-# Empty cells keep the current value.
-# The normal CSV fields are applied by Move Editor -> Balance moves.
-# Rows near the bottom marked SPECIAL CHECK may need an additional Battle.cro/code.bin patch
-# if the effect is hardcoded by the game.
-#
-# BattlePatch:
-#   Gen7KingShieldMinusOne is currently implemented and confirmed for Escudo Real.
-#   Other special moves are kept at the bottom for later implementation/testing.
-#
-Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStage,Flinch,Effect,Param0x0B,Inflict,InflictChance,Heal,Recoil,TurnMin,TurnMax,Targeting,ClearStatEffects,UserStat,UserStatChange,UserStatChance,TargetStat,TargetStatChange,TargetStatChance,Stat1,Stat1Change,Stat1Chance,Stat2,Stat2Change,Stat2Chance,Stat3,Stat3Change,Stat3Chance,ClearFlags,SetFlags,UnsetFlags,KingShieldAttackMinusOne,BattlePatch,Notes,ZEffect
-,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-# Regular / CSV-only or mostly CSV-driven changes
-79,,Status,,,70,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Somnifero / Sleep Powder: 70% accuracy
-601,,,,,,,,,,,,,,,,,,,,,true,,,,,,,Speed,-1,100,Special Attack,2,100,Special Defense,2,100,,,,,,"Geomancy / Geocontrol: +2 SpA, +2 SpD, -1 Speed"
-6,,Physical,,25,,40,,,,,40,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Dia de Pago / Pay Day: 25 power, 40 PP, 40% flinch"
-336,,Status,,,,,,,,,,,,,,,,,,,true,Attack,3,100,,,,,,,,,,,,,,,,,,Aullido / Howl: +3 Attack
-577,,Special,,60,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Beso Drenaje / Draining Kiss: 60 power
-72,,Special,,60,,,,,,,,,,,,75,,,,,,,,,,,,,,,,,,,,,,,,,,"Megaagotar / Mega Drain: 60 power, 75% recovery"
-202,,Special,,80,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gigadrenado / Giga Drain: 80 power
-182,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Proteccion / Protect: 5 PP
-596,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Barrera Espinosa / Spiky Shield: 5 PP
-105,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Recuperacion / Recover: 5 PP
-208,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Batido / Milk Drink: 5 PP
-355,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Respiro / Roost: 5 PP
-505,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Auxilio / Heal Pulse: 5 PP
-303,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Relajo / Slack Off: 5 PP
-135,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Amortiguador / Soft-Boiled: 5 PP
-15,Grass,Physical,,70,100,,,,,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Corte / Cut: Grass, 70 power, 100 acc, +1 crit"
-19,,Physical,,130,100,,,,,,,,,,,,-33,,,,,,,,,,,,,,,,,,,,,,,,,"Vuelo / Fly: 130 power, 100 acc, -33% recoil"
-70,,Physical,,30,,,,,,,,,1,Confusion,30,,,,,,,,,,,,,,,,,,,,,,,,,,,"Fuerza / Strength: 30 power, 30% confusion, Param0x0B=1"
-249,,Physical,,60,,,,,,,,,,,,,,,,,,,,,Defense,-1,100,,,,,,,,,,,,,,,"Golpe Roca / Rock Smash: 60 power, always lowers Defense"
-291,,Physical,,130,,,,,,,,,,,,,-33,,,,,,,,,,,,,,,,,,,,,,,,,"Buceo / Dive: 130 power, -33% recoil"
-594,Water,Special,,25,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Shuriken de Agua / Water Shuriken: 25 power; use 20 if preferred
-468,,Status,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Afilagarras / Hone Claws: targets ally
-526,,Status,,,,,,,,,,,,,,,,,,Single,,,,,,,,,,,,,,,,,,,,,,Avivar / Work Up: targeteable
-674,,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Speed,1,100,,,,,,Pinon Auxiliar / Gear Up: also +1 Speed
-106,,Status,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Fortaleza / Harden: targets ally
-590,,Status,,,,,,,,,,,,,,,,,,Ally,true,,,,Special Attack,1,100,,,,,,,,,,,,,,,"Confidencia / Confide: targets ally, +1 Sp. Atk"
-589,,Status,,,,,,,,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,,Camaraderia / Play Nice: affects both foes
-485,,Special,,150,,,,,,,,,,,,,,,,AllPokemon,,,,,,,,,,,,,,,,,,,,,,"Sincrorruido / Synchronoise: 150 power, affects all Pokemon"
-161,,Special,,,,,,,,,,,,,30,,,,,,,,,,,,,,,,,,,,,,,,,,,Triataque / Tri Attack: 30% secondary effect
-600,,Status,,,,,,,,,,,,,,,,,,AllPokemon,,,,,,,,,,,,,,,,,,,,,,Polvo Explosivo / Powder: affects both/all
-184,,Status,,,,,1,,,,,,,,,,,,,,true,,,,Speed,-1,100,,,,,,,,,,,,,,,"Cara Susto / Scary Face: +1 priority, -1 Speed"
-153,,Special,,250,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Explosion: Special, 250 power"
-120,,Physical,,250,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Autodestruccion / Self-Destruct: Physical, 250 power"
-693,,Physical,,25,,,,2,5,,,,,,,,,,,Single,,,,,,,,,,,,,,,,,,,,,,"Giro Vil / Brutal Swing: single target, Rock Blast-like 2-5 hits"
-190,,Special,,,90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Pulpocanon / Octazooka: 90 accuracy
-340,,Physical,,,100,,,,,,,,,Paralyze,40,,,,,,,,,,,,,,,,,,,,,,,,,,,"Bote / Bounce: 100 accuracy, 40% paralysis"
-
-# Special / hardcoded or behavior-check changes last
-50,,Status,,,,,,,,,,,,,,,,4,4,AllFoes,,,,,,,,,,,,,,,,,,,,,,Anulacion / Disable: affects both foes; fixed duration 4 turns,
-588,,Status,,,,5,,,,,,,,,,,,,,,true,,,,,,,,,,,,,,,,,,,true,Gen7KingShieldMinusOne,SPECIAL ACTIVE: King's Shield / Escudo Real: Attack -1
-148,Electric,Status,,,70,5,,,,,,,177,Paralyze,100,,,,,AllFoes,,,,,Evasion,-1,100,,,,,,,,,,,,,,,"SPECIAL CHECK: Destello / Flash: Electric, all foes, paralysis + -1 evasion, Param0x0B=0xB1"
-346,,Status,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,SPECIAL CHECK: Hidrochorro / Water Sport: Fire damage reduction parameter to 100
-300,,Status,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,SPECIAL CHECK: Chapoteo Lodo / Mud Sport: Electric damage reduction parameter to 100
-381,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7LuckyChantCritBoost,Conjuro / Lucky Chant: Battle.cro v17 only; preserve vanilla move data; protected side +1 critical stage; duration 8 turns
-293,,Status,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Camuflaje / Camouflage: Z-Move bonus +1 Attack, Defense, Sp. Atk, Sp. Def and Speed (ZEffect 22); normal Camouflage unchanged",22
-54,,Status,,,,,3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7MistOwnerActiveV5762,Neblina / Mist: +3 priority; remains active while the original user stays active; ally switching does not end it; owner switch/faint ends it; immediate recast transfers ownership; Mist itself gives no critical-stage boost,
-108,,Status,13,,,,0,,,,,111,,,,,,,,Single,true,,,,,,,,,,,,,,,,,,,,Gen7SmokescreenV82,Pantalla de Humo / Smokescreen: first-active-turn self-protection + selected target Accuracy -1; doubles-safe private descriptors (v8.2)
-277,,Status,,,,,,,,,,,,,,,,3,3,,,,,,,,,,,,,,,,,,,,,,,SPECIAL CHECK: Capa Magica / Magic Coat: 3 turns if effect reads turn fields
-96,,Status,13,,,,,,,,,399,,None,0,0,,,,Single,true,,,,,,,,,,,,,,,,,,,,Gen7MeditateV73,Meditacion / Meditate: target status cleanse +1 Attack (v7.3)
-563,Ground,Status,,0,101,10,,,,,,339,,,,25,,,,,true,,,,,,,,,,,,,,,,,,,,,"SPECIAL CHECK: Fertilizante / Rototiller: heal 25%, no stat boosts"
-587,Fairy,Status,13,,,,,,,,,294,,,,,,,,AllPokemon,,,,,,,,,,,,,,,,,,,,,Gen7FairyLockAllFairyV11,Cerrojo Feerico / Fairy Lock: all active Pokemon become pure Fairy (v11)
-
-193,,Status,,,,,,,,,,,,,,,,,,Self,true,,,,,,,Attack,1,100,Defense,1,100,Speed,1,100,,,,,,"Profecia / Foresight: self-target; +1 Attack, +1 Defense and +1 Speed",
-171,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7NightmareSleepV76,Pesadilla / Nightmare: target awake -> stock Sleep only; target already asleep -> vanilla Nightmare.,
+Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStage,Flinch,Effect,Param0x0B,Inflict,InflictChance,Heal,Recoil,TurnMin,TurnMax,Targeting,ClearStatEffects,UserStat,UserStatChange,UserStatChance,TargetStat,TargetStatChange,TargetStatChance,Stat1,Stat1Change,Stat1Chance,Stat2,Stat2Change,Stat2Chance,Stat3,Stat3Change,Stat3Chance,ClearFlags,SetFlags,UnsetFlags,KingShieldAttackMinusOne,BattlePatch,Notes,ZEffect,InGameDescription
+147,,,,,80,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Espora / Spore: precisión 80%.,,Duerme al objetivo.\nTiene un 80% de precisión.
+79,,,,,70,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Somnífero / Sleep Powder: precisión 70%.,,Duerme al objetivo.\nTiene un 70% de precisión.
+601,,,,,,,,,,,,,,,,,,,,,true,,,,,,,Special Attack,2,100,Special Defense,2,100,Speed,1,100,,,,,,"Geocontrol / Geomancy: +2 At. Esp., +2 Def. Esp. y +1 Velocidad.",,Aumenta 2 niveles el At. Esp. y la Def. Esp.\nTambién aumenta 1 nivel la Velocidad.
+6,,,,25,,,,,,,45,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Día de Pago / Pay Day: 25 de potencia y 45% de retroceso.,,Tiene 25 de potencia y un 45%\nde hacer retroceder al objetivo.
+50,,,,,,,,,,,,,,,,,,4,4,AllFoes,,,,,,,,,,,,,,,,,,,,,,Anulación / Disable: afecta a ambos rivales y dura 4 turnos.,,Anula el último movimiento usado por ambos rivales\ndurante 4 turnos.
+336,,,,,,,,,,,,,,,,,,,,,true,Attack,3,100,,,,,,,,,,,,,,,,,,Aullido / Howl: Ataque del usuario +3.,,Aumenta 3 niveles el Ataque del usuario.
+182,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Protección / Protect: 5 PP.,,
+197,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Detección / Detect: 5 PP.,,
+596,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Barrera Espinosa / Spiky Shield: 5 PP.,,
+588,,,,,,5,,,,,,,,,,,,,,,true,,,,,,,,,,,,,,,,,,,true,Gen7KingShieldMinusOne,Escudo Real / King's Shield: 5 PP; baja Ataque solo 1 nivel.,,"Protege al usuario.\nSi recibe contacto, baja 1 nivel el Ataque del rival."
+105,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Recuperación / Recover: 5 PP.,,
+234,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Sol Matinal / Morning Sun: 5 PP.,,
+236,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Luz Lunar / Moonlight: 5 PP.,,
+208,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Batido / Milk Drink: 5 PP.,,
+303,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Relajo / Slack Off: 5 PP.,,
+235,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Síntesis / Synthesis: 5 PP.,,
+456,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Auxilio / Heal Order: 5 PP.,,
+135,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Amortiguador / Soft-Boiled: 5 PP.,,
+355,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Respiro / Roost: 5 PP.,,
+505,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Pulso Cura / Heal Pulse: 5 PP.,,
+15,Grass,,,70,,,,,,1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,"Corte / Cut: tipo Planta, 70 de potencia y crítico +1.",,Ataca con un corte de tipo Planta.\nTiene mayor probabilidad de golpe crítico.
+19,,,,130,100,,,,,,,,,,,,-33,,,,,,,,,,,,,,,,,,,,,,,,,"Vuelo / Fly: 130 de potencia, 100% precisión y 1/3 de recoil.",,Vuela el primer turno y ataca en el siguiente.\nEl usuario recibe 1/3 del daño causado.
+70,,,DMG | Inflict Status,80,,,,,,,,,1,Confusion,30,,,,,,,,,,,,,,,,,,,,,,,,,,,Fuerza / Strength: 80 de potencia y 30% de confusión.,,Golpea con 80 de potencia.\nTiene un 30% de confundir al objetivo.
+249,,,,60,,,,,,,,,,,,,,,,,true,,,,Defense,-1,100,,,,,,,,,,,,,,,Golpe Roca / Rock Smash: 60 de potencia y siempre baja Defensa -1.,,Golpea con 60 de potencia y siempre\nbaja 1 nivel la Defensa del objetivo.
+291,,,,130,100,,,,,,,,,,,,-33,,,,,,,,,,,,,,,,,,,,,,,,,"Buceo / Dive: 130 de potencia, 100% precisión y 1/3 de recoil.",,Se sumerge el primer turno y ataca en el siguiente.\nEl usuario recibe 1/3 del daño causado.
+148,Electric,,No DMG | STATUS | + Target Stat,,70,,,,,,,67,,Paralyze,100,,,,,AllFoes,true,,,,Evasion,-1,100,,,,,,,,,,,,,,,"Destello / Flash: tipo Eléctrico, 70% precisión; ambos rivales; paraliza y baja Evasión -1.",,"Afecta a ambos rivales, los paraliza\ny baja 1 nivel su Evasión."
+577,,,,60,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Beso Drenaje / Draining Kiss: 60 de potencia.,,
+72,,,,60,,,,,,,,,,,,75,,,,,,,,,,,,,,,,,,,,,,,,,,Megaagotar / Mega Drain: 60 de potencia y recupera 75% del daño.,,Tiene 60 de potencia y recupera\nel 75% del daño causado.
+202,,,,80,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gigadrenado / Giga Drain: 80 de potencia.,,
+594,,,,20,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Shuriken de Agua / Water Shuriken: 20 de potencia por golpe.,,
+468,,,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Afilagarras / Hone Claws: también puede afectar al compañero en dobles.,,Aumenta el Ataque y la Precisión.\nTambién puede usarse sobre el compañero.
+526,,,,,,,,,,,,,,,,,,,,Single,,,,,,,,,,,,,,,,,,,,,,Avivar / Work Up: permite elegir objetivo.,,Aumenta el Ataque y el At. Esp.\nPermite elegir al objetivo.
+106,,,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Fortaleza / Harden: también puede afectar al compañero en dobles.,,
+346,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Hidrochorro / Water Sport: inhabilita ataques de tipo Fuego.,,Inhabilita los movimientos de tipo Fuego\nmientras está activo.
+300,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Chapoteo Lodo / Mud Sport: inhabilita ataques de tipo Eléctrico.,,Inhabilita los movimientos de tipo Eléctrico\nmientras está activo.
+381,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7LuckyChantCritBoost,Conjuro / Lucky Chant: además aumenta la probabilidad de crítico de todo el equipo.,,Protege al equipo de golpes críticos\ny aumenta su probabilidad de asestar críticos.
+273,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7WishPivot,Deseo / Wish: cambia de Pokémon al usarlo y mantiene la cura diferida.,,"Pide un deseo y cambia al usuario.\nAl final del turno siguiente, cura al Pokémon activo."
+590,,,,,,,,,,,,,,,,,,,,Ally,true,,,,Special Attack,1,100,,,,,,,,,,,,,,,Confidencia / Confide: sube At. Esp. +1 y afecta al compañero en dobles.,,Aumenta 1 nivel el At. Esp.\ndel compañero elegido.
+589,,,,,,,,,,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,,Camaradería / Play Nice: afecta a ambos rivales en dobles.,,Hace bajar 1 nivel el Ataque de ambos rivales.
+674,,,,,,,,,,,,,,,,,,,,,true,,,,,,,Attack,1,100,Special Attack,1,100,Speed,1,100,,,,,,"Piñón Auxiliar / Gear Up: Ataque +1, At. Esp. +1 y Velocidad +1.",,"Aumenta 1 nivel el Ataque, At. Esp.\ny Velocidad de los aliados."
+293,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Camuflaje Z / Z-Camouflage: sube todas las estadísticas +1.,22,"Como Movimiento Z, sube todas\nlas características en 1."
+108,,,13,,,,0,,,,,111,,,,,,,,Single,true,,,,,,,,,,,,,,,,,,,,Gen7SmokescreenV82,Pantalla de Humo / Smokescreen: protección sin prioridad y baja Precisión -1.,,Protege al usuario sin prioridad\ny baja 1 nivel la Precisión del objetivo.
+54,,,,,,,3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7MistOwnerActiveV5762,Neblina / Mist: prioridad +3; dura hasta que el usuario salga del campo.,,"Con prioridad +3, protege al equipo.\nDura mientras el usuario siga en combate."
+161,,,,,,,,,,,,,,,30,,,,,,,,,,,,,,,,,,,,,,,,,,,Triataque / Tri Attack: 30% de aplicar uno de sus efectos secundarios.,,"Tiene un 30% de quemar, congelar\no paralizar al objetivo."
+193,,,,,,,,,,,,,,,,,,,,Self,true,,,,,,,Attack,1,100,Defense,1,100,Speed,1,100,,,,,,"Profecía / Foresight: Ataque +1, Defensa +1 y Velocidad +1.",,"Aumenta 1 nivel el Ataque, la Defensa\ny la Velocidad del usuario."
+96,,,13,,,,,,,,,399,,None,0,0,,,,Single,true,,,,,,,,,,,,,,,,,,,,Gen7MeditateV73,"Meditación / Meditate: permite elegir objetivo, cura estados y aumenta Ataque +1.",,Cura los problemas de estado del objetivo\ny aumenta 1 nivel su Ataque.
+600,,,,,,,,,,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,,Polvo Explosivo / Powder: afecta a ambos rivales en dobles.,,
+184,,,,,,,1,,,,,,,,,,,,,,true,,,,Speed,-1,100,,,,,,,,,,,,,,,Cara Susto / Scary Face: prioridad +1 y Velocidad -1.,,"Con prioridad +1, baja 1 nivel\nla Velocidad del objetivo."
+153,,Special,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Explosión / Explosion: categoría Especial.,,
+120,,,,250,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Autodestrucción / Self-Destruct: 250 de potencia.,,
+563,,,,,,,,,,,,,,,,25,,,,AllPokemon,true,,,,,,,,,,,,,,,,,,,,,Fertilizante / Rototiller: cura 25% a todos los Pokémon de tipo Planta en el campo.,,Cura un 25% de los PS máximos\nde todos los Pokémon de tipo Planta en el campo.
+693,,,,30,,,,2,5,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,,"Giro Vil / Brutal Swing: 30 potencia, 2-5 golpes, ambos rivales;",,"Golpea a ambos rivales de 2 a 5 veces."
+190,,,,,90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Pulpocañón / Octazooka: 90% de precisión.,,
+340,,,,,100,,,,,,,,,Paralyze,40,,,,,,,,,,,,,,,,,,,,,,,,,,,Bote / Bounce: 100% precisión y 40% de paralizar.,,Se eleva el primer turno y ataca en el siguiente.\nTiene un 40% de paralizar al objetivo.
+587,Fairy,,13,,,,,,,,,294,,,,,,,,AllPokemon,,,,,,,,,,,,,,,,,,,,,Gen7FairyLockAllFairyV11,Cerrojo Feérico / Fairy Lock: convierte en tipo Hada puro a todos los Pokémon activos.,,Convierte en tipo Hada puro\na todos los Pokémon activos.
+171,,,,,80,,-1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7NightmareSleepV76,Pesadilla / Nightmare: despierto -> Sueño; dormido -> pierde 25% PS por turno.,,"Si está despierto, duerme al objetivo.\nSi ya duerme, pierde 1/4 de sus PS máximos por turno."
+661,,,,,,5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Búnker a 5 pps

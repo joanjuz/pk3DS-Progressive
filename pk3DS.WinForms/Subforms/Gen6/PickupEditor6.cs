@@ -137,6 +137,7 @@ public partial class PickupEditor6 : Form
             if (ctr <= validItems.Length) continue;
             Util.Shuffle(validItems); ctr = 0;
         }
+        RandomizationSessionState.MarkAction("pickup.randomize");
         WinFormsUtil.Alert("Randomized!");
     }
 }

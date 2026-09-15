@@ -216,6 +216,7 @@ public partial class StaticEncounterEditor6 : Form
             NUD_Form.Value = formrand.GetRandomForme(species);
             CB_Gender.SelectedIndex = 0; // random
         }
+        RandomizationSessionState.MarkAction("static-encounters.randomize");
         WinFormsUtil.Alert("Randomized all Static Encounters according to specification!");
     }
 
@@ -234,6 +235,7 @@ public partial class StaticEncounterEditor6 : Form
             LB_Encounters.SelectedIndex = i;
             NUD_Level.Value = Randomizer.GetModifiedLevel((int)NUD_Level.Value, NUD_LevelBoost.Value);
         }
+        RandomizationSessionState.MarkAction("static-encounters.modify-levels");
         WinFormsUtil.Alert("Modified all Levels according to specification!");
     }
 }

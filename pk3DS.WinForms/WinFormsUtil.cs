@@ -355,20 +355,38 @@ public static class WinFormsUtil
     // Message Displays
     public static DialogResult Error(params string[] lines)
     {
-        System.Media.SystemSounds.Exclamation.Play();
         string msg = string.Join(Environment.NewLine + Environment.NewLine, lines);
+        if (BatchRuntime.IsActive)
+        {
+            BatchRuntime.Log("ERROR: " + msg.Replace(Environment.NewLine, " | "));
+            throw new InvalidOperationException(msg);
+        }
+
+        System.Media.SystemSounds.Exclamation.Play();
         return MessageBox.Show(msg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
     public static DialogResult Alert(params string[] lines)
     {
-        System.Media.SystemSounds.Asterisk.Play();
         string msg = string.Join(Environment.NewLine + Environment.NewLine, lines);
+        if (BatchRuntime.IsActive)
+        {
+            BatchRuntime.Log(msg.Replace(Environment.NewLine, " | "));
+            return DialogResult.OK;
+        }
+
+        System.Media.SystemSounds.Asterisk.Play();
         return MessageBox.Show(msg, "Alert", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     public static DialogResult Prompt(MessageBoxButtons btn, params string[] lines)
     {
+        if (BatchRuntime.IsActive)
+        {
+            BatchRuntime.Log("Auto-confirm: " + string.Join(" | ", lines));
+            return BatchRuntime.GetPromptResult(btn);
+        }
+
         System.Media.SystemSounds.Question.Play();
         string msg = string.Join(Environment.NewLine + Environment.NewLine, lines);
         return MessageBox.Show(msg, "Prompt", btn, MessageBoxIcon.Asterisk);

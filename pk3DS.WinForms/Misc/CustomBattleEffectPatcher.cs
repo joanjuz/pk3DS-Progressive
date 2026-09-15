@@ -41,12 +41,14 @@ internal static class CustomBattleEffectPatcher
 
         var list = requests.ToArray();
         int changed = 0;
+        bool failed = false;
 
         if (generation == 7 && requests is not null && requests.Any(IsGen7NightmareSleepV76Request))
         {
             int nightmareV76Changed = Gen7NightmareSleepV76Patcher.Apply();
             if (nightmareV76Changed < 0)
             {
+                failed = true;
                 alert?.Invoke(
                     "Special battle patch skipped",
                     "Could not apply Gen7 Nightmare / Pesadilla awake-to-Sleep v76 to Battle.cro.");
@@ -68,6 +70,7 @@ internal static class CustomBattleEffectPatcher
 
             if (result < 0)
             {
+                failed = true;
                 if (alert is not null)
                     alert("Special battle patch skipped", $"Could not apply King's Shield -1 Attack battle patch for Gen{generation}.");
             }
@@ -85,6 +88,7 @@ internal static class CustomBattleEffectPatcher
                 int result = PatchGen7WaterMudSportReduction(sportRequests);
                 if (result < 0)
                 {
+                    failed = true;
                     if (alert is not null)
                         alert("Special battle patch skipped", "Could not apply the Gen7 Water Sport / Mud Sport Battle.cro reduction patch.");
                 }
@@ -99,6 +103,7 @@ internal static class CustomBattleEffectPatcher
                 int result = PatchGen7WishPivot();
                 if (result < 0)
                 {
+                    failed = true;
                     if (alert is not null)
                         alert("Special battle patch skipped", "Could not apply the Gen7 Wish / Deseo immediate-pivot Battle.cro patch.");
                 }
@@ -115,6 +120,7 @@ internal static class CustomBattleEffectPatcher
 
             if (result < 0)
             {
+                failed = true;
                 if (alert is not null)
                 {
                     alert(
@@ -133,6 +139,7 @@ internal static class CustomBattleEffectPatcher
 
             if (result < 0)
             {
+                failed = true;
                 if (alert is not null)
                 {
                     alert(
@@ -151,6 +158,7 @@ internal static class CustomBattleEffectPatcher
 
             if (result < 0)
             {
+                failed = true;
                 if (alert is not null)
                 {
                     alert(
@@ -169,6 +177,7 @@ internal static class CustomBattleEffectPatcher
 
             if (result < 0)
             {
+                failed = true;
                 if (alert is not null)
                 {
                     alert(
@@ -181,7 +190,7 @@ internal static class CustomBattleEffectPatcher
                 changed += result;
             }
         }
-return changed;
+        return failed ? -1 : changed;
     }
 
     private static bool IsKingShieldMinusOneRequest(BattlePatchRequest request, int generation)

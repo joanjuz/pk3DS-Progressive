@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -260,6 +260,7 @@ public partial class StaticEncounterEditor7 : Form
             LB_Trade.SelectedIndex = Math.Min(Math.Max(tEntry, 0), LB_Trade.Items.Count - 1);
         GetTrade();
 
+        RandomizationSessionState.MarkAction("trades.accept-any");
         WinFormsUtil.Alert("Trades updated!", $"{Trades.Length} in-game trades now accept any Pokemon.");
     }
 
@@ -312,6 +313,7 @@ public partial class StaticEncounterEditor7 : Form
             LB_Trade.SelectedIndex = Math.Min(Math.Max(tEntry, 0), LB_Trade.Items.Count - 1);
         GetTrade();
 
+        RandomizationSessionState.MarkAction("trades.randomize-offers");
         WinFormsUtil.Alert("Trades randomized!", $"{Trades.Length} in-game trades now accept any Pokemon and give randomized Pokemon.");
     }
 
@@ -340,9 +342,8 @@ public partial class StaticEncounterEditor7 : Form
         if (Gifts.Take(3).Select(gift => gift.Species).SequenceEqual(oldStarters))
             return;
 
-        var dr = WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Starters have been changed. Update text references?", "Note that this only updates text references for the current language set in pk3DS.", "This can be changed from Options -> Language on the main window.");
-        if (dr == DialogResult.Yes)
-            UpdateStarterText();
+
+        UpdateStarterText();
     }
 
     private string GetEntryText(int species, int entry)
@@ -694,6 +695,7 @@ public partial class StaticEncounterEditor7 : Form
         GetListBoxEntries();
         GetGift();
 
+        RandomizationSessionState.MarkAction("starters.randomize");
         WinFormsUtil.Alert("Randomized Starters according to specification!");
     }
 
@@ -841,51 +843,152 @@ public partial class StaticEncounterEditor7 : Form
         GetEncounter();
         GetTrade();
 
+        RandomizationSessionState.MarkAction("static-encounters.randomize");
         WinFormsUtil.Alert("Randomized Static Encounters according to specification!");
     }
 
     // Mirror Changes
     private void UpdateStarterText()
     {
-        var gr = Main.Config.GetGARCReference("storytext");
-        int file = Main.Config.USUM ? 39 : 41;
-        for (int i = 0; i < 10; i++)
+        int originalLanguage = Main.Config.Language;
+        int storyFile = Main.Config.USUM ? 39 : 41;
+        int speciesNameFile = Main.Config.USUM ? 60 : 55;
+        int typeNameFile = Main.Config.USUM ? 112 : 107;
+
+        // Rowlet / Litten / Popplio. Used only as a recovery fallback when
+        // StoryText is still vanilla but the encounter table was randomized earlier.
+        int[] vanillaStarters = [722, 725, 728];
+
+        int updatedLanguages = 0;
+
+        try
         {
-            // get Story Text
-            var sr = gr.GetRelativeGARC(i, gr.Name);
-            var s = Main.Config.GetGARCByReference(sr);
-            byte[][] storytextdata = s.Files;
-
-            string[] storyText = TextFile.GetStrings(Main.Config, storytextdata[file]);
-
-            for (int j = 0; j < 3; j++)
+            // Gen 7 stores ten language variants. Switch Config.Language before
+            // opening each GARC so GetGARCData resolves the correct physical path.
+            for (int language = 0; language < 10; language++)
             {
-                int oldSpecies = oldStarters[j];
-                int species = Gifts[j].Species;
-                // Replace Story Text
-                string line = storyText[1 + j];
-                // Replace Species
-                line = line.Replace(specieslist[oldSpecies], specieslist[species]);
+                Main.Config.Language = language;
 
-                if (Main.Config.SM) // replace type text
+                var storyGarc = Main.Config.GetGARCData("storytext");
+                var gameTextGarc = Main.Config.GetGARCData("gametext");
+
+                string[] localizedSpecies =
+                    TextFile.GetStrings(Main.Config, gameTextGarc.Files[speciesNameFile]);
+
+                string[] localizedTypes =
+                    TextFile.GetStrings(Main.Config, gameTextGarc.Files[typeNameFile]);
+
+                byte[][] storyData = storyGarc.Files;
+                string[] storyText =
+                    TextFile.GetStrings(Main.Config, storyData[storyFile]);
+
+                for (int j = 0; j < 3; j++)
                 {
-                    int oldIndex = Main.Config.Personal.GetFormIndex(oldSpecies, Gifts[j].Form);
-                    int oldtype0 = Main.Config.Personal[oldIndex].Types[0];
-                    int newIndex = Main.Config.Personal.GetFormIndex(species, Gifts[j].Form);
-                    int newtype0 = Main.Config.Personal[newIndex].Types[0];
-                    line = line.Replace(types[oldtype0], types[newtype0]);
-                }
-                else if (Main.Config.USUM)
-                {
-                    storyText[14 + j] = specieslist[species];
+                    int newSpecies = Gifts[j].Species;
+                    string newName = localizedSpecies[newSpecies];
+
+                    // USUM/SM starter description lines.
+                    storyText[1 + j] = ReplaceStarterName(
+                        storyText[1 + j],
+                        localizedSpecies,
+                        oldStarters[j],
+                        vanillaStarters[j],
+                        newName);
+
+                    if (Main.Config.SM)
+                    {
+                        int oldIndex = Main.Config.Personal.GetFormIndex(oldStarters[j], 0);
+                        int oldType0 = Main.Config.Personal[oldIndex].Types[0];
+
+                        int newIndex = Main.Config.Personal.GetFormIndex(newSpecies, Gifts[j].Form);
+                        int newType0 = Main.Config.Personal[newIndex].Types[0];
+
+                        string oldTypeName = localizedTypes[oldType0];
+                        string newTypeName = localizedTypes[newType0];
+
+                        if (!string.IsNullOrWhiteSpace(oldTypeName) &&
+                            storyText[1 + j].Contains(oldTypeName, StringComparison.Ordinal))
+                        {
+                            storyText[1 + j] =
+                                storyText[1 + j].Replace(oldTypeName, newTypeName);
+                        }
+                    }
+                    else if (Main.Config.USUM)
+                    {
+                        // USUM also keeps the three names in standalone entries.
+                        storyText[14 + j] = newName;
+                    }
                 }
 
-                storyText[1 + j] = line;
+                storyData[storyFile] = TextFile.GetBytes(Main.Config, storyText);
+                storyGarc.Files = storyData;
+                storyGarc.Save();
+                updatedLanguages++;
             }
-            storytextdata[file] = TextFile.GetBytes(Main.Config, storyText);
-            s.Files = storytextdata;
-            s.Save();
         }
+        finally
+        {
+            Main.Config.Language = originalLanguage;
+        }
+
+        WinFormsUtil.Alert(
+            "Starter text updated!",
+            $"Professor/starter-selection text synchronized for {updatedLanguages} language banks.");
+    }
+
+    private static string ReplaceStarterName(
+        string line,
+        string[] localizedSpecies,
+        int expectedOldSpecies,
+        int vanillaSpecies,
+        string newName)
+    {
+        if (string.IsNullOrEmpty(line) || string.IsNullOrEmpty(newName))
+            return line;
+
+        // Already synchronized.
+        if (line.Contains(newName, StringComparison.Ordinal))
+            return line;
+
+        // Normal case: text still contains the starter that was present when
+        // the editor was opened.
+        if (expectedOldSpecies > 0 && expectedOldSpecies < localizedSpecies.Length)
+        {
+            string oldName = localizedSpecies[expectedOldSpecies];
+            if (!string.IsNullOrWhiteSpace(oldName) &&
+                line.Contains(oldName, StringComparison.Ordinal))
+            {
+                return line.Replace(oldName, newName);
+            }
+        }
+
+        // Recovery case: encounter data was randomized by an older build but
+        // StoryText was never updated and still says Rowlet/Litten/Popplio.
+        if (vanillaSpecies > 0 && vanillaSpecies < localizedSpecies.Length)
+        {
+            string vanillaName = localizedSpecies[vanillaSpecies];
+            if (!string.IsNullOrWhiteSpace(vanillaName) &&
+                line.Contains(vanillaName, StringComparison.Ordinal))
+            {
+                return line.Replace(vanillaName, newName);
+            }
+        }
+
+        // Last-resort repair for an already desynchronized text from a previous
+        // randomization. These are starter-only lines, so replace the longest
+        // species name actually present while preserving every control code and
+        // all surrounding dialogue.
+        string found = localizedSpecies
+            .Where(name =>
+                !string.IsNullOrWhiteSpace(name) &&
+                !string.Equals(name, newName, StringComparison.Ordinal) &&
+                line.Contains(name, StringComparison.Ordinal))
+            .OrderByDescending(name => name.Length)
+            .FirstOrDefault();
+
+        return string.IsNullOrEmpty(found)
+            ? line
+            : line.Replace(found, newName);
     }
 
     public void ExportEncounters()
@@ -916,6 +1019,7 @@ public partial class StaticEncounterEditor7 : Form
             LB_Trade.SelectedIndex = i;
             NUD_TLevel.Value = Randomizer.GetModifiedLevel((int)NUD_TLevel.Value, NUD_LevelBoost.Value);
         }
+        RandomizationSessionState.MarkAction("static-encounters.modify-levels");
         WinFormsUtil.Alert("Modified all Levels according to specification!");
     }
 

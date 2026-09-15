@@ -233,6 +233,9 @@ public partial class Patch : Form
             Text = "Patch Manager Â· Randomizing field items...";
 
             var result = await Task.Run(FieldItemDumper.RandomizeDefault);
+            RandomizationSessionState.MarkAction(
+                "field-items.randomize",
+                ("template", Path.GetFileName(FieldItemRandomizerTemplate.DefaultPath)));
             WinFormsUtil.Alert("Field items randomized.", result.Summary);
         }
         catch (Exception ex)

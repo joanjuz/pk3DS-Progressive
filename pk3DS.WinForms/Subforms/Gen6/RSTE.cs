@@ -777,6 +777,7 @@ public partial class RSTE : Form
             trpoke[i] = t.WriteTeam();
         }
         CB_TrainerID.SelectedIndex = 1;
+        RandomizationSessionState.MarkAction("trainers.randomize");
         WinFormsUtil.Alert("Randomized all Trainers according to specification!", "Smart Items were applied only to Use-checked Move Rules trainers. Ban Bad Items applies to the regular random item pool when enabled.");
     }
 

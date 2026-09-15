@@ -21,8 +21,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace pk3DS.WinForms;
@@ -35,6 +37,7 @@ public sealed partial class Main : Form
         InitializeComponent();
         EnsureCatchZonesButtonVisible();
         ConfigureModernDashboard();
+        ConfigureGlobalTemplateMenu();
 
         // Prepare DragDrop Functionality
         AllowDrop = TB_Path.AllowDrop = true;
@@ -73,6 +76,425 @@ public sealed partial class Main : Form
         const string randset = RandSettings.FileName;
         if (File.Exists(randset))
             RandSettings.Load(File.ReadAllLines(randset));
+    }
+
+    private void ConfigureGlobalTemplateMenu()
+    {
+        var menu = new ToolStripMenuItem("Global ROM Template");
+        menu.DropDownItems.Add("Load global template...", null, (_, _) => LoadGlobalRandomizationTemplate());
+        menu.DropDownItems.Add("Save current setup...", null, (_, _) => SaveGlobalRandomizationTemplate());
+
+        randomizationToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
+        randomizationToolStripMenuItem.DropDownItems.Add(menu);
+        randomizationToolStripMenuItem.DropDownItems.Add(
+            "Batch ROM Builder...", null, async (_, _) => await ShowBatchRomBuilder());
+    }
+
+    private string CurrentGlobalTemplateGame
+    {
+        get
+        {
+            if (Config is null)
+                return string.Empty;
+            if (Config.USUM)
+                return "USUM";
+            if (Config.SM)
+                return "SM";
+            if (Config.ORAS)
+                return "ORAS";
+            if (Config.XY)
+                return "XY";
+            return Config.Version.ToString();
+        }
+    }
+
+    private void SaveGlobalRandomizationTemplate()
+    {
+        if (Config is null)
+        {
+            WinFormsUtil.Alert("Load a game before saving a global ROM template.");
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(GlobalRandomizationTemplateFile.TemplateDirectory);
+            string game = CurrentGlobalTemplateGame;
+
+            using var dialog = new SaveFileDialog
+            {
+                Title = "Save global ROM template",
+                Filter = "Global ROM template (*.json)|*.json",
+                InitialDirectory = GlobalRandomizationTemplateFile.TemplateDirectory,
+                FileName = $"rom_template_{game.ToLowerInvariant()}.json",
+                AddExtension = true,
+                DefaultExt = "json",
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string name = Path.GetFileNameWithoutExtension(dialog.FileName);
+            var template = GlobalRandomizationTemplateFile.Capture(name, game, Config.Generation);
+            GlobalRandomizationTemplateFile.Save(dialog.FileName, template, game);
+
+            string trainer = template.Trainer is null ? "no trainer-specific state" : "trainer state included";
+            WinFormsUtil.Alert(
+                "Global ROM template saved!",
+                $"{Path.GetFileName(dialog.FileName)}\n{template.Actions.Count} recorded action(s); {trainer}.\n\nSaved in custom_balance_templates.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert("Could not save global ROM template.", ex.Message);
+        }
+    }
+
+    private void LoadGlobalRandomizationTemplate()
+    {
+        if (Config is null)
+        {
+            WinFormsUtil.Alert("Load a game before loading a global ROM template.");
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(GlobalRandomizationTemplateFile.TemplateDirectory);
+            string game = CurrentGlobalTemplateGame;
+
+            using var dialog = new OpenFileDialog
+            {
+                Title = "Load global ROM template",
+                Filter = "Global ROM template (*.json)|*.json|All files (*.*)|*.*",
+                InitialDirectory = GlobalRandomizationTemplateFile.TemplateDirectory,
+                CheckFileExists = true,
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var template = GlobalRandomizationTemplateFile.Load(dialog.FileName, game);
+            var warnings = GlobalRandomizationTemplateFile.Apply(template, game);
+
+            string message =
+                $"Loaded '{template.Name}'.\n" +
+                $"Recorded actions: {template.Actions.Count}.\n" +
+                $"Trainer state: {(template.Trainer is null ? "not included" : "included")}.\n\n" +
+                "Randomizer windows opened from now on will use the loaded settings.";
+
+            if (warnings.Count != 0)
+                message += "\n\nDependency warnings:\n- " + string.Join("\n- ", warnings);
+
+            WinFormsUtil.Alert("Global ROM template loaded!", message);
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert("Could not load global ROM template.", ex.Message);
+        }
+    }
+
+    private async Task ShowBatchRomBuilder()
+    {
+        if (Config is null || string.IsNullOrWhiteSpace(RomFSPath) || string.IsNullOrWhiteSpace(ExeFSPath) || string.IsNullOrWhiteSpace(ExHeaderPath))
+        {
+            WinFormsUtil.Alert("Load a complete extracted game (RomFS + ExeFS + ExHeader) before using Batch ROM Builder.");
+            return;
+        }
+
+        if (Config.Generation != 7)
+        {
+            WinFormsUtil.Alert(
+                "Batch ROM Builder v1 currently supports Generation 7 only.",
+                "USUM is the primary supported target. Gen 6 can be added after this workflow is validated.");
+            return;
+        }
+
+        string originalRoot = Directory.Exists(TB_Path.Text)
+            ? Path.GetFullPath(TB_Path.Text)
+            : new DirectoryInfo(RomFSPath).Parent?.FullName;
+        if (string.IsNullOrWhiteSpace(originalRoot) || !Directory.Exists(originalRoot))
+        {
+            WinFormsUtil.Alert("Could not determine the loaded extracted-game root folder.");
+            return;
+        }
+
+        string sourceParent = Directory.GetParent(originalRoot)?.FullName ?? originalRoot;
+        string defaultOutput = Path.Combine(sourceParent, Path.GetFileName(originalRoot) + "_BatchROMs");
+        Directory.CreateDirectory(GlobalRandomizationTemplateFile.TemplateDirectory);
+
+        using var dialog = new BatchRomBuilderDialog(
+            GlobalRandomizationTemplateFile.TemplateDirectory,
+            CurrentGlobalTemplateGame,
+            defaultOutput);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        BatchRomBuildOptions options = dialog.Options;
+        if (IsSameOrChildPath(options.OutputDirectory, originalRoot))
+        {
+            WinFormsUtil.Alert(
+                "Choose an output folder outside the loaded extracted-game folder.",
+                "Otherwise generated .3ds files would be copied into later staging ROMs and waste a large amount of disk space.");
+            return;
+        }
+
+        GlobalRandomizationTemplate template;
+        string game = CurrentGlobalTemplateGame;
+        try
+        {
+            template = GlobalRandomizationTemplateFile.Load(options.TemplatePath, game);
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert("Could not load the selected Global ROM Template.", ex.Message);
+            return;
+        }
+
+        if (template.Generation != 7)
+        {
+            WinFormsUtil.Alert($"The selected template is Generation {template.Generation}; Batch ROM Builder v1 requires Generation 7.");
+            return;
+        }
+
+        string[] unsupported = BatchGen7ActionExecutor.GetUnsupported(template.Actions);
+        if (unsupported.Length != 0)
+        {
+            WinFormsUtil.Alert(
+                "This template contains actions that Batch ROM Builder does not know how to replay yet:",
+                string.Join(Environment.NewLine, unsupported.Select(z => "- " + z)),
+                "Nothing was changed.");
+            return;
+        }
+
+        if (template.Actions is null || template.Actions.Count == 0)
+        {
+            WinFormsUtil.Alert("The selected Global ROM Template contains no recorded actions to replay.");
+            return;
+        }
+
+        List<string> dependencyWarnings;
+        try
+        {
+            dependencyWarnings = GlobalRandomizationTemplateFile.Apply(template, game);
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert("The Global ROM Template could not be applied.", ex.Message);
+            return;
+        }
+
+        if (dependencyWarnings.Count != 0)
+        {
+            string warningText = string.Join(Environment.NewLine, dependencyWarnings.Select(z => "- " + z));
+            if (WinFormsUtil.Prompt(
+                    MessageBoxButtons.YesNo,
+                    "Some files used by this template have changed since it was saved:",
+                    warningText,
+                    "Continue using the current files anyway?") != DialogResult.Yes)
+                return;
+        }
+
+        if (template.ActionCoverageVersion < 2 &&
+            WinFormsUtil.Prompt(
+                MessageBoxButtons.YesNo,
+                $"This template has action coverage version {template.ActionCoverageVersion}.",
+                "Version 2 or newer is recommended because older templates may not contain every operation that was used to build the ROM.",
+                "Continue anyway?") != DialogResult.Yes)
+        {
+            return;
+        }
+
+        string buildKind = options.Trimmed ? "Trimmed .3DS" : "Full .3DS";
+        if (WinFormsUtil.Prompt(
+                MessageBoxButtons.YesNo,
+                $"Build {options.Count} randomized ROM(s)?",
+                $"Template: {Path.GetFileName(options.TemplatePath)}",
+                $"Output: {options.OutputDirectory}",
+                $"Build type: {buildKind}",
+                "Each ROM will receive a different int32 seed and all recorded randomization actions will run again from the same clean staging source.") != DialogResult.Yes)
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(options.OutputDirectory);
+        string logPath = Path.Combine(options.OutputDirectory, options.BaseName + "_batch.txt");
+        var log = new List<string>
+        {
+            "pk3DS Batch ROM Builder",
+            $"Template: {options.TemplatePath}",
+            $"Game: {game}",
+            $"Build type: {buildKind}",
+            $"ROM count: {options.Count}",
+            $"Restore pk3DS backups: {options.RestoreBackups}",
+            $"Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+            string.Empty,
+        };
+        File.WriteAllLines(logPath, log, Encoding.UTF8);
+
+        GameConfig originalConfig = Config;
+        string activeStage = null;
+        var usedSeeds = new HashSet<int>();
+        int completed = 0;
+
+        Enabled = false;
+        UseWaitCursor = true;
+
+        try
+        {
+            for (int i = 1; i <= options.Count; i++)
+            {
+                int seed = CreateBatchSeed(usedSeeds);
+                activeStage = Path.Combine(sourceParent, $".pk3ds_batch_{Guid.NewGuid():N}");
+                string outputPath = Path.Combine(options.OutputDirectory, $"{options.BaseName}_{i:00}.3ds");
+
+                UpdateStatus($"[Batch {i}/{options.Count}] Preparing clean staging copy...", false);
+                int restored = await Task.Run(() =>
+                    BatchWorkspace.PrepareCleanCopy(originalRoot, activeStage, originalConfig, options.RestoreBackups));
+
+                using (BatchRuntime.Begin(message => UpdateStatus($"[Batch {i}/{options.Count}] {message}")))
+                {
+                    OpenQuick(activeStage);
+                    if (Config is null || Config.Generation != 7 || !string.Equals(CurrentGlobalTemplateGame, game, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException("The staging copy did not reopen as the same Generation 7 game.");
+
+                    GlobalRandomizationTemplateFile.Apply(template, game);
+                    Util.ReseedRand(seed);
+                    BatchRuntime.Log($"Seed = {seed}");
+                    BatchRuntime.Log($"Replaying {template.Actions.Count} action(s)...");
+                    BatchGen7ActionExecutor.Execute(template);
+
+                    if (File.Exists(outputPath))
+                        File.Delete(outputPath);
+
+                    UpdateStatus($"[Batch {i}/{options.Count}] Rebuilding {Path.GetFileName(outputPath)}...");
+                    string exeFS = ExeFSPath;
+                    string romFS = RomFSPath;
+                    string exHeader = ExHeaderPath;
+                    await Task.Run(() =>
+                    {
+                        var exh = new Exheader(exHeader);
+                        CTRUtil.BuildROM(
+                            true,
+                            "Nintendo",
+                            exeFS,
+                            romFS,
+                            exHeader,
+                            exh.GetSerial(),
+                            outputPath,
+                            options.Trimmed,
+                            pBar1,
+                            RTB_Status);
+                    });
+
+                    if (!File.Exists(outputPath))
+                        throw new IOException($"CTRUtil finished without creating '{outputPath}'.");
+
+                    completed++;
+                    log.Add($"ROM {i:00}");
+                    log.Add($"Seed: {seed}");
+                    log.Add($"File: {outputPath}");
+                    log.Add($"Original backup files restored into staging: {restored}");
+                    log.Add(string.Empty);
+                    File.WriteAllLines(logPath, log, Encoding.UTF8);
+
+                    // Reopen the untouched source before the next iteration. OpenQuick
+                    // resets session state, so reapply the template to leave the normal
+                    // pk3DS UI configured exactly as it was for the batch recipe.
+                    OpenQuick(originalRoot);
+                    if (Config is null)
+                        throw new InvalidOperationException("Could not reopen the original extracted game after building a batch ROM.");
+                    GlobalRandomizationTemplateFile.Apply(template, game);
+                }
+
+                string stageToDelete = activeStage;
+                activeStage = null;
+                try
+                {
+                    await Task.Run(() => BatchWorkspace.DeleteDirectoryBestEffort(stageToDelete));
+                }
+                catch (Exception cleanupEx)
+                {
+                    log.Add($"Warning: staging cleanup failed for {stageToDelete}: {cleanupEx.Message}");
+                    File.WriteAllLines(logPath, log, Encoding.UTF8);
+                    UpdateStatus($"[Batch {i}/{options.Count}] Warning: could not delete staging folder.");
+                }
+                UpdateStatus($"[Batch {i}/{options.Count}] Complete: {Path.GetFileName(outputPath)}");
+            }
+
+            log.Add($"Completed: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            File.WriteAllLines(logPath, log, Encoding.UTF8);
+            WinFormsUtil.Alert(
+                "Batch ROM build complete!",
+                $"Created {completed} ROM(s).",
+                $"Output folder: {options.OutputDirectory}",
+                $"Seeds/log: {logPath}");
+        }
+        catch (Exception ex)
+        {
+            log.Add($"FAILED after {completed}/{options.Count} ROM(s): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            log.Add(ex.ToString());
+            try { File.WriteAllLines(logPath, log, Encoding.UTF8); } catch { }
+
+            WinFormsUtil.Alert(
+                "Batch ROM Builder stopped because an error occurred.",
+                ex.Message,
+                $"Completed ROMs were kept. Log: {logPath}");
+        }
+        finally
+        {
+            // A failure may have happened while a staging project was loaded. Always
+            // return pk3DS to the user's original extracted game when possible before
+            // deleting that staging folder.
+            if (!string.Equals(Path.GetFullPath(TB_Path.Text ?? string.Empty), originalRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    using (BatchRuntime.Begin(message => UpdateStatus("[Batch cleanup] " + message)))
+                    {
+                        OpenQuick(originalRoot);
+                        if (Config is not null)
+                            GlobalRandomizationTemplateFile.Apply(template, game);
+                    }
+                }
+                catch
+                {
+                    // The build log already contains the primary failure. Do not hide it
+                    // with a secondary cleanup exception.
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(activeStage))
+            {
+                try { await Task.Run(() => BatchWorkspace.DeleteDirectoryBestEffort(activeStage)); }
+                catch { }
+            }
+
+            UseWaitCursor = false;
+            Enabled = true;
+        }
+    }
+
+    private static int CreateBatchSeed(HashSet<int> usedSeeds)
+    {
+        while (true)
+        {
+            byte[] bytes = new byte[sizeof(int)];
+            RandomNumberGenerator.Fill(bytes);
+            int seed = BitConverter.ToInt32(bytes, 0);
+            if (usedSeeds.Add(seed))
+                return seed;
+        }
+    }
+
+    private static bool IsSameOrChildPath(string candidatePath, string parentPath)
+    {
+        string candidate = Path.GetFullPath(candidatePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string parent = Path.GetFullPath(parentPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (string.Equals(candidate, parent, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return candidate.StartsWith(parent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+               candidate.StartsWith(parent + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 
     private void ConfigureModernDashboard()
@@ -163,6 +585,25 @@ public sealed partial class Main : Form
     private uint HANSgameID; // for exporting RomFS/ExeFS with correct X8 gameID
     private readonly bool skipBoth;
     public static PersonalInfo[] SpeciesStat => Config.Personal.Table;
+
+    internal static void SaveGameText()
+    {
+        var g = Config.GARCGameText;
+        string[][] files = Config.GameTextStrings;
+        var originalFiles = g.Files;
+        byte[][] serialized = files.Select(x => TextFile.GetBytes(Config, x)).ToArray();
+
+        g.Files = serialized;
+        try
+        {
+            g.Save();
+        }
+        catch
+        {
+            g.Files = originalFiles;
+            throw;
+        }
+    }
 
     // Main Form Methods
     private void L_About_Click(object sender, EventArgs e)
@@ -352,6 +793,7 @@ public sealed partial class Main : Form
         // Check for ROMFS/EXEFS/EXHEADER
         RomFSPath = ExeFSPath = null; // Reset
         Config = null;
+        GlobalRandomizationTemplateFile.ResetSession();
 
         string[] folders = Directory.GetDirectories(path);
         int count = folders.Length;
@@ -616,6 +1058,9 @@ public sealed partial class Main : Form
         try
         {
             string report = Gen6TradePatcher.ApplyGen6TradePatch(ExeFSPath, Config, randomizeOffers);
+            RandomizationSessionState.MarkAction(
+                "trade-patch.apply",
+                ("randomizeOffers", randomizeOffers.ToString()));
             WinFormsUtil.Alert("Gen 6 trade patch applied!", report);
         }
         catch (Exception ex)
@@ -1772,6 +2217,7 @@ public sealed partial class Main : Form
         if (int.TryParse(val, out int seed))
         {
             Util.ReseedRand(seed);
+            RandomizationSessionState.MarkAction("rng.seed", ("value", seed.ToString()));
             WinFormsUtil.Alert($"Reseeded RNG to seed: {seed}");
             return;
         }

@@ -118,6 +118,10 @@ public partial class ShinyRate : Form
         if (CHK_EverythingShiny.Enabled)
             exefsData[alwaysIndex] = CHK_EverythingShiny.Checked ? (byte)0xEA : (byte)0x0A;
         File.WriteAllBytes(codebin, exefsData);
+        RandomizationSessionState.MarkAction(
+            "shiny-rate.apply",
+            ("rerolls", NUD_Rerolls.Value.ToString()),
+            ("everythingShiny", (CHK_EverythingShiny.Enabled && CHK_EverythingShiny.Checked).ToString()));
         Close();
     }
 
@@ -154,6 +158,7 @@ public partial class ShinyRate : Form
             new byte[] { 0x23, 0x00, 0xD4, 0xE5 }.CopyTo(exefsData, offset);
             File.WriteAllBytes(codebin, exefsData);
         }
+        RandomizationSessionState.RemoveAction("shiny-rate.apply");
         Close();
     }
 

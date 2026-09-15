@@ -368,6 +368,7 @@ public partial class TMHMEditor6 : Form
                 dgvHM.Rows[j].Cells[1].Value = movelist[randomMoves[ctr++]];
             }
         }
+        RandomizationSessionState.MarkAction("tms.randomize");
         WinFormsUtil.Alert("Randomized!");
     }
 

@@ -274,6 +274,7 @@ public partial class GiftEditor6 : Form
             if (MegaDictionary.Values.Any(z => z.Contains(CB_HeldItem.SelectedIndex)) && NUD_Form.Value != 0)
                 NUD_Form.Value = 0; // don't allow mega gifts to be form 1
         }
+        RandomizationSessionState.MarkAction("gifts.randomize");
         WinFormsUtil.Alert("Randomized all Gift Pokémon according to specification!");
     }
 
@@ -352,6 +353,7 @@ public partial class GiftEditor6 : Form
             LB_Gifts.SelectedIndex = i;
             NUD_Level.Value = Randomizer.GetModifiedLevel((int)NUD_Level.Value, NUD_LevelBoost.Value);
         }
+        RandomizationSessionState.MarkAction("gifts.modify-levels");
         WinFormsUtil.Alert("Modified all Levels according to specification!");
     }
 }

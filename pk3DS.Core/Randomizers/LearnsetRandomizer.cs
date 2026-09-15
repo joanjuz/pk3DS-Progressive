@@ -28,9 +28,9 @@ public class LearnsetRandomizer : IRandomizer
     public int ExpandTo = 25;
     public bool Spread = true;
     public int SpreadTo = 75;
-    public bool STABFirst = true;
+    public bool STABFirst = false; // retained for compatibility; no special first move is forced
     public bool Learn4Level1 = false;
-    public bool OrderByPower = true;
+    public bool OrderByPower = false; // learnset order remains randomized
 
     public bool STAB { set => moverand.rSTAB = value; }
     public IList<int> BannedMoves { set => moverand.BannedMoves = value; }
@@ -85,18 +85,16 @@ public class LearnsetRandomizer : IRandomizer
     private int[] GetRandomMoves(int count, int index)
     {
         count = Expand ? ExpandTo : count;
-
-        int[] moves = new int[count];
         if (count == 0)
-            return moves;
-        moves[0] = STABFirst ? moverand.GetRandomFirstMove(index) : MoveRandomizer.GetRandomFirstMoveAny();
-        var rand = moverand.GetRandomLearnset(index, count - 1);
+            return [];
 
-        // STAB Moves (if requested) come first; randomize the order of moves
-        Util.Shuffle(rand);
-        if (OrderByPower)
-            moverand.ReorderMovesPower(rand);
-        rand.CopyTo(moves, 1);
+        // Randomize the complete learnset in one pool. STAB only affects the requested
+        // percentage; there is no longer a special/forced level-1 move.
+        var moves = moverand.GetRandomLearnset(index, count);
+
+        // Keep the resulting learnset in random order instead of sorting damaging
+        // moves from lower to higher power.
+        Util.Shuffle(moves);
         return moves;
     }
 

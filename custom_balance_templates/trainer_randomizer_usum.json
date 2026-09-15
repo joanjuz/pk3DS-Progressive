@@ -1,0 +1,2128 @@
+{
+  "version": 1,
+  "name": "USUM trainer randomizer",
+  "game": "USUM",
+  "progressiveBST": {
+    "enabled": true,
+    "ranges": [
+      {
+        "minLevel": 1,
+        "maxLevel": 10,
+        "minBST": 180,
+        "maxBST": 320,
+        "fullRandom": false
+      },
+      {
+        "minLevel": 11,
+        "maxLevel": 20,
+        "minBST": 220,
+        "maxBST": 380,
+        "fullRandom": false
+      },
+      {
+        "minLevel": 21,
+        "maxLevel": 30,
+        "minBST": 280,
+        "maxBST": 450,
+        "fullRandom": false
+      },
+      {
+        "minLevel": 31,
+        "maxLevel": 40,
+        "minBST": 340,
+        "maxBST": 520,
+        "fullRandom": false
+      },
+      {
+        "minLevel": 41,
+        "maxLevel": 50,
+        "minBST": 400,
+        "maxBST": 580,
+        "fullRandom": false
+      },
+      {
+        "minLevel": 51,
+        "maxLevel": 100,
+        "minBST": 480,
+        "maxBST": 680,
+        "fullRandom": false
+      }
+    ]
+  },
+  "moveSettings": {
+    "source": "RandomizeAll",
+    "betterMovesets": false,
+    "forceHighPower": true,
+    "highPowerLevel": 60,
+    "noFixedDamage": true,
+    "ensureDamagingMoves": true,
+    "damagingMoveCount": 1,
+    "ensureSTABMoves": false,
+    "stabMoveCount": 2
+  },
+  "levelCaps": {
+    "enabled": false,
+    "applyToPreviousTrainers": true,
+    "previousTrainerGap": 2,
+    "resetUnlistedTrainers": true,
+    "trainers": [
+      {
+        "trainerID": 52,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 215,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 216,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 12,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 13,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 14,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 648,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 649,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 74,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 75,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 23,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 76,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 77,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 78,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 79,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 651,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 652,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 438,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 439,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 440,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 89,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 90,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 555,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 630,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 217,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 218,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 219,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 138,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 238,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 235,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 132,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 220,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 221,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 222,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 239,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 447,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 448,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 449,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 154,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 441,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 450,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 451,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 452,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 236,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 241,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 131,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 498,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 500,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 499,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 501,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 502,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 503,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 504,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 505,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 506,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 507,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 508,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 497,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 240,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 415,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 416,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 556,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 557,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 149,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 153,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 156,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 489,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 578,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 583,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 144,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 146,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 396,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 398,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 412,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 494,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 495,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 496,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 582,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 410,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 561,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 623,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 650,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 558,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 350,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 351,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 352,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 480,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 490,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 541,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 580,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 401,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 405,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 409,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 542,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 543,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 572,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 573,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 559,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 560,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 644,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 647,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 160,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 359,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 477,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 478,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 479,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 356,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 358,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 417,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 418,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 419,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 562,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 645,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      },
+      {
+        "trainerID": 159,
+        "use": true,
+        "levelCap": 0,
+        "mega": false,
+        "zMove": false
+      }
+    ]
+  },
+  "trainerMoveRules": {
+    "resetUnlistedTrainers": true,
+    "trainers": [
+      {
+        "trainerID": 52,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 215,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 216,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 12,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 13,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 14,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 648,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 649,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 74,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 75,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 23,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 76,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 77,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 78,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 79,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 651,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 652,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 438,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 439,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 440,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 89,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 90,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 555,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 630,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 217,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 218,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 219,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 138,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 238,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 235,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 132,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 220,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 221,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 222,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 239,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 447,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 448,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 449,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 154,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 441,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 450,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 451,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 452,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 236,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 241,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 131,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 498,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 500,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 499,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 501,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 502,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 503,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 504,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 505,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 506,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 507,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 508,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 497,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 240,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 415,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 416,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 556,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 557,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 149,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 153,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 156,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 489,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 578,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 583,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 144,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 146,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 396,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 398,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 412,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 494,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 495,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 496,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 582,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 410,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 561,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 623,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 650,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 558,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 350,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 351,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 352,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 480,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 490,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 541,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 580,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 401,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 405,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 409,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 542,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 543,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 572,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 573,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 559,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 560,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 644,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 647,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 160,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 359,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 477,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 478,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 479,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 356,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 358,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 417,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 418,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 419,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 562,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 645,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      },
+      {
+        "trainerID": 159,
+        "use": true,
+        "minMovePower": 0,
+        "strongStat": false,
+        "mixedTolerance": 15,
+        "allowStatusMoves": true,
+        "betterMovesets": true,
+        "smartItems": true,
+        "eVs": -1
+      }
+    ]
+  }
+}
