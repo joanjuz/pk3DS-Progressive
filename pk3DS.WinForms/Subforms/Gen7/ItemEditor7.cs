@@ -40,7 +40,7 @@ public partial class ItemEditor7 : Form
         if (DialogResult.Yes != WinFormsUtil.Prompt(
             MessageBoxButtons.YesNo,
             "Fix economy?",
-            "This will set all TM/HM buy prices to 1000, PokÃ© Ball to 100, Great Ball to 150, Ultra Ball to 200, and Repel/Super Repel/Max Repel to 50."))
+            "This will set all TM/HM buy prices to 1000, Poké Ball to 100, Great Ball to 150, Ultra Ball to 200, and Repel/Super Repel/Max Repel to 50."))
         {
             return;
         }

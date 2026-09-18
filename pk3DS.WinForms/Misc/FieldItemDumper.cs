@@ -12,7 +12,7 @@ using pk3DS.Core.Structures;
 namespace pk3DS.WinForms;
 
 /// <summary>
-/// Diagnostic field item dumper and safe field item shuffler based on the field item locations used by the Universal PokÃ©mon Randomizer ZX.
+/// Diagnostic field item dumper and safe field item shuffler based on the field item locations used by the Universal Pokémon Randomizer ZX.
 /// The randomizer intentionally starts in a conservative shuffle mode: it only swaps detected field item IDs between known locations.
 /// </summary>
 internal static class FieldItemDumper

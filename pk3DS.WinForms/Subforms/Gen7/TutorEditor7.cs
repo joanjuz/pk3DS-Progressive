@@ -18,6 +18,7 @@ public partial class TutorEditor7 : Form
             Close();
         }
         InitializeComponent();
+        B_Randomize.Visible = false;
         AddFreeTutorsButton();
 
         data = File.ReadAllBytes(CROPath);
@@ -33,10 +34,10 @@ public partial class TutorEditor7 : Form
         B_FreeTutors = new Button
         {
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
-            Location = new System.Drawing.Point(B_Randomize.Right + 6, B_Randomize.Top),
+            Location = new System.Drawing.Point(B_Randomize.Left, B_Randomize.Top),
             Name = "B_FreeTutors",
             Size = new System.Drawing.Size(80, B_Randomize.Height),
-            TabIndex = B_Randomize.TabIndex + 1,
+            TabIndex = B_Randomize.TabIndex,
             Text = "Free Tutors",
             UseVisualStyleBackColor = true,
         };

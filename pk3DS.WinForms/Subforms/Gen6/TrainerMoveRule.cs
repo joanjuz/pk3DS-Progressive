@@ -13,10 +13,10 @@ public sealed class TrainerMoveRule
     // 0 means disabled.
     public int MinMovePower { get; set; }
 
-    // If enabled, damaging moves are filtered by the PokÃ©mon's stronger attacking stat.
+    // If enabled, damaging moves are filtered by the Pokémon's stronger attacking stat.
     public bool UseStrongestAttackStat { get; set; }
 
-    // If Attack and Sp. Attack differ by this value or less, the PokÃ©mon is treated as mixed.
+    // If Attack and Sp. Attack differ by this value or less, the Pokémon is treated as mixed.
     public int MixedTolerance { get; set; } = 15;
 
     // Enabled by default. If disabled, status moves are filtered out.
@@ -27,7 +27,7 @@ public sealed class TrainerMoveRule
 
     // Give this trainer competitive/smart held items after its final moveset is generated.
     public bool SmartItems { get; set; } = true;
-    // -1 means disabled. If set, all EV stats for every PokÃ©mon in this trainer battle use this value when supported.
+    // -1 means disabled. If set, all EV stats for every Pokémon in this trainer battle use this value when supported.
     public int OverrideEVs { get; set; } = -1;
 
     public TrainerMoveRule Clone()

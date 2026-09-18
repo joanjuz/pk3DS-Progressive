@@ -220,6 +220,7 @@ public partial class TrainerRand : Form
     private Button B_TrainerTemplate;
     private CheckBox CHK_RandomDoubleBattles;
     private NumericUpDown NUD_DoubleBattleChance;
+    private Label L_DoubleBattlePercent;
     private CheckBox CHK_SmartHeldItems;
     private CheckBox CHK_ItemClause;
     private ComboBox CB_SmartHeldItemMode;
@@ -417,8 +418,9 @@ public partial class TrainerRand : Form
         Move(section, CHK_LevelCaps, 232, 52);
         Move(section, B_SetLevelCaps, 340, 46, 110, 32);
 
-        Move(section, CHK_RandomDoubleBattles, 16, 84);
-        Move(section, NUD_DoubleBattleChance, 168, 82, 60);
+        Move(section, NUD_DoubleBattleChance, 16, 82, 60);
+        Move(section, L_DoubleBattlePercent, 82, 85);
+        Move(section, CHK_RandomDoubleBattles, 142, 84);
 
         section.Controls.Add(SmallLabel("Team size", 16, 116));
         Move(section, L_MinPKM, 16, 138, 58);
@@ -929,7 +931,7 @@ public partial class TrainerRand : Form
             Enabled = false,
         };
 
-        var L_DoubleBattlePercent = new Label
+        L_DoubleBattlePercent = new Label
         {
             AutoSize = true,
             Location = new System.Drawing.Point(NUD_DoubleBattleChance.Right + 5, NUD_DoubleBattleChance.Top + 3),

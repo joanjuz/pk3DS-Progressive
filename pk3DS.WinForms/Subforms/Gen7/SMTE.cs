@@ -914,8 +914,8 @@ public partial class SMTE : Form
 
         CB_Gender.Items.Clear();
         CB_Gender.Items.Add("- / Genderless/Random");
-        CB_Gender.Items.Add("â™‚ / Male");
-        CB_Gender.Items.Add("â™€ / Female");
+        CB_Gender.Items.Add("♂ / Male");
+        CB_Gender.Items.Add("♀ / Female");
 
         CB_Forme.Items.Add("");
 

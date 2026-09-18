@@ -14,7 +14,7 @@ public sealed class TrainerLevelCapRule
     // Per-trainer option: force the selected important battle to have a Mega-capable ace.
     public bool GuaranteeMega { get; set; }
 
-    // Gen 7 only: force one PokÃ©mon in this important battle to hold a compatible Z-Crystal.
+    // Gen 7 only: force one Pokémon in this important battle to hold a compatible Z-Crystal.
     public bool GuaranteeZMove { get; set; }
 
     // Per-trainer option: force randomized trainer moves to have at least this power.
@@ -45,7 +45,7 @@ public sealed class TrainerLevelCapStage
     public int LevelCap { get; set; }
     public bool GuaranteeMega { get; set; }
 
-    // Gen 7 only: force one PokÃ©mon in this important battle to hold a compatible Z-Crystal.
+    // Gen 7 only: force one Pokémon in this important battle to hold a compatible Z-Crystal.
     public bool GuaranteeZMove { get; set; }
     public int MinMovePower { get; set; }
 }

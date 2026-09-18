@@ -21,7 +21,7 @@
 #
 # Mode:
 #   Random           = choose a random legal item from the pool
-#   Smart            = choose a smart item based on PokÃ©mon, moves, ability and role
+#   Smart            = choose a smart item based on Pokémon, moves, ability and role
 #   Clear            = remove held item
 #   Keep             = keep original item
 #

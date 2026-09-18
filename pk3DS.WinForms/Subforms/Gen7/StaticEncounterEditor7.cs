@@ -119,6 +119,9 @@ public partial class StaticEncounterEditor7 : Form
             CB_TSpecies.Items.Add(s);
             CB_TRequest.Items.Add(s);
         }
+
+        if (Main.Config.USUM && CB_TRequest.Items.Count > 0)
+            CB_TRequest.Items[0] = "(Any Pokemon)";
         foreach (var s in ability)
         {
             CB_GAbility.Items.Add(s);
@@ -191,6 +194,9 @@ public partial class StaticEncounterEditor7 : Form
 
     private void AddTradeUtilityButtons()
     {
+        if (!Main.Config.USUM)
+            return;
+
         const int gap = 6;
         int width = 250;
         int height = Math.Max(CB_TRequest.Height, 24);
@@ -245,7 +251,7 @@ public partial class StaticEncounterEditor7 : Form
         if (WinFormsUtil.Prompt(
             MessageBoxButtons.YesNo,
             "Make all in-game trades accept any Pokemon?",
-            "This sets Requested Species to (None) for every in-game trade. The NPC will still give the same Pokemon unless you also randomize the offered Pokemon.") != DialogResult.Yes)
+            "This sets Requested Species to (Any Pokemon) for every USUM in-game trade. Saving will also patch the party/box selector so the request truly behaves as a wildcard.") != DialogResult.Yes)
         {
             return;
         }
@@ -261,7 +267,7 @@ public partial class StaticEncounterEditor7 : Form
         GetTrade();
 
         RandomizationSessionState.MarkAction("trades.accept-any");
-        WinFormsUtil.Alert("Trades updated!", $"{Trades.Length} in-game trades now accept any Pokemon.");
+        WinFormsUtil.Alert("Trades updated!", $"{Trades.Length} in-game trades are set to accept any Pokemon. Click Save to apply the USUM selector patch.");
     }
 
     private void B_TradeAcceptAnyRandomOffer_Click(object sender, EventArgs e)
@@ -269,7 +275,7 @@ public partial class StaticEncounterEditor7 : Form
         if (WinFormsUtil.Prompt(
             MessageBoxButtons.YesNo,
             "Randomize in-game trades?",
-            "This will make every in-game trade accept any Pokemon and randomize the Pokemon the NPC gives you. This does not change the party-only selection UI.") != DialogResult.Yes)
+            "This will make every USUM in-game trade accept any Pokemon and randomize the Pokemon the NPC gives you. Saving also patches the party/box selector.") != DialogResult.Yes)
         {
             return;
         }
@@ -314,7 +320,7 @@ public partial class StaticEncounterEditor7 : Form
         GetTrade();
 
         RandomizationSessionState.MarkAction("trades.randomize-offers");
-        WinFormsUtil.Alert("Trades randomized!", $"{Trades.Length} in-game trades now accept any Pokemon and give randomized Pokemon.");
+        WinFormsUtil.Alert("Trades randomized!", $"{Trades.Length} in-game trades are set to accept any Pokemon and give randomized Pokemon. Click Save to apply the USUM selector patch.");
     }
 
 
@@ -323,6 +329,22 @@ public partial class StaticEncounterEditor7 : Form
         SetGift();
         SetEncounter();
         SetTrade();
+
+        // In USUM, request species 0 is not a wildcard by itself. The field
+        // selector must also be patched so the species filter is not enabled.
+        if (Main.Config.USUM && Trades.Any(z => z.TradeRequestSpecies == 0))
+        {
+            try
+            {
+                USUMTradePatcher.ApplyAcceptAnyPokemon(Main.ExeFSPath, Main.Config);
+            }
+            catch (Exception ex)
+            {
+                WinFormsUtil.Error("Could not apply the USUM accept-any trade patch.", ex.Message);
+                return;
+            }
+        }
+
         SaveData();
         RandSettings.SetFormSettings(this, Tab_Randomizer.Controls);
         Close();

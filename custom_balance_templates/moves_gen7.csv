@@ -32,8 +32,8 @@ Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStag
 468,,,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Afilagarras / Hone Claws: también puede afectar al compañero en dobles.,,Aumenta el Ataque y la Precisión.\nTambién puede usarse sobre el compañero.
 526,,,,,,,,,,,,,,,,,,,,Single,,,,,,,,,,,,,,,,,,,,,,Avivar / Work Up: permite elegir objetivo.,,Aumenta el Ataque y el At. Esp.\nPermite elegir al objetivo.
 106,,,,,,,,,,,,,,,,,,,,Ally,,,,,,,,,,,,,,,,,,,,,,Fortaleza / Harden: también puede afectar al compañero en dobles.,,
-346,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Hidrochorro / Water Sport: inhabilita ataques de tipo Fuego.,,Inhabilita los movimientos de tipo Fuego\nmientras está activo.
-300,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Chapoteo Lodo / Mud Sport: inhabilita ataques de tipo Eléctrico.,,Inhabilita los movimientos de tipo Eléctrico\nmientras está activo.
+346,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7WaterSportFullBlock,Hidrochorro / Water Sport: inhabilita ataques de tipo Fuego.,,Inhabilita los movimientos de tipo Fuego\nmientras está activo.
+300,,,,,,,,,,,,,100,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7MudSportFullBlock,Chapoteo Lodo / Mud Sport: inhabilita ataques de tipo Eléctrico.,,Inhabilita los movimientos de tipo Eléctrico\nmientras está activo.
 381,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7LuckyChantCritBoost,Conjuro / Lucky Chant: además aumenta la probabilidad de crítico de todo el equipo.,,Protege al equipo de golpes críticos\ny aumenta su probabilidad de asestar críticos.
 273,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Gen7WishPivot,Deseo / Wish: cambia de Pokémon al usarlo y mantiene la cura diferida.,,"Pide un deseo y cambia al usuario.\nAl final del turno siguiente, cura al Pokémon activo."
 590,,,,,,,,,,,,,,,,,,,,Ally,true,,,,Special Attack,1,100,,,,,,,,,,,,,,,Confidencia / Confide: sube At. Esp. +1 y afecta al compañero en dobles.,,Aumenta 1 nivel el At. Esp.\ndel compañero elegido.

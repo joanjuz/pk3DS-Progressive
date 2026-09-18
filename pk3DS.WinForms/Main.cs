@@ -995,7 +995,74 @@ public sealed partial class Main : Form
         FLP_RomFS.Controls.AddRange(romfs);
         FLP_ExeFS.Controls.AddRange(exefs);
         AddGen6TradePatchButtonIfNeeded();
+        AddUSUMMoveRelearnerButtonIfNeeded();
         FLP_CRO.Controls.AddRange(cro);
+    }
+
+    private Button B_USUMMoveRelearner;
+
+    private void AddUSUMMoveRelearnerButtonIfNeeded()
+    {
+        if (Config?.USUM != true)
+            return;
+
+        B_USUMMoveRelearner ??= new Button
+        {
+            Name = "B_USUMMoveRelearner",
+            Size = new System.Drawing.Size(138, 28),
+            Margin = new Padding(4, 4, 4, 6),
+            Text = "USUM Relearner",
+            UseVisualStyleBackColor = true,
+        };
+
+        B_USUMMoveRelearner.Click -= B_USUMMoveRelearner_Click;
+        B_USUMMoveRelearner.Click += B_USUMMoveRelearner_Click;
+
+        if (!FLP_ExeFS.Controls.Contains(B_USUMMoveRelearner))
+            FLP_ExeFS.Controls.Add(B_USUMMoveRelearner);
+    }
+
+    private void B_USUMMoveRelearner_Click(object sender, EventArgs e)
+    {
+        if (ThreadActive())
+            return;
+
+        if (Config?.USUM != true)
+        {
+            WinFormsUtil.Alert(
+                "This patch is only available for Ultra Sun / Ultra Moon.");
+            return;
+        }
+
+        if (ExeFSPath == null)
+        {
+            WinFormsUtil.Alert(
+                "No ExeFS loaded.",
+                "Load an unpacked USUM ExeFS folder with decompressed code.bin first.");
+            return;
+        }
+
+        if (DialogResult.Yes != WinFormsUtil.Prompt(
+            MessageBoxButtons.YesNo,
+            "Enable the USUM Move Relearner patch?",
+            "This applies both supplied ASM behaviors to code.bin:",
+            "- Pokémon Center café NPCs open the Move Relearner.",
+            "- The relearner only offers level-up moves the Pokémon could already know at its current level.",
+            "",
+            "A backup of code.bin is created the first time the patch is applied."))
+        {
+            return;
+        }
+
+        try
+        {
+            string report = USUMMoveRelearnerPatcher.Apply(ExeFSPath);
+            WinFormsUtil.Alert("USUM Move Relearner patch applied!", report);
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Error("USUM Move Relearner patch failed.", ex.Message);
+        }
     }
 
     private Button B_ORASTradePatch;

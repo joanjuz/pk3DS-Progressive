@@ -230,7 +230,7 @@ public partial class Patch : Form
 
             SetFieldItemButtonsEnabled(false);
             UseWaitCursor = true;
-            Text = "Patch Manager Â· Randomizing field items...";
+            Text = "Patch Manager · Randomizing field items...";
 
             var result = await Task.Run(FieldItemDumper.RandomizeDefault);
             RandomizationSessionState.MarkAction(
@@ -245,7 +245,7 @@ public partial class Patch : Form
         finally
         {
             UseWaitCursor = false;
-            Text = "Patch Manager Â· Utilities";
+            Text = "Patch Manager · Utilities";
             SetFieldItemButtonsEnabled(true);
         }
     }

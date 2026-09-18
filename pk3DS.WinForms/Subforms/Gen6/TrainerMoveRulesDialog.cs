@@ -58,7 +58,7 @@ public static class TrainerMoveRulesDialog
         {
             DataPropertyName = nameof(TrainerMoveRule.UseStrongestAttackStat),
             HeaderText = "Strong Stat",
-            ToolTipText = "Choose Physical or Special moves according to the PokÃ©mon's stronger attacking stat.",
+            ToolTipText = "Choose Physical or Special moves according to the Pokémon's stronger attacking stat.",
             Width = 90,
         });
 
@@ -97,7 +97,7 @@ public static class TrainerMoveRulesDialog
         {
             DataPropertyName = nameof(TrainerMoveRule.OverrideEVs),
             HeaderText = "EVs (-1=Off)",
-            ToolTipText = "Set all EV stats for every PokÃ©mon in this trainer battle. -1 disables EV override.",
+            ToolTipText = "Set all EV stats for every Pokémon in this trainer battle. -1 disables EV override.",
             Width = 95,
         });
 
