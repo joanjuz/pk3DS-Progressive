@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -18,7 +19,7 @@ namespace pk3DS.WinForms;
 /// </summary>
 internal static class CatchZonePatchSync
 {
-    private const int CurrentFormat = 1;
+    private const int CurrentFormat = 2;
     private const string PatchRootName = "catch_zone_patches";
     private const string LegacyTemplateRootName = "catch_zone_templates";
 
@@ -92,13 +93,17 @@ internal static class CatchZonePatchSync
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         File.WriteAllText(outputPath, JsonSerializer.Serialize(manifest, JsonOptions));
 
-        long changedBytes = manifest.Files.Sum(z => z.Hunks.Sum(h => (long)Convert.FromBase64String(h.Data).Length));
+        long literalBytes = manifest.Files.Sum(z =>
+            z.Hunks.Sum(h => (long)Convert.FromBase64String(h.Data).Length) +
+            z.Delta.Sum(op => string.IsNullOrEmpty(op.Data) ? 0L : Convert.FromBase64String(op.Data).LongLength));
+        long copiedBytes = manifest.Files.Sum(z => z.Delta.Sum(op => op.CopyOffset >= 0 ? (long)op.Length : 0L));
         int deletedFiles = manifest.Files.Count(z => z.Operation.Equals("delete", StringComparison.OrdinalIgnoreCase));
         int patchedFiles = manifest.Files.Count - deletedFiles;
 
         return $"Generated catch-zone patch manifest: {game} ({patchedFiles.ToString(CultureInfo.InvariantCulture)} patched files, " +
-               $"{deletedFiles.ToString(CultureInfo.InvariantCulture)} deleted files, {changedBytes.ToString(CultureInfo.InvariantCulture)} changed bytes). " +
-               $"Saved to {outputPath}";
+               $"{deletedFiles.ToString(CultureInfo.InvariantCulture)} deleted files, {literalBytes.ToString(CultureInfo.InvariantCulture)} literal patch bytes" +
+               (copiedBytes > 0 ? $", {copiedBytes.ToString(CultureInfo.InvariantCulture)} bytes referenced from the clean source" : string.Empty) +
+               $"). Saved to {outputPath}";
     }
 
     internal static string ApplyCurrentGameWorkingDirectoryPatches()
@@ -163,14 +168,25 @@ internal static class CatchZonePatchSync
 
             VerifyExpectedSource(file, data, path);
 
-            foreach (CatchZonePatchHunk hunk in file.Hunks.OrderBy(z => z.Offset))
+            if (file.PatchMode.Equals("delta", StringComparison.OrdinalIgnoreCase))
             {
-                byte[] replacement = Convert.FromBase64String(hunk.Data);
-                if (hunk.Offset < 0 || hunk.Offset > data.Length - replacement.Length)
-                    throw new InvalidDataException(
-                        $"Patch hunk is outside the file bounds: {file.Scope}/{file.Path} @ 0x{hunk.Offset:X}.");
+                data = ApplyDelta(data, file);
+            }
+            else
+            {
+                foreach (CatchZonePatchHunk hunk in file.Hunks.OrderBy(z => z.Offset))
+                {
+                    byte[] replacement = Convert.FromBase64String(hunk.Data);
+                    if (hunk.Offset < 0 || hunk.Offset > data.Length - replacement.Length)
+                        throw new InvalidDataException(
+                            $"Patch hunk is outside the file bounds: {file.Scope}/{file.Path} @ 0x{hunk.Offset:X}.");
 
-                Buffer.BlockCopy(replacement, 0, data, hunk.Offset, replacement.Length);
+                    Buffer.BlockCopy(replacement, 0, data, hunk.Offset, replacement.Length);
+                }
+
+                if (file.TargetLength >= 0 && data.LongLength != file.TargetLength)
+                    throw new InvalidDataException(
+                        $"Catch-zone hunk patch produced an unexpected length for {file.Scope}/{file.Path}. Expected {file.TargetLength}, got {data.LongLength}.");
             }
 
             string resultHash = ComputeSha256(data);
@@ -258,24 +274,29 @@ internal static class CatchZonePatchSync
             if (source.AsSpan().SequenceEqual(target))
                 continue;
 
-            if (source.Length != target.Length)
-            {
-                throw new NotSupportedException(
-                    $"The legacy template changes the length of {scope}/{relative} ({source.Length} -> {target.Length}). " +
-                    "The first patch format supports same-length byte replacements only.");
-            }
-
-            var hunks = BuildHunks(source, target);
-            manifest.Files.Add(new CatchZonePatchFile
+            var patchFile = new CatchZonePatchFile
             {
                 Scope = scope,
                 Path = relative,
                 Operation = "patch",
                 Length = source.LongLength,
+                TargetLength = target.LongLength,
                 SourceSha256 = ComputeSha256(source),
                 TargetSha256 = ComputeSha256(target),
-                Hunks = hunks,
-            });
+            };
+
+            if (source.Length == target.Length)
+            {
+                patchFile.PatchMode = "hunks";
+                patchFile.Hunks = BuildHunks(source, target);
+            }
+            else
+            {
+                patchFile.PatchMode = "delta";
+                patchFile.Delta = BuildDelta(source, target);
+            }
+
+            manifest.Files.Add(patchFile);
         }
 
         if (!fullReplacement)
@@ -297,6 +318,175 @@ internal static class CatchZonePatchSync
                 TargetSha256 = string.Empty,
             });
         }
+    }
+
+    private static byte[] ApplyDelta(byte[] source, CatchZonePatchFile file)
+    {
+        if (file.TargetLength < 0 || file.TargetLength > int.MaxValue)
+            throw new InvalidDataException($"Invalid target length for {file.Scope}/{file.Path}: {file.TargetLength}.");
+
+        using var output = new MemoryStream((int)file.TargetLength);
+
+        foreach (CatchZoneDeltaOperation op in file.Delta)
+        {
+            if (op.CopyOffset >= 0)
+            {
+                if (op.Length < 0 || op.CopyOffset > source.Length - op.Length)
+                    throw new InvalidDataException(
+                        $"Invalid delta copy range for {file.Scope}/{file.Path}: source 0x{op.CopyOffset:X}, length {op.Length}.");
+
+                output.Write(source, op.CopyOffset, op.Length);
+                continue;
+            }
+
+            byte[] literal = Convert.FromBase64String(op.Data ?? string.Empty);
+            if (op.Length != literal.Length)
+                throw new InvalidDataException(
+                    $"Invalid delta literal length for {file.Scope}/{file.Path}: manifest says {op.Length}, data contains {literal.Length}.");
+
+            output.Write(literal, 0, literal.Length);
+        }
+
+        byte[] result = output.ToArray();
+        if (result.LongLength != file.TargetLength)
+            throw new InvalidDataException(
+                $"Catch-zone delta produced an unexpected length for {file.Scope}/{file.Path}. Expected {file.TargetLength}, got {result.LongLength}.");
+
+        return result;
+    }
+
+    private static List<CatchZoneDeltaOperation> BuildDelta(byte[] source, byte[] target)
+    {
+        const int KeyLength = 8;
+        const int MinimumCopyLength = 16;
+        const int MaxCandidatesPerKey = 64;
+
+        var result = new List<CatchZoneDeltaOperation>();
+
+        if (target.Length == 0)
+            return result;
+
+        if (source.Length < KeyLength || target.Length < KeyLength)
+        {
+            AddLiteral(result, target, 0, target.Length);
+            return result;
+        }
+
+        var sourceIndex = new Dictionary<ulong, List<int>>();
+
+        for (int i = 0; i <= source.Length - KeyLength; i++)
+        {
+            ulong key = BinaryPrimitives.ReadUInt64LittleEndian(source.AsSpan(i, KeyLength));
+            if (!sourceIndex.TryGetValue(key, out List<int> positions))
+            {
+                positions = [];
+                sourceIndex.Add(key, positions);
+            }
+
+            if (positions.Count < MaxCandidatesPerKey)
+                positions.Add(i);
+        }
+
+        int targetPos = 0;
+        int literalStart = 0;
+
+        while (targetPos <= target.Length - KeyLength)
+        {
+            ulong key = BinaryPrimitives.ReadUInt64LittleEndian(target.AsSpan(targetPos, KeyLength));
+
+            int bestSource = -1;
+            int bestLength = 0;
+
+            if (sourceIndex.TryGetValue(key, out List<int> candidates))
+            {
+                foreach (int sourcePos in candidates)
+                {
+                    int length = KeyLength;
+                    int max = Math.Min(source.Length - sourcePos, target.Length - targetPos);
+
+                    while (length < max && source[sourcePos + length] == target[targetPos + length])
+                        length++;
+
+                    if (length <= bestLength)
+                        continue;
+
+                    bestSource = sourcePos;
+                    bestLength = length;
+
+                    if (bestLength == max)
+                        break;
+                }
+            }
+
+            if (bestLength < MinimumCopyLength)
+            {
+                targetPos++;
+                continue;
+            }
+
+            AddLiteral(result, target, literalStart, targetPos - literalStart);
+            AddCopy(result, bestSource, bestLength);
+
+            targetPos += bestLength;
+            literalStart = targetPos;
+        }
+
+        AddLiteral(result, target, literalStart, target.Length - literalStart);
+
+        return result;
+    }
+
+    private static void AddCopy(List<CatchZoneDeltaOperation> operations, int sourceOffset, int length)
+    {
+        if (length <= 0)
+            return;
+
+        if (operations.Count != 0)
+        {
+            CatchZoneDeltaOperation previous = operations[^1];
+            if (previous.CopyOffset >= 0 && previous.CopyOffset + previous.Length == sourceOffset)
+            {
+                previous.Length += length;
+                return;
+            }
+        }
+
+        operations.Add(new CatchZoneDeltaOperation
+        {
+            CopyOffset = sourceOffset,
+            Length = length,
+        });
+    }
+
+    private static void AddLiteral(List<CatchZoneDeltaOperation> operations, byte[] target, int offset, int length)
+    {
+        if (length <= 0)
+            return;
+
+        byte[] data = new byte[length];
+        Buffer.BlockCopy(target, offset, data, 0, length);
+
+        if (operations.Count != 0)
+        {
+            CatchZoneDeltaOperation previous = operations[^1];
+            if (previous.CopyOffset < 0)
+            {
+                byte[] previousData = Convert.FromBase64String(previous.Data ?? string.Empty);
+                byte[] combined = new byte[previousData.Length + data.Length];
+                Buffer.BlockCopy(previousData, 0, combined, 0, previousData.Length);
+                Buffer.BlockCopy(data, 0, combined, previousData.Length, data.Length);
+                previous.Data = Convert.ToBase64String(combined);
+                previous.Length = combined.Length;
+                return;
+            }
+        }
+
+        operations.Add(new CatchZoneDeltaOperation
+        {
+            CopyOffset = -1,
+            Length = data.Length,
+            Data = Convert.ToBase64String(data),
+        });
     }
 
     private static List<CatchZonePatchHunk> BuildHunks(byte[] source, byte[] target)
@@ -427,14 +617,24 @@ internal sealed class CatchZonePatchFile
     public string Scope { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
     public string Operation { get; set; } = "patch";
+    public string PatchMode { get; set; } = "hunks";
     public long Length { get; set; } = -1;
+    public long TargetLength { get; set; } = -1;
     public string SourceSha256 { get; set; } = string.Empty;
     public string TargetSha256 { get; set; } = string.Empty;
     public List<CatchZonePatchHunk> Hunks { get; set; } = [];
+    public List<CatchZoneDeltaOperation> Delta { get; set; } = [];
 }
 
 internal sealed class CatchZonePatchHunk
 {
     public int Offset { get; set; }
+    public string Data { get; set; } = string.Empty;
+}
+
+internal sealed class CatchZoneDeltaOperation
+{
+    public int CopyOffset { get; set; } = -1;
+    public int Length { get; set; }
     public string Data { get; set; } = string.Empty;
 }
