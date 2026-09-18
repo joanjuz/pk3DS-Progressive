@@ -12,6 +12,10 @@
   
   <ItemGroup>
     <Content Include="Resources\*" />
+    <Content Include="catch_zone_patches\**\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
   
   <ItemGroup>

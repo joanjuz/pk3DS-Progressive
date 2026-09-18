@@ -1468,18 +1468,21 @@ public sealed partial class Main : Form
             return;
         if (Config?.XY != true && Config?.ORAS != true)
         {
-            WinFormsUtil.Alert("Catch-zone templates are only available for XY/ORAS.");
+            WinFormsUtil.Alert("Catch zones are only available for XY/ORAS.");
             return;
         }
-        if (!CatchZoneTemplateSync.HasAnyTemplateForCurrentGame())
+        if (!CatchZonePatchSync.HasPatchForCurrentGame())
         {
-            WinFormsUtil.Alert("No catch-zone templates were found for this game. Expected folder: catch_zone_templates/XY or catch_zone_templates/ORAS next to pk3DS.exe.");
+            WinFormsUtil.Alert(
+                "No catch-zone patch was found for this game.",
+                "Expected catch_zone_patches/XY.json or catch_zone_patches/ORAS.json next to pk3DS.exe.");
             return;
         }
 
-        if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo,
-                "Apply catch-zone templates to this ROM?",
-                "This will overwrite Gen 6 encounter data and map graphics with the templates for the currently loaded game."))
+        if (DialogResult.Yes != WinFormsUtil.Prompt(
+                MessageBoxButtons.YesNo,
+                "Enable catch zones for this ROM?",
+                "pk3DS will patch the encounter/map files extracted from your own ROM dump."))
             return;
 
         new Thread(() =>
@@ -1488,15 +1491,18 @@ public sealed partial class Main : Form
             try
             {
                 Invoke((MethodInvoker)delegate { Enabled = false; });
+
                 FileGet(files, false);
-                string catchZoneSyncReport = CatchZoneTemplateSync.ApplyCurrentGameTemplates(files);
-                if (!string.IsNullOrWhiteSpace(catchZoneSyncReport))
-                    UpdateStatus(catchZoneSyncReport.Replace(Environment.NewLine, " | "));
+
+                string folderPatchReport = CatchZonePatchSync.ApplyCurrentGameWorkingDirectoryPatches();
+                if (!string.IsNullOrWhiteSpace(folderPatchReport))
+                    UpdateStatus(folderPatchReport.Replace(Environment.NewLine, " | "));
+
                 FileSet(files);
 
-                string rawSyncReport = CatchZoneTemplateSync.ApplyCurrentGameRawFiles(RomFSPath);
-                if (!string.IsNullOrWhiteSpace(rawSyncReport))
-                    UpdateStatus(rawSyncReport.Replace(Environment.NewLine, " | "));
+                string rawPatchReport = CatchZonePatchSync.ApplyCurrentGameRawPatches(RomFSPath);
+                if (!string.IsNullOrWhiteSpace(rawPatchReport))
+                    UpdateStatus(rawPatchReport.Replace(Environment.NewLine, " | "));
 
                 Invoke(() => WinFormsUtil.Alert("Catch zones enabled for this ROM."));
             }

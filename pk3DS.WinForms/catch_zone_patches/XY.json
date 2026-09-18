@@ -1,0 +1,7986 @@
+{
+  "format": 2,
+  "game": "XY",
+  "files": [
+    {
+      "scope": "encdata",
+      "path": "dec_012.bin",
+      "operation": "patch",
+      "patchMode": "delta",
+      "length": 4016,
+      "targetLength": 4408,
+      "sourceSha256": "4795092da2f13154a8b515e2809c4fd234b8e8f0bc1cc43a23da19773d7c8d65",
+      "targetSha256": "d284884eb10cddf9fe17a7758b9266dcce18d1e7741fac1e2f77b37ef816758c",
+      "hunks": [],
+      "delta": [
+        {
+          "copyOffset": 0,
+          "length": 20,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 2,
+          "data": "OBE="
+        },
+        {
+          "copyOffset": 22,
+          "length": 198,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 3,
+          "data": "mAIJ"
+        },
+        {
+          "copyOffset": 223,
+          "length": 3793,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 392,
+          "data": "AQAAAAAAAAAAAAAAAAAAAEQCDhCxAg4QLwIOEJsCDhCMAA4QHgAOEGMADhBaAg4QEAEOEJwRDhD3AQ4QlQAOEAAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQE="
+        }
+      ]
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_021.bin",
+      "operation": "patch",
+      "patchMode": "delta",
+      "length": 12936,
+      "targetLength": 13328,
+      "sourceSha256": "227de581fba4031afa469dc356f4ba4122b936c49b3979249ee782cb4b1ce9ed",
+      "targetSha256": "017a07dc3a11f3b62740bbf123444ede0d2a481a2ff02c1b68bb69c866f4098a",
+      "hunks": [],
+      "delta": [
+        {
+          "copyOffset": 0,
+          "length": 20,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 2,
+          "data": "EDQ="
+        },
+        {
+          "copyOffset": 22,
+          "length": 1486,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 3,
+          "data": "WwBY"
+        },
+        {
+          "copyOffset": 1511,
+          "length": 11425,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 392,
+          "data": "AQAAAAAAAAAAAAAAAAAAAMUBFxrPABcaYAEXGm8CFxqqARcaSAIXGg4BFxpTARcaegIXGgUAFxqzABcaHQEXGgAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQE="
+        }
+      ]
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_038.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 8020,
+      "targetLength": 8020,
+      "sourceSha256": "f030613f514354521c9b93abec387539a5506a5ad6319b41027873746dff4b50",
+      "targetSha256": "f15aae08a4ac756f93afd9dbf0ec456d30df9d0db3fe50883525b924fcf60b02",
+      "hunks": [
+        {
+          "offset": 7884,
+          "data": "pgA="
+        },
+        {
+          "offset": 7888,
+          "data": "MgI="
+        },
+        {
+          "offset": 7892,
+          "data": "LA=="
+        },
+        {
+          "offset": 7896,
+          "data": "rAI="
+        },
+        {
+          "offset": 7900,
+          "data": "swI="
+        },
+        {
+          "offset": 7924,
+          "data": "CgE="
+        },
+        {
+          "offset": 7928,
+          "data": "qAE="
+        },
+        {
+          "offset": 7932,
+          "data": "IwE="
+        },
+        {
+          "offset": 7936,
+          "data": "mgA="
+        },
+        {
+          "offset": 7940,
+          "data": "ggI="
+        },
+        {
+          "offset": 7944,
+          "data": "lQE="
+        },
+        {
+          "offset": 7948,
+          "data": "tgE="
+        },
+        {
+          "offset": 7952,
+          "data": "mgE="
+        },
+        {
+          "offset": 7956,
+          "data": "wA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_045.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 5596,
+      "targetLength": 5596,
+      "sourceSha256": "5f29dc01086e67035570a45fee1b3701f99934f4aa7231b14f58db389e8f9985",
+      "targetSha256": "2d2dd49a2a35ededa505712066eb66fd288be482503e4a0196be0e88296ab7fa",
+      "hunks": [
+        {
+          "offset": 5460,
+          "data": "dQ=="
+        },
+        {
+          "offset": 5464,
+          "data": "iQA="
+        },
+        {
+          "offset": 5468,
+          "data": "gw=="
+        },
+        {
+          "offset": 5472,
+          "data": "8Q=="
+        },
+        {
+          "offset": 5476,
+          "data": "yA=="
+        },
+        {
+          "offset": 5480,
+          "data": "qQA="
+        },
+        {
+          "offset": 5484,
+          "data": "EQA="
+        },
+        {
+          "offset": 5488,
+          "data": "8QE="
+        },
+        {
+          "offset": 5492,
+          "data": "8AE="
+        },
+        {
+          "offset": 5496,
+          "data": "MA=="
+        },
+        {
+          "offset": 5500,
+          "data": "KAA="
+        },
+        {
+          "offset": 5504,
+          "data": "VgA="
+        },
+        {
+          "offset": 5508,
+          "data": "nwA="
+        },
+        {
+          "offset": 5512,
+          "data": "XgA="
+        },
+        {
+          "offset": 5516,
+          "data": "Gg=="
+        },
+        {
+          "offset": 5520,
+          "data": "gQ=="
+        },
+        {
+          "offset": 5524,
+          "data": "CgI="
+        },
+        {
+          "offset": 5528,
+          "data": "JwE="
+        },
+        {
+          "offset": 5532,
+          "data": "DwI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_053.bin",
+      "operation": "patch",
+      "patchMode": "delta",
+      "length": 6628,
+      "targetLength": 7020,
+      "sourceSha256": "3a3aa733b3a690599ed979d9d182da2160693f3be83084bdaafda16fb76c5bbd",
+      "targetSha256": "ca3e48cc69ff45d59848d70260f97c9cd4ae4ffbc849f342099b2a736601e15a",
+      "hunks": [],
+      "delta": [
+        {
+          "copyOffset": 0,
+          "length": 20,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 2,
+          "data": "bBs="
+        },
+        {
+          "copyOffset": 22,
+          "length": 252,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 1,
+          "data": "RQ=="
+        },
+        {
+          "copyOffset": 275,
+          "length": 6353,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 392,
+          "data": "AQAAAAAAAAAAAAAAAAAAAKABBgi9AAYIKgEGCMYABgiSAgYIKwAGCPoBBgjqAAYIMwIGCLYCBggbAAYIagAGCAAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQEAAAEBAAABAQAAAQE="
+        }
+      ]
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_157.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6812,
+      "targetLength": 6812,
+      "sourceSha256": "f7a1ede957ee0d2083708a00ac99aff9e5c00999b35a58f5ca9bf3a006007e85",
+      "targetSha256": "9a65f91c6493267a9ba7242094aa56fde621aebeb9984dcec17ae98982a0ea1c",
+      "hunks": [
+        {
+          "offset": 6676,
+          "data": "7gE="
+        },
+        {
+          "offset": 6680,
+          "data": "fA=="
+        },
+        {
+          "offset": 6684,
+          "data": "rQ=="
+        },
+        {
+          "offset": 6688,
+          "data": "iQE="
+        },
+        {
+          "offset": 6692,
+          "data": "QwI="
+        },
+        {
+          "offset": 6696,
+          "data": "aQA="
+        },
+        {
+          "offset": 6700,
+          "data": "\u002Bw=="
+        },
+        {
+          "offset": 6704,
+          "data": "jwE="
+        },
+        {
+          "offset": 6708,
+          "data": "VQI="
+        },
+        {
+          "offset": 6712,
+          "data": "cAI="
+        },
+        {
+          "offset": 6716,
+          "data": "TQ=="
+        },
+        {
+          "offset": 6720,
+          "data": "lAA="
+        },
+        {
+          "offset": 6724,
+          "data": "LQI="
+        },
+        {
+          "offset": 6728,
+          "data": "2gE="
+        },
+        {
+          "offset": 6732,
+          "data": "JQE="
+        },
+        {
+          "offset": 6736,
+          "data": "QAE="
+        },
+        {
+          "offset": 6740,
+          "data": "hgA="
+        },
+        {
+          "offset": 6744,
+          "data": "WwA="
+        },
+        {
+          "offset": 6748,
+          "data": "tAE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_172.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 11708,
+      "targetLength": 11708,
+      "sourceSha256": "97d3a28f1ab62d99e63f3b9e8c05051ab8e7ac0eff91cb4808c395e8a1dfdc4a",
+      "targetSha256": "56ef68233b96a891c92e0dc17c831237c8e13d30750561361832106330847c4e",
+      "hunks": [
+        {
+          "offset": 11572,
+          "data": "ewE="
+        },
+        {
+          "offset": 11576,
+          "data": "XQE="
+        },
+        {
+          "offset": 11580,
+          "data": "sAI="
+        },
+        {
+          "offset": 11584,
+          "data": "AwE="
+        },
+        {
+          "offset": 11588,
+          "data": "IAI="
+        },
+        {
+          "offset": 11612,
+          "data": "3wA="
+        },
+        {
+          "offset": 11616,
+          "data": "2AA="
+        },
+        {
+          "offset": 11620,
+          "data": "aQ=="
+        },
+        {
+          "offset": 11624,
+          "data": "VA=="
+        },
+        {
+          "offset": 11628,
+          "data": "tQ=="
+        },
+        {
+          "offset": 11632,
+          "data": "CwE="
+        },
+        {
+          "offset": 11636,
+          "data": "HwE="
+        },
+        {
+          "offset": 11640,
+          "data": "wg=="
+        },
+        {
+          "offset": 11644,
+          "data": "AQ=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_200.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 7788,
+      "targetLength": 7788,
+      "sourceSha256": "e9f35563f1f9ebaa6620e5ecd522c121692db0fa12fbdb092e864e5ddac49d78",
+      "targetSha256": "3d0a157979bfd17ad15d33ae9d1e1ccc0433ec2a0121005314909a661e07bdcd",
+      "hunks": [
+        {
+          "offset": 7692,
+          "data": "Nw=="
+        },
+        {
+          "offset": 7696,
+          "data": "RwE="
+        },
+        {
+          "offset": 7700,
+          "data": "DAI="
+        },
+        {
+          "offset": 7704,
+          "data": "bAE="
+        },
+        {
+          "offset": 7708,
+          "data": "AQI="
+        },
+        {
+          "offset": 7712,
+          "data": "gwE="
+        },
+        {
+          "offset": 7716,
+          "data": "Qg=="
+        },
+        {
+          "offset": 7720,
+          "data": "VQA="
+        },
+        {
+          "offset": 7724,
+          "data": "agI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_259.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 5516,
+      "targetLength": 5516,
+      "sourceSha256": "af0b3fd5a52bda174fac9500fbc6a7e2eb21d469fcf9b540959fe3754d24a6a4",
+      "targetSha256": "0e397ed7edca587cf0b667df95e267409d40ab6293caf9886c748d837b3fbb59",
+      "hunks": [
+        {
+          "offset": 5140,
+          "data": "6QE="
+        },
+        {
+          "offset": 5144,
+          "data": "pg=="
+        },
+        {
+          "offset": 5148,
+          "data": "qgI="
+        },
+        {
+          "offset": 5152,
+          "data": "rgA="
+        },
+        {
+          "offset": 5156,
+          "data": "pAA="
+        },
+        {
+          "offset": 5160,
+          "data": "FwE="
+        },
+        {
+          "offset": 5164,
+          "data": "6wE="
+        },
+        {
+          "offset": 5168,
+          "data": "9gA="
+        },
+        {
+          "offset": 5172,
+          "data": "0AE="
+        },
+        {
+          "offset": 5176,
+          "data": "ZA=="
+        },
+        {
+          "offset": 5180,
+          "data": "XQI="
+        },
+        {
+          "offset": 5184,
+          "data": "Mg=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_260.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 5556,
+      "targetLength": 5556,
+      "sourceSha256": "0ba132538ef8a711d03d135b97e23378616b8abbcf63f2e2f82a6f672b51d13f",
+      "targetSha256": "8a0aa74d0bcb478ca7cb4022924cd3a51b2b3fc4f1d139c924f3ce286072256f",
+      "hunks": [
+        {
+          "offset": 654,
+          "data": "CA=="
+        },
+        {
+          "offset": 5180,
+          "data": "kgE="
+        },
+        {
+          "offset": 5185,
+          "data": "AA=="
+        },
+        {
+          "offset": 5188,
+          "data": "AQ=="
+        },
+        {
+          "offset": 5192,
+          "data": "wQI="
+        },
+        {
+          "offset": 5196,
+          "data": "9QA="
+        },
+        {
+          "offset": 5200,
+          "data": "yg=="
+        },
+        {
+          "offset": 5204,
+          "data": "CAE="
+        },
+        {
+          "offset": 5208,
+          "data": "ywI="
+        },
+        {
+          "offset": 5212,
+          "data": "ugA="
+        },
+        {
+          "offset": 5216,
+          "data": "EwE="
+        },
+        {
+          "offset": 5220,
+          "data": "Xw=="
+        },
+        {
+          "offset": 5224,
+          "data": "vA=="
+        },
+        {
+          "offset": 5420,
+          "data": "UAI="
+        },
+        {
+          "offset": 5424,
+          "data": "DA=="
+        },
+        {
+          "offset": 5428,
+          "data": "oQA="
+        },
+        {
+          "offset": 5432,
+          "data": "4Q=="
+        },
+        {
+          "offset": 5436,
+          "data": "Gw=="
+        },
+        {
+          "offset": 5460,
+          "data": "rAE="
+        },
+        {
+          "offset": 5464,
+          "data": "lwE="
+        },
+        {
+          "offset": 5468,
+          "data": "jgE="
+        },
+        {
+          "offset": 5472,
+          "data": "1Q=="
+        },
+        {
+          "offset": 5476,
+          "data": "RgI="
+        },
+        {
+          "offset": 5480,
+          "data": "RQ=="
+        },
+        {
+          "offset": 5484,
+          "data": "CQ=="
+        },
+        {
+          "offset": 5488,
+          "data": "hQ=="
+        },
+        {
+          "offset": 5492,
+          "data": "IQ=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_261.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4616,
+      "targetLength": 4616,
+      "sourceSha256": "f357399ee5289c103a280863ad828d0808c77af15f15da1ad72e5448dc8733cd",
+      "targetSha256": "088d458a4995adf0fca790ee440c8118f3426022143fafcbc9fa926bd1274aa3",
+      "hunks": [
+        {
+          "offset": 4288,
+          "data": "4AA="
+        },
+        {
+          "offset": 4292,
+          "data": "dAI="
+        },
+        {
+          "offset": 4296,
+          "data": "WAA="
+        },
+        {
+          "offset": 4300,
+          "data": "hAA="
+        },
+        {
+          "offset": 4304,
+          "data": "aQI="
+        },
+        {
+          "offset": 4308,
+          "data": "VwA="
+        },
+        {
+          "offset": 4312,
+          "data": "tQI="
+        },
+        {
+          "offset": 4316,
+          "data": "QAI="
+        },
+        {
+          "offset": 4320,
+          "data": "KQA="
+        },
+        {
+          "offset": 4324,
+          "data": "WgA="
+        },
+        {
+          "offset": 4328,
+          "data": "OwA="
+        },
+        {
+          "offset": 4332,
+          "data": "PQE="
+        },
+        {
+          "offset": 4384,
+          "data": "/AE="
+        },
+        {
+          "offset": 4388,
+          "data": "BwE="
+        },
+        {
+          "offset": 4392,
+          "data": "igE="
+        },
+        {
+          "offset": 4396,
+          "data": "SA=="
+        },
+        {
+          "offset": 4400,
+          "data": "WAI="
+        },
+        {
+          "offset": 4405,
+          "data": "AQ=="
+        },
+        {
+          "offset": 4408,
+          "data": "2Q=="
+        },
+        {
+          "offset": 4412,
+          "data": "gQA="
+        },
+        {
+          "offset": 4416,
+          "data": "xQI="
+        },
+        {
+          "offset": 4420,
+          "data": "YQI="
+        },
+        {
+          "offset": 4424,
+          "data": "owE="
+        },
+        {
+          "offset": 4428,
+          "data": "BwA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_262.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 7384,
+      "targetLength": 7384,
+      "sourceSha256": "44b6b0b20c3d84dc8a8b91400b537c5adde0cd6632c6baaf73810430e39621a5",
+      "targetSha256": "60e8df154f0498d067a4ca36d9571693e15067ab8c3a2ed3813cb90d7e1f4f59",
+      "hunks": [
+        {
+          "offset": 848,
+          "data": "AA=="
+        },
+        {
+          "offset": 850,
+          "data": "Aw=="
+        },
+        {
+          "offset": 856,
+          "data": "Ag=="
+        },
+        {
+          "offset": 858,
+          "data": "BQ=="
+        },
+        {
+          "offset": 884,
+          "data": "uw=="
+        },
+        {
+          "offset": 7008,
+          "data": "iwE="
+        },
+        {
+          "offset": 7012,
+          "data": "rQ=="
+        },
+        {
+          "offset": 7016,
+          "data": "ygA="
+        },
+        {
+          "offset": 7020,
+          "data": "CwA="
+        },
+        {
+          "offset": 7024,
+          "data": "GQE="
+        },
+        {
+          "offset": 7028,
+          "data": "fwA="
+        },
+        {
+          "offset": 7032,
+          "data": "IAA="
+        },
+        {
+          "offset": 7036,
+          "data": "3wE="
+        },
+        {
+          "offset": 7040,
+          "data": "YgA="
+        },
+        {
+          "offset": 7044,
+          "data": "EgI="
+        },
+        {
+          "offset": 7048,
+          "data": "rQ=="
+        },
+        {
+          "offset": 7052,
+          "data": "uwA="
+        },
+        {
+          "offset": 7104,
+          "data": "2QA="
+        },
+        {
+          "offset": 7108,
+          "data": "EQE="
+        },
+        {
+          "offset": 7112,
+          "data": "5wA="
+        },
+        {
+          "offset": 7116,
+          "data": "Iw=="
+        },
+        {
+          "offset": 7120,
+          "data": "fQE="
+        },
+        {
+          "offset": 7124,
+          "data": "BgE="
+        },
+        {
+          "offset": 7128,
+          "data": "EQ=="
+        },
+        {
+          "offset": 7132,
+          "data": "pAE="
+        },
+        {
+          "offset": 7136,
+          "data": "dgI="
+        },
+        {
+          "offset": 7140,
+          "data": "0Q=="
+        },
+        {
+          "offset": 7144,
+          "data": "/AA="
+        },
+        {
+          "offset": 7148,
+          "data": "FgA="
+        },
+        {
+          "offset": 7324,
+          "data": "9A=="
+        },
+        {
+          "offset": 7328,
+          "data": "9A=="
+        },
+        {
+          "offset": 7332,
+          "data": "9A=="
+        },
+        {
+          "offset": 7336,
+          "data": "9A=="
+        },
+        {
+          "offset": 7340,
+          "data": "9A=="
+        },
+        {
+          "offset": 7344,
+          "data": "LA=="
+        },
+        {
+          "offset": 7348,
+          "data": "LA=="
+        },
+        {
+          "offset": 7352,
+          "data": "LA=="
+        },
+        {
+          "offset": 7356,
+          "data": "LA=="
+        },
+        {
+          "offset": 7360,
+          "data": "LA=="
+        },
+        {
+          "offset": 7364,
+          "data": "Fg=="
+        },
+        {
+          "offset": 7368,
+          "data": "Fg=="
+        },
+        {
+          "offset": 7372,
+          "data": "Fg=="
+        },
+        {
+          "offset": 7376,
+          "data": "Fg=="
+        },
+        {
+          "offset": 7380,
+          "data": "Fg=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_263.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3100,
+      "targetLength": 3100,
+      "sourceSha256": "e9b13103f3d6e7379eb67a0b0ff5d7ab358efa12de5b6aac5b68c1d5e1c33fc7",
+      "targetSha256": "357d002bc5265b5e3621e2d4a75fe8cf6d92e40df6a76ac28f415598c1e39d2f",
+      "hunks": [
+        {
+          "offset": 1086,
+          "data": "Bg=="
+        },
+        {
+          "offset": 2916,
+          "data": "xAE="
+        },
+        {
+          "offset": 2920,
+          "data": "LgE="
+        },
+        {
+          "offset": 2924,
+          "data": "DAE="
+        },
+        {
+          "offset": 2928,
+          "data": "jQE="
+        },
+        {
+          "offset": 2932,
+          "data": "3AE="
+        },
+        {
+          "offset": 2936,
+          "data": "\u002BAA="
+        },
+        {
+          "offset": 2940,
+          "data": "\u002BAE="
+        },
+        {
+          "offset": 2944,
+          "data": "XAE="
+        },
+        {
+          "offset": 2948,
+          "data": "cQA="
+        },
+        {
+          "offset": 2952,
+          "data": "rw=="
+        },
+        {
+          "offset": 2956,
+          "data": "cQ=="
+        },
+        {
+          "offset": 2960,
+          "data": "2gA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_264.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 18588,
+      "targetLength": 18588,
+      "sourceSha256": "ab72d1902ab0685b34eea4eee75e3df97e8a5098c44dd8e81082c7f2478357ba",
+      "targetSha256": "808ce77d93c5625d6ea355cf5f80f528cabbf782931559f8d19c65fffaace8a9",
+      "hunks": [
+        {
+          "offset": 18212,
+          "data": "7gA="
+        },
+        {
+          "offset": 18216,
+          "data": "8g=="
+        },
+        {
+          "offset": 18220,
+          "data": "MAA="
+        },
+        {
+          "offset": 18224,
+          "data": "sgI="
+        },
+        {
+          "offset": 18228,
+          "data": "sAA="
+        },
+        {
+          "offset": 18232,
+          "data": "4gA="
+        },
+        {
+          "offset": 18236,
+          "data": "awI="
+        },
+        {
+          "offset": 18240,
+          "data": "DQ=="
+        },
+        {
+          "offset": 18244,
+          "data": "wAI="
+        },
+        {
+          "offset": 18248,
+          "data": "DQA="
+        },
+        {
+          "offset": 18252,
+          "data": "BAI="
+        },
+        {
+          "offset": 18256,
+          "data": "BQE="
+        },
+        {
+          "offset": 18260,
+          "data": "OAE="
+        },
+        {
+          "offset": 18264,
+          "data": "0wA="
+        },
+        {
+          "offset": 18268,
+          "data": "dQE="
+        },
+        {
+          "offset": 18272,
+          "data": "lwA="
+        },
+        {
+          "offset": 18276,
+          "data": "bQ=="
+        },
+        {
+          "offset": 18280,
+          "data": "OA=="
+        },
+        {
+          "offset": 18284,
+          "data": "MQI="
+        },
+        {
+          "offset": 18288,
+          "data": "kAA="
+        },
+        {
+          "offset": 18292,
+          "data": "hw=="
+        },
+        {
+          "offset": 18296,
+          "data": "LgA="
+        },
+        {
+          "offset": 18300,
+          "data": "gAI="
+        },
+        {
+          "offset": 18304,
+          "data": "ngI="
+        },
+        {
+          "offset": 18308,
+          "data": "hwI="
+        },
+        {
+          "offset": 18312,
+          "data": "SgA="
+        },
+        {
+          "offset": 18316,
+          "data": "CQI="
+        },
+        {
+          "offset": 18320,
+          "data": "SgI="
+        },
+        {
+          "offset": 18324,
+          "data": "SQA="
+        },
+        {
+          "offset": 18328,
+          "data": "1wE="
+        },
+        {
+          "offset": 18332,
+          "data": "MgE="
+        },
+        {
+          "offset": 18336,
+          "data": "UwA="
+        },
+        {
+          "offset": 18340,
+          "data": "zwI="
+        },
+        {
+          "offset": 18344,
+          "data": "FgI="
+        },
+        {
+          "offset": 18348,
+          "data": "SwI="
+        },
+        {
+          "offset": 18352,
+          "data": "OQE="
+        },
+        {
+          "offset": 18528,
+          "data": "FA=="
+        },
+        {
+          "offset": 18532,
+          "data": "FA=="
+        },
+        {
+          "offset": 18536,
+          "data": "FA=="
+        },
+        {
+          "offset": 18540,
+          "data": "FA=="
+        },
+        {
+          "offset": 18544,
+          "data": "FA=="
+        },
+        {
+          "offset": 18548,
+          "data": "Ug=="
+        },
+        {
+          "offset": 18552,
+          "data": "Ug=="
+        },
+        {
+          "offset": 18556,
+          "data": "Ug=="
+        },
+        {
+          "offset": 18560,
+          "data": "Ug=="
+        },
+        {
+          "offset": 18564,
+          "data": "Ug=="
+        },
+        {
+          "offset": 18568,
+          "data": "kgA="
+        },
+        {
+          "offset": 18572,
+          "data": "kgA="
+        },
+        {
+          "offset": 18576,
+          "data": "kgA="
+        },
+        {
+          "offset": 18580,
+          "data": "kgA="
+        },
+        {
+          "offset": 18584,
+          "data": "kgA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_266.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6920,
+      "targetLength": 6920,
+      "sourceSha256": "648835499af52e72d4d7e130979272fd01b98d95dfceea2a1e44944e65529b0f",
+      "targetSha256": "55108c40d86fb9a7ef5fa803960de854d873395f84661cdf82b0e0b07919dda9",
+      "hunks": [
+        {
+          "offset": 1070,
+          "data": "BQ=="
+        },
+        {
+          "offset": 1096,
+          "data": "KQ=="
+        },
+        {
+          "offset": 1308,
+          "data": "AQ=="
+        },
+        {
+          "offset": 1336,
+          "data": "GQ=="
+        },
+        {
+          "offset": 6544,
+          "data": "ww=="
+        },
+        {
+          "offset": 6548,
+          "data": "xg=="
+        },
+        {
+          "offset": 6552,
+          "data": "NAA="
+        },
+        {
+          "offset": 6556,
+          "data": "9AA="
+        },
+        {
+          "offset": 6560,
+          "data": "9Q=="
+        },
+        {
+          "offset": 6564,
+          "data": "BQI="
+        },
+        {
+          "offset": 6568,
+          "data": "0wE="
+        },
+        {
+          "offset": 6572,
+          "data": "YgE="
+        },
+        {
+          "offset": 6576,
+          "data": "3gA="
+        },
+        {
+          "offset": 6580,
+          "data": "PgA="
+        },
+        {
+          "offset": 6584,
+          "data": "qgA="
+        },
+        {
+          "offset": 6588,
+          "data": "uA=="
+        },
+        {
+          "offset": 6592,
+          "data": "dAE="
+        },
+        {
+          "offset": 6596,
+          "data": "SRo="
+        },
+        {
+          "offset": 6600,
+          "data": "mQE="
+        },
+        {
+          "offset": 6604,
+          "data": "YAA="
+        },
+        {
+          "offset": 6608,
+          "data": "fgA="
+        },
+        {
+          "offset": 6612,
+          "data": "ZgI="
+        },
+        {
+          "offset": 6616,
+          "data": "DwA="
+        },
+        {
+          "offset": 6620,
+          "data": "Cw=="
+        },
+        {
+          "offset": 6624,
+          "data": "cAA="
+        },
+        {
+          "offset": 6628,
+          "data": "PAE="
+        },
+        {
+          "offset": 6632,
+          "data": "Nw=="
+        },
+        {
+          "offset": 6636,
+          "data": "pAI="
+        },
+        {
+          "offset": 6784,
+          "data": "fgI="
+        },
+        {
+          "offset": 6788,
+          "data": "0g=="
+        },
+        {
+          "offset": 6792,
+          "data": "Hw=="
+        },
+        {
+          "offset": 6796,
+          "data": "zQ=="
+        },
+        {
+          "offset": 6800,
+          "data": "FAI="
+        },
+        {
+          "offset": 6804,
+          "data": "TwA="
+        },
+        {
+          "offset": 6808,
+          "data": "aA=="
+        },
+        {
+          "offset": 6812,
+          "data": "vwA="
+        },
+        {
+          "offset": 6816,
+          "data": "cw=="
+        },
+        {
+          "offset": 6820,
+          "data": "Uw=="
+        },
+        {
+          "offset": 6824,
+          "data": "NQA="
+        },
+        {
+          "offset": 6828,
+          "data": "yfg="
+        },
+        {
+          "offset": 6832,
+          "data": "nRE="
+        },
+        {
+          "offset": 6836,
+          "data": "iQ=="
+        },
+        {
+          "offset": 6840,
+          "data": "RgE="
+        },
+        {
+          "offset": 6844,
+          "data": "fQA="
+        },
+        {
+          "offset": 6848,
+          "data": "TAI="
+        },
+        {
+          "offset": 6852,
+          "data": "EAA="
+        },
+        {
+          "offset": 6856,
+          "data": "LgI="
+        },
+        {
+          "offset": 6860,
+          "data": "4g=="
+        },
+        {
+          "offset": 6864,
+          "data": "4g=="
+        },
+        {
+          "offset": 6868,
+          "data": "4g=="
+        },
+        {
+          "offset": 6872,
+          "data": "4g=="
+        },
+        {
+          "offset": 6876,
+          "data": "4g=="
+        },
+        {
+          "offset": 6880,
+          "data": "EAI="
+        },
+        {
+          "offset": 6884,
+          "data": "EAI="
+        },
+        {
+          "offset": 6888,
+          "data": "EAI="
+        },
+        {
+          "offset": 6892,
+          "data": "EAI="
+        },
+        {
+          "offset": 6896,
+          "data": "EAI="
+        },
+        {
+          "offset": 6900,
+          "data": "zAA="
+        },
+        {
+          "offset": 6904,
+          "data": "zAA="
+        },
+        {
+          "offset": 6908,
+          "data": "zAA="
+        },
+        {
+          "offset": 6912,
+          "data": "zAA="
+        },
+        {
+          "offset": 6916,
+          "data": "zAA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_267.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3788,
+      "targetLength": 3788,
+      "sourceSha256": "3cd0c9f9ed08bd4ee640fbed521e58c9b7cbbb8b7e9afef3519880fea34d7dcb",
+      "targetSha256": "87c2003a4304c065c3903ecb99839642a6748bd3d2085ed6504f77a132254362",
+      "hunks": [
+        {
+          "offset": 3604,
+          "data": "iwA="
+        },
+        {
+          "offset": 3608,
+          "data": "NQ=="
+        },
+        {
+          "offset": 3612,
+          "data": "Hg=="
+        },
+        {
+          "offset": 3616,
+          "data": "/gA="
+        },
+        {
+          "offset": 3620,
+          "data": "qAA="
+        },
+        {
+          "offset": 3624,
+          "data": "TQI="
+        },
+        {
+          "offset": 3628,
+          "data": "sQ=="
+        },
+        {
+          "offset": 3632,
+          "data": "kQ=="
+        },
+        {
+          "offset": 3636,
+          "data": "LwA="
+        },
+        {
+          "offset": 3640,
+          "data": "WwE="
+        },
+        {
+          "offset": 3644,
+          "data": "NgA="
+        },
+        {
+          "offset": 3648,
+          "data": "Tg=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_268.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4448,
+      "targetLength": 4448,
+      "sourceSha256": "d3922187704bdf681212e4f7dffee343e979dc3b5476867ff04de6181d1be368",
+      "targetSha256": "89763c66ddf1030a29ca7c762f0760082652e110c8e23b72e9c34f365ada0666",
+      "hunks": [
+        {
+          "offset": 4072,
+          "data": "EgA="
+        },
+        {
+          "offset": 4076,
+          "data": "2AE="
+        },
+        {
+          "offset": 4080,
+          "data": "RwA="
+        },
+        {
+          "offset": 4084,
+          "data": "lg=="
+        },
+        {
+          "offset": 4088,
+          "data": "dQ=="
+        },
+        {
+          "offset": 4092,
+          "data": "FQA="
+        },
+        {
+          "offset": 4096,
+          "data": "Ag=="
+        },
+        {
+          "offset": 4100,
+          "data": "vg=="
+        },
+        {
+          "offset": 4104,
+          "data": "0A=="
+        },
+        {
+          "offset": 4108,
+          "data": "KwI="
+        },
+        {
+          "offset": 4112,
+          "data": "Hw=="
+        },
+        {
+          "offset": 4116,
+          "data": "vwE="
+        },
+        {
+          "offset": 4120,
+          "data": "BAE="
+        },
+        {
+          "offset": 4124,
+          "data": "twI="
+        },
+        {
+          "offset": 4128,
+          "data": "1gE="
+        },
+        {
+          "offset": 4132,
+          "data": "KwE="
+        },
+        {
+          "offset": 4136,
+          "data": "ngE="
+        },
+        {
+          "offset": 4140,
+          "data": "4AE="
+        },
+        {
+          "offset": 4144,
+          "data": "6gE="
+        },
+        {
+          "offset": 4148,
+          "data": "pQ=="
+        },
+        {
+          "offset": 4152,
+          "data": "9gE="
+        },
+        {
+          "offset": 4156,
+          "data": "uw=="
+        },
+        {
+          "offset": 4160,
+          "data": "ZQ=="
+        },
+        {
+          "offset": 4164,
+          "data": "AgA="
+        },
+        {
+          "offset": 4388,
+          "data": "zw=="
+        },
+        {
+          "offset": 4392,
+          "data": "zw=="
+        },
+        {
+          "offset": 4396,
+          "data": "zw=="
+        },
+        {
+          "offset": 4400,
+          "data": "zw=="
+        },
+        {
+          "offset": 4404,
+          "data": "zw=="
+        },
+        {
+          "offset": 4408,
+          "data": "5g=="
+        },
+        {
+          "offset": 4412,
+          "data": "5g=="
+        },
+        {
+          "offset": 4416,
+          "data": "5g=="
+        },
+        {
+          "offset": 4420,
+          "data": "5g=="
+        },
+        {
+          "offset": 4424,
+          "data": "5g=="
+        },
+        {
+          "offset": 4428,
+          "data": "rw=="
+        },
+        {
+          "offset": 4432,
+          "data": "rw=="
+        },
+        {
+          "offset": 4436,
+          "data": "rw=="
+        },
+        {
+          "offset": 4440,
+          "data": "rw=="
+        },
+        {
+          "offset": 4444,
+          "data": "rw=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_269.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2804,
+      "targetLength": 2804,
+      "sourceSha256": "72036130000d974f43c4222add6e0f9f6ec9c574dd0766186fc3ed5b64fd5da4",
+      "targetSha256": "b62abca015a7a64d3501814ebc3a2c0953b0137d5016925b16809343ca7f03ba",
+      "hunks": [
+        {
+          "offset": 2429,
+          "data": "Ag=="
+        },
+        {
+          "offset": 2432,
+          "data": "ZAA="
+        },
+        {
+          "offset": 2436,
+          "data": "HAA="
+        },
+        {
+          "offset": 2440,
+          "data": "VwE="
+        },
+        {
+          "offset": 2444,
+          "data": "mAI="
+        },
+        {
+          "offset": 2448,
+          "data": "GQI="
+        },
+        {
+          "offset": 2452,
+          "data": "Xg=="
+        },
+        {
+          "offset": 2456,
+          "data": "FQ=="
+        },
+        {
+          "offset": 2460,
+          "data": "FAE="
+        },
+        {
+          "offset": 2464,
+          "data": "lAE="
+        },
+        {
+          "offset": 2468,
+          "data": "eQ=="
+        },
+        {
+          "offset": 2472,
+          "data": "wg=="
+        },
+        {
+          "offset": 2744,
+          "data": "CQE="
+        },
+        {
+          "offset": 2748,
+          "data": "CQE="
+        },
+        {
+          "offset": 2752,
+          "data": "CQE="
+        },
+        {
+          "offset": 2756,
+          "data": "CQE="
+        },
+        {
+          "offset": 2760,
+          "data": "CQE="
+        },
+        {
+          "offset": 2764,
+          "data": "gQ=="
+        },
+        {
+          "offset": 2768,
+          "data": "gQ=="
+        },
+        {
+          "offset": 2772,
+          "data": "gQ=="
+        },
+        {
+          "offset": 2776,
+          "data": "gQ=="
+        },
+        {
+          "offset": 2780,
+          "data": "gQ=="
+        },
+        {
+          "offset": 2784,
+          "data": "uQI="
+        },
+        {
+          "offset": 2788,
+          "data": "uQI="
+        },
+        {
+          "offset": 2792,
+          "data": "uQI="
+        },
+        {
+          "offset": 2796,
+          "data": "uQI="
+        },
+        {
+          "offset": 2800,
+          "data": "uQI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_270.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4644,
+      "targetLength": 4644,
+      "sourceSha256": "959cd29993d8c2eb71ef1e55fb73d0d4ae731f303857f3a2fbde9cb88505817d",
+      "targetSha256": "e1fe970f8e91f369dc25ed8df01859fb0ea55324116b0120ea8f8a78ca4ec8b9",
+      "hunks": [
+        {
+          "offset": 4268,
+          "data": "og=="
+        },
+        {
+          "offset": 4272,
+          "data": "ZwE="
+        },
+        {
+          "offset": 4276,
+          "data": "oQE="
+        },
+        {
+          "offset": 4280,
+          "data": "rgI="
+        },
+        {
+          "offset": 4284,
+          "data": "TgA="
+        },
+        {
+          "offset": 4288,
+          "data": "zA=="
+        },
+        {
+          "offset": 4292,
+          "data": "0QE="
+        },
+        {
+          "offset": 4296,
+          "data": "PQ=="
+        },
+        {
+          "offset": 4300,
+          "data": "gg=="
+        },
+        {
+          "offset": 4304,
+          "data": "tg=="
+        },
+        {
+          "offset": 4308,
+          "data": "YAI="
+        },
+        {
+          "offset": 4312,
+          "data": "\u002Bw=="
+        },
+        {
+          "offset": 4316,
+          "data": "bg=="
+        },
+        {
+          "offset": 4320,
+          "data": "7w=="
+        },
+        {
+          "offset": 4324,
+          "data": "/QE="
+        },
+        {
+          "offset": 4328,
+          "data": "PA=="
+        },
+        {
+          "offset": 4332,
+          "data": "kQI="
+        },
+        {
+          "offset": 4336,
+          "data": "VQE="
+        },
+        {
+          "offset": 4340,
+          "data": "ZQA="
+        },
+        {
+          "offset": 4344,
+          "data": "ig=="
+        },
+        {
+          "offset": 4348,
+          "data": "dwE="
+        },
+        {
+          "offset": 4352,
+          "data": "Rg=="
+        },
+        {
+          "offset": 4356,
+          "data": "fAI="
+        },
+        {
+          "offset": 4360,
+          "data": "lAI="
+        },
+        {
+          "offset": 4508,
+          "data": "igI="
+        },
+        {
+          "offset": 4512,
+          "data": "xho="
+        },
+        {
+          "offset": 4516,
+          "data": "GQA="
+        },
+        {
+          "offset": 4520,
+          "data": "OQ=="
+        },
+        {
+          "offset": 4524,
+          "data": "XQ=="
+        },
+        {
+          "offset": 4528,
+          "data": "Kg=="
+        },
+        {
+          "offset": 4532,
+          "data": "pgE="
+        },
+        {
+          "offset": 4536,
+          "data": "hwA="
+        },
+        {
+          "offset": 4540,
+          "data": "egE="
+        },
+        {
+          "offset": 4544,
+          "data": "0Q=="
+        },
+        {
+          "offset": 4548,
+          "data": "dwA="
+        },
+        {
+          "offset": 4552,
+          "data": "KgA="
+        },
+        {
+          "offset": 4556,
+          "data": "jA=="
+        },
+        {
+          "offset": 4560,
+          "data": "lQI="
+        },
+        {
+          "offset": 4564,
+          "data": "xwI="
+        },
+        {
+          "offset": 4568,
+          "data": "SwE="
+        },
+        {
+          "offset": 4572,
+          "data": "fA=="
+        },
+        {
+          "offset": 4576,
+          "data": "qw=="
+        },
+        {
+          "offset": 4580,
+          "data": "sQA="
+        },
+        {
+          "offset": 4584,
+          "data": "2wA="
+        },
+        {
+          "offset": 4588,
+          "data": "2wA="
+        },
+        {
+          "offset": 4592,
+          "data": "2wA="
+        },
+        {
+          "offset": 4596,
+          "data": "2wA="
+        },
+        {
+          "offset": 4600,
+          "data": "2wA="
+        },
+        {
+          "offset": 4604,
+          "data": "NwI="
+        },
+        {
+          "offset": 4608,
+          "data": "NwI="
+        },
+        {
+          "offset": 4612,
+          "data": "NwI="
+        },
+        {
+          "offset": 4616,
+          "data": "NwI="
+        },
+        {
+          "offset": 4620,
+          "data": "NwI="
+        },
+        {
+          "offset": 4624,
+          "data": "ow=="
+        },
+        {
+          "offset": 4628,
+          "data": "ow=="
+        },
+        {
+          "offset": 4632,
+          "data": "ow=="
+        },
+        {
+          "offset": 4636,
+          "data": "ow=="
+        },
+        {
+          "offset": 4640,
+          "data": "ow=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_272.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6700,
+      "targetLength": 6700,
+      "sourceSha256": "43c303a86f7a71e1f73285eccf4b2b35443b6a1b3ac156570177c7619ddd6ef9",
+      "targetSha256": "c2c4216703136dea30b92f8a32b1ac59bdc4f3067cf32c745984944f4ccffbc0",
+      "hunks": [
+        {
+          "offset": 6516,
+          "data": "qwI="
+        },
+        {
+          "offset": 6520,
+          "data": "QA=="
+        },
+        {
+          "offset": 6524,
+          "data": "OgI="
+        },
+        {
+          "offset": 6528,
+          "data": "RwI="
+        },
+        {
+          "offset": 6532,
+          "data": "hQ=="
+        },
+        {
+          "offset": 6536,
+          "data": "MA=="
+        },
+        {
+          "offset": 6540,
+          "data": "XAA="
+        },
+        {
+          "offset": 6544,
+          "data": "Ug=="
+        },
+        {
+          "offset": 6548,
+          "data": "IgI="
+        },
+        {
+          "offset": 6552,
+          "data": "AwA="
+        },
+        {
+          "offset": 6556,
+          "data": "EwI="
+        },
+        {
+          "offset": 6560,
+          "data": "kw=="
+        },
+        {
+          "offset": 6584,
+          "data": "Dg=="
+        },
+        {
+          "offset": 6588,
+          "data": "sAE="
+        },
+        {
+          "offset": 6592,
+          "data": "6A=="
+        },
+        {
+          "offset": 6596,
+          "data": "ewI="
+        },
+        {
+          "offset": 6600,
+          "data": "QwE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_273.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 12468,
+      "targetLength": 12468,
+      "sourceSha256": "3fb7630e2d4833bef7a399ab9bbc19a8c20381e603374675a17fac16935c822d",
+      "targetSha256": "1c0a109cc723c46f1ca533911ace0de2f26860926e3a0e186706363a690cd28a",
+      "hunks": [
+        {
+          "offset": 12092,
+          "data": "mw=="
+        },
+        {
+          "offset": 12096,
+          "data": "6QA="
+        },
+        {
+          "offset": 12100,
+          "data": "WgE="
+        },
+        {
+          "offset": 12104,
+          "data": "wwI="
+        },
+        {
+          "offset": 12108,
+          "data": "GwI="
+        },
+        {
+          "offset": 12112,
+          "data": "Jw=="
+        },
+        {
+          "offset": 12116,
+          "data": "Vw=="
+        },
+        {
+          "offset": 12120,
+          "data": "1AA="
+        },
+        {
+          "offset": 12124,
+          "data": "uAI="
+        },
+        {
+          "offset": 12128,
+          "data": "5A=="
+        },
+        {
+          "offset": 12132,
+          "data": "TwI="
+        },
+        {
+          "offset": 12136,
+          "data": "rg=="
+        },
+        {
+          "offset": 12284,
+          "data": "UQ=="
+        },
+        {
+          "offset": 12288,
+          "data": "qQE="
+        },
+        {
+          "offset": 12292,
+          "data": "6w=="
+        },
+        {
+          "offset": 12296,
+          "data": "mlo="
+        },
+        {
+          "offset": 12300,
+          "data": "RQ=="
+        },
+        {
+          "offset": 12304,
+          "data": "Xg=="
+        },
+        {
+          "offset": 12308,
+          "data": "\u002BQE="
+        },
+        {
+          "offset": 12312,
+          "data": "Yg=="
+        },
+        {
+          "offset": 12316,
+          "data": "PA=="
+        },
+        {
+          "offset": 12320,
+          "data": "6AE="
+        },
+        {
+          "offset": 12324,
+          "data": "Ag=="
+        },
+        {
+          "offset": 12328,
+          "data": "LQ=="
+        },
+        {
+          "offset": 12332,
+          "data": "mw=="
+        },
+        {
+          "offset": 12336,
+          "data": "bQA="
+        },
+        {
+          "offset": 12340,
+          "data": "xQA="
+        },
+        {
+          "offset": 12344,
+          "data": "lw=="
+        },
+        {
+          "offset": 12348,
+          "data": "ywE="
+        },
+        {
+          "offset": 12372,
+          "data": "bA=="
+        },
+        {
+          "offset": 12376,
+          "data": "Qw=="
+        },
+        {
+          "offset": 12380,
+          "data": "Og=="
+        },
+        {
+          "offset": 12384,
+          "data": "WQI="
+        },
+        {
+          "offset": 12388,
+          "data": "agE="
+        },
+        {
+          "offset": 12392,
+          "data": "KAI="
+        },
+        {
+          "offset": 12396,
+          "data": "OgE="
+        },
+        {
+          "offset": 12400,
+          "data": "ngA="
+        },
+        {
+          "offset": 12404,
+          "data": "rA=="
+        },
+        {
+          "offset": 12408,
+          "data": "vgE="
+        },
+        {
+          "offset": 12412,
+          "data": "vgE="
+        },
+        {
+          "offset": 12416,
+          "data": "vgE="
+        },
+        {
+          "offset": 12420,
+          "data": "vgE="
+        },
+        {
+          "offset": 12424,
+          "data": "vgE="
+        },
+        {
+          "offset": 12428,
+          "data": "IwA="
+        },
+        {
+          "offset": 12432,
+          "data": "IwA="
+        },
+        {
+          "offset": 12436,
+          "data": "IwA="
+        },
+        {
+          "offset": 12440,
+          "data": "IwA="
+        },
+        {
+          "offset": 12444,
+          "data": "IwA="
+        },
+        {
+          "offset": 12448,
+          "data": "Zg=="
+        },
+        {
+          "offset": 12452,
+          "data": "Zg=="
+        },
+        {
+          "offset": 12456,
+          "data": "Zg=="
+        },
+        {
+          "offset": 12460,
+          "data": "Zg=="
+        },
+        {
+          "offset": 12464,
+          "data": "Zg=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_275.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2440,
+      "targetLength": 2440,
+      "sourceSha256": "5f1e4090759678e9490cd7c18f20c54f7f68f38d0e53d5fbe13287cd21ea20d0",
+      "targetSha256": "7eb7fca9ad430e25fe0fa7c6056021c555bb9d53ab7166695755ec728585d0be",
+      "hunks": [
+        {
+          "offset": 2064,
+          "data": "JwA="
+        },
+        {
+          "offset": 2068,
+          "data": "RAA="
+        },
+        {
+          "offset": 2072,
+          "data": "Ig=="
+        },
+        {
+          "offset": 2076,
+          "data": "ZAI="
+        },
+        {
+          "offset": 2080,
+          "data": "bgI="
+        },
+        {
+          "offset": 2084,
+          "data": "/QA="
+        },
+        {
+          "offset": 2088,
+          "data": "mYI="
+        },
+        {
+          "offset": 2092,
+          "data": "UQ=="
+        },
+        {
+          "offset": 2096,
+          "data": "iAA="
+        },
+        {
+          "offset": 2100,
+          "data": "NA=="
+        },
+        {
+          "offset": 2104,
+          "data": "AAE="
+        },
+        {
+          "offset": 2108,
+          "data": "nQA="
+        },
+        {
+          "offset": 2208,
+          "data": "5Q=="
+        },
+        {
+          "offset": 2212,
+          "data": "pwA="
+        },
+        {
+          "offset": 2216,
+          "data": "QQ=="
+        },
+        {
+          "offset": 2220,
+          "data": "Pg=="
+        },
+        {
+          "offset": 2224,
+          "data": "FQ=="
+        },
+        {
+          "offset": 2228,
+          "data": "OAA="
+        },
+        {
+          "offset": 2232,
+          "data": "WQA="
+        },
+        {
+          "offset": 2236,
+          "data": "7QA="
+        },
+        {
+          "offset": 2240,
+          "data": "QQA="
+        },
+        {
+          "offset": 2244,
+          "data": "vQE="
+        },
+        {
+          "offset": 2248,
+          "data": "vw=="
+        },
+        {
+          "offset": 2252,
+          "data": "bwE="
+        },
+        {
+          "offset": 2304,
+          "data": "KQ=="
+        },
+        {
+          "offset": 2308,
+          "data": "MQ=="
+        },
+        {
+          "offset": 2312,
+          "data": "Jg=="
+        },
+        {
+          "offset": 2316,
+          "data": "twA="
+        },
+        {
+          "offset": 2320,
+          "data": "PwI="
+        },
+        {
+          "offset": 2344,
+          "data": "DwE="
+        },
+        {
+          "offset": 2348,
+          "data": "eA=="
+        },
+        {
+          "offset": 2352,
+          "data": "oA=="
+        },
+        {
+          "offset": 2356,
+          "data": "TAA="
+        },
+        {
+          "offset": 2360,
+          "data": "7wE="
+        },
+        {
+          "offset": 2364,
+          "data": "iwI="
+        },
+        {
+          "offset": 2368,
+          "data": "1g=="
+        },
+        {
+          "offset": 2372,
+          "data": "ZQE="
+        },
+        {
+          "offset": 2376,
+          "data": "nwE="
+        },
+        {
+          "offset": 2380,
+          "data": "owI="
+        },
+        {
+          "offset": 2384,
+          "data": "owI="
+        },
+        {
+          "offset": 2388,
+          "data": "owI="
+        },
+        {
+          "offset": 2392,
+          "data": "owI="
+        },
+        {
+          "offset": 2396,
+          "data": "owI="
+        },
+        {
+          "offset": 2400,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2404,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2408,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2412,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2416,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2420,
+          "data": "Zw=="
+        },
+        {
+          "offset": 2424,
+          "data": "Zw=="
+        },
+        {
+          "offset": 2428,
+          "data": "Zw=="
+        },
+        {
+          "offset": 2432,
+          "data": "Zw=="
+        },
+        {
+          "offset": 2436,
+          "data": "Zw=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_276.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4100,
+      "targetLength": 4100,
+      "sourceSha256": "1b4959f9520d3cbece9551c03eb30c334d620d8a92da9f4b59a493d2804ded6c",
+      "targetSha256": "bcd7fb5b327d19852e5d78cffa57b742e4e0787b9767e855bab0d486cade467e",
+      "hunks": [
+        {
+          "offset": 3772,
+          "data": "VAE="
+        },
+        {
+          "offset": 3776,
+          "data": "qQI="
+        },
+        {
+          "offset": 3780,
+          "data": "cw=="
+        },
+        {
+          "offset": 3784,
+          "data": "4wA="
+        },
+        {
+          "offset": 3788,
+          "data": "kwI="
+        },
+        {
+          "offset": 3792,
+          "data": "tAI="
+        },
+        {
+          "offset": 3796,
+          "data": "hgE="
+        },
+        {
+          "offset": 3800,
+          "data": "dw=="
+        },
+        {
+          "offset": 3804,
+          "data": "/gE="
+        },
+        {
+          "offset": 3808,
+          "data": "Ww=="
+        },
+        {
+          "offset": 3812,
+          "data": "eAE="
+        },
+        {
+          "offset": 3816,
+          "data": "Vg=="
+        },
+        {
+          "offset": 3916,
+          "data": "zgA="
+        },
+        {
+          "offset": 3920,
+          "data": "uQE="
+        },
+        {
+          "offset": 3924,
+          "data": "HAE="
+        },
+        {
+          "offset": 3928,
+          "data": "gAA="
+        },
+        {
+          "offset": 3932,
+          "data": "jQA="
+        },
+        {
+          "offset": 3936,
+          "data": "QQI="
+        },
+        {
+          "offset": 3940,
+          "data": "dAA="
+        },
+        {
+          "offset": 3944,
+          "data": "HQA="
+        },
+        {
+          "offset": 3948,
+          "data": "fw=="
+        },
+        {
+          "offset": 3952,
+          "data": "yAA="
+        },
+        {
+          "offset": 3956,
+          "data": "RQE="
+        },
+        {
+          "offset": 3960,
+          "data": "MwE="
+        },
+        {
+          "offset": 3964,
+          "data": "IA=="
+        },
+        {
+          "offset": 3968,
+          "data": "yQI="
+        },
+        {
+          "offset": 3972,
+          "data": "ogI="
+        },
+        {
+          "offset": 3976,
+          "data": "awA="
+        },
+        {
+          "offset": 3980,
+          "data": "LAA="
+        },
+        {
+          "offset": 4004,
+          "data": "nxo="
+        },
+        {
+          "offset": 4008,
+          "data": "tA=="
+        },
+        {
+          "offset": 4012,
+          "data": "OwE="
+        },
+        {
+          "offset": 4016,
+          "data": "QgE="
+        },
+        {
+          "offset": 4020,
+          "data": "CAI="
+        },
+        {
+          "offset": 4024,
+          "data": "NQE="
+        },
+        {
+          "offset": 4028,
+          "data": "YQ=="
+        },
+        {
+          "offset": 4032,
+          "data": "pwE="
+        },
+        {
+          "offset": 4036,
+          "data": "GgI="
+        },
+        {
+          "offset": 4040,
+          "data": "8wE="
+        },
+        {
+          "offset": 4044,
+          "data": "8wE="
+        },
+        {
+          "offset": 4048,
+          "data": "8wE="
+        },
+        {
+          "offset": 4052,
+          "data": "8wE="
+        },
+        {
+          "offset": 4056,
+          "data": "8wE="
+        },
+        {
+          "offset": 4060,
+          "data": "iA=="
+        },
+        {
+          "offset": 4064,
+          "data": "iA=="
+        },
+        {
+          "offset": 4068,
+          "data": "iA=="
+        },
+        {
+          "offset": 4072,
+          "data": "iA=="
+        },
+        {
+          "offset": 4076,
+          "data": "iA=="
+        },
+        {
+          "offset": 4080,
+          "data": "xwA="
+        },
+        {
+          "offset": 4084,
+          "data": "xwA="
+        },
+        {
+          "offset": 4088,
+          "data": "xwA="
+        },
+        {
+          "offset": 4092,
+          "data": "xwA="
+        },
+        {
+          "offset": 4096,
+          "data": "xwA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_278.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3632,
+      "targetLength": 3632,
+      "sourceSha256": "77f17ead1116c81d2f44aa3af3904c2305c59d4250cd047d7a0ac46104abed81",
+      "targetSha256": "d7ef3a0ad72c691a269a7edca55a21c0215de7c6ded6f820f6bbf622559de38e",
+      "hunks": [
+        {
+          "offset": 3448,
+          "data": "bQI="
+        },
+        {
+          "offset": 3452,
+          "data": "0gA="
+        },
+        {
+          "offset": 3456,
+          "data": "lg=="
+        },
+        {
+          "offset": 3460,
+          "data": "3QE="
+        },
+        {
+          "offset": 3464,
+          "data": "LwE="
+        },
+        {
+          "offset": 3468,
+          "data": "ugE="
+        },
+        {
+          "offset": 3472,
+          "data": "zQE="
+        },
+        {
+          "offset": 3476,
+          "data": "cg=="
+        },
+        {
+          "offset": 3480,
+          "data": "nA=="
+        },
+        {
+          "offset": 3484,
+          "data": "pwI="
+        },
+        {
+          "offset": 3488,
+          "data": "TQ=="
+        },
+        {
+          "offset": 3492,
+          "data": "FwI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_279.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3292,
+      "targetLength": 3292,
+      "sourceSha256": "d4bb8374fd89db812d980d62677f264d2cc5af208aa0d3202f7a44fd156cf94e",
+      "targetSha256": "ff4de2d58079eb2e7d2b3c106468f811b42f5d6101e6909df1db7affe009b394",
+      "hunks": [
+        {
+          "offset": 2916,
+          "data": "HQ=="
+        },
+        {
+          "offset": 2920,
+          "data": "jgA="
+        },
+        {
+          "offset": 2924,
+          "data": "OQ=="
+        },
+        {
+          "offset": 2928,
+          "data": "JgA="
+        },
+        {
+          "offset": 2932,
+          "data": "XwI="
+        },
+        {
+          "offset": 2936,
+          "data": "VgE="
+        },
+        {
+          "offset": 2940,
+          "data": "jwA="
+        },
+        {
+          "offset": 2944,
+          "data": "wwA="
+        },
+        {
+          "offset": 2948,
+          "data": "4QE="
+        },
+        {
+          "offset": 2952,
+          "data": "wQE="
+        },
+        {
+          "offset": 2956,
+          "data": "5QA="
+        },
+        {
+          "offset": 2960,
+          "data": "YwE="
+        },
+        {
+          "offset": 3060,
+          "data": "Pw=="
+        },
+        {
+          "offset": 3065,
+          "data": "AA=="
+        },
+        {
+          "offset": 3068,
+          "data": "ZwA="
+        },
+        {
+          "offset": 3072,
+          "data": "ygE="
+        },
+        {
+          "offset": 3076,
+          "data": "/wE="
+        },
+        {
+          "offset": 3080,
+          "data": "aAA="
+        },
+        {
+          "offset": 3084,
+          "data": "Dg=="
+        },
+        {
+          "offset": 3088,
+          "data": "xAA="
+        },
+        {
+          "offset": 3092,
+          "data": "Mw=="
+        },
+        {
+          "offset": 3096,
+          "data": "aAE="
+        },
+        {
+          "offset": 3100,
+          "data": "AA=="
+        },
+        {
+          "offset": 3104,
+          "data": "XwE="
+        },
+        {
+          "offset": 3176,
+          "data": "uQ=="
+        },
+        {
+          "offset": 3180,
+          "data": "cgI="
+        },
+        {
+          "offset": 3184,
+          "data": "eg=="
+        },
+        {
+          "offset": 3188,
+          "data": "dg=="
+        },
+        {
+          "offset": 3192,
+          "data": "NgE="
+        },
+        {
+          "offset": 3232,
+          "data": "YwI="
+        },
+        {
+          "offset": 3236,
+          "data": "YwI="
+        },
+        {
+          "offset": 3240,
+          "data": "YwI="
+        },
+        {
+          "offset": 3244,
+          "data": "YwI="
+        },
+        {
+          "offset": 3248,
+          "data": "YwI="
+        },
+        {
+          "offset": 3252,
+          "data": "twE="
+        },
+        {
+          "offset": 3256,
+          "data": "twE="
+        },
+        {
+          "offset": 3260,
+          "data": "twE="
+        },
+        {
+          "offset": 3264,
+          "data": "twE="
+        },
+        {
+          "offset": 3268,
+          "data": "twE="
+        },
+        {
+          "offset": 3272,
+          "data": "7AA="
+        },
+        {
+          "offset": 3276,
+          "data": "7AA="
+        },
+        {
+          "offset": 3280,
+          "data": "7AA="
+        },
+        {
+          "offset": 3284,
+          "data": "7AA="
+        },
+        {
+          "offset": 3288,
+          "data": "7AA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_281.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 8716,
+      "targetLength": 8716,
+      "sourceSha256": "4a14521cafe4233a3fa870aee03d0c5cf91919966a9424407897640169b22e78",
+      "targetSha256": "6d9b352d6ea086ea920928b86a4dc59d873e6850a0eae2b7e6df527029fcf5d2",
+      "hunks": [
+        {
+          "offset": 8388,
+          "data": "cgE="
+        },
+        {
+          "offset": 8392,
+          "data": "tQE="
+        },
+        {
+          "offset": 8396,
+          "data": "cQI="
+        },
+        {
+          "offset": 8400,
+          "data": "sgE="
+        },
+        {
+          "offset": 8404,
+          "data": "/wA="
+        },
+        {
+          "offset": 8408,
+          "data": "JQI="
+        },
+        {
+          "offset": 8412,
+          "data": "Pg=="
+        },
+        {
+          "offset": 8416,
+          "data": "uwE="
+        },
+        {
+          "offset": 8420,
+          "data": "GgE="
+        },
+        {
+          "offset": 8424,
+          "data": "NgI="
+        },
+        {
+          "offset": 8428,
+          "data": "oQI="
+        },
+        {
+          "offset": 8432,
+          "data": "DQ=="
+        },
+        {
+          "offset": 8436,
+          "data": "sgA="
+        },
+        {
+          "offset": 8440,
+          "data": "BwI="
+        },
+        {
+          "offset": 8444,
+          "data": "eQ=="
+        },
+        {
+          "offset": 8448,
+          "data": "TgE="
+        },
+        {
+          "offset": 8452,
+          "data": "ZgE="
+        },
+        {
+          "offset": 8456,
+          "data": "1QE="
+        },
+        {
+          "offset": 8460,
+          "data": "nRo="
+        },
+        {
+          "offset": 8464,
+          "data": "iAE="
+        },
+        {
+          "offset": 8468,
+          "data": "hAE="
+        },
+        {
+          "offset": 8472,
+          "data": "3gE="
+        },
+        {
+          "offset": 8476,
+          "data": "yAI="
+        },
+        {
+          "offset": 8480,
+          "data": "mQA="
+        },
+        {
+          "offset": 8532,
+          "data": "XAI="
+        },
+        {
+          "offset": 8536,
+          "data": "Cg=="
+        },
+        {
+          "offset": 8540,
+          "data": "SQE="
+        },
+        {
+          "offset": 8544,
+          "data": "IgA="
+        },
+        {
+          "offset": 8548,
+          "data": "IQA="
+        },
+        {
+          "offset": 8552,
+          "data": "2wE="
+        },
+        {
+          "offset": 8556,
+          "data": "0A=="
+        },
+        {
+          "offset": 8560,
+          "data": "UAE="
+        },
+        {
+          "offset": 8564,
+          "data": "EgE="
+        },
+        {
+          "offset": 8568,
+          "data": "oAI="
+        },
+        {
+          "offset": 8572,
+          "data": "BgI="
+        },
+        {
+          "offset": 8576,
+          "data": "aw=="
+        },
+        {
+          "offset": 8580,
+          "data": "JAI="
+        },
+        {
+          "offset": 8584,
+          "data": "GAA="
+        },
+        {
+          "offset": 8588,
+          "data": "JQA="
+        },
+        {
+          "offset": 8592,
+          "data": "eA=="
+        },
+        {
+          "offset": 8596,
+          "data": "ogE="
+        },
+        {
+          "offset": 8620,
+          "data": "kAI="
+        },
+        {
+          "offset": 8624,
+          "data": "yw=="
+        },
+        {
+          "offset": 8628,
+          "data": "GAE="
+        },
+        {
+          "offset": 8632,
+          "data": "mAA="
+        },
+        {
+          "offset": 8636,
+          "data": "bw=="
+        },
+        {
+          "offset": 8640,
+          "data": "cwA="
+        },
+        {
+          "offset": 8644,
+          "data": "TwE="
+        },
+        {
+          "offset": 8648,
+          "data": "vAI="
+        },
+        {
+          "offset": 8652,
+          "data": "rwE="
+        },
+        {
+          "offset": 8656,
+          "data": "mAE="
+        },
+        {
+          "offset": 8660,
+          "data": "mAE="
+        },
+        {
+          "offset": 8664,
+          "data": "mAE="
+        },
+        {
+          "offset": 8668,
+          "data": "mAE="
+        },
+        {
+          "offset": 8672,
+          "data": "mAE="
+        },
+        {
+          "offset": 8676,
+          "data": "yQE="
+        },
+        {
+          "offset": 8680,
+          "data": "yQE="
+        },
+        {
+          "offset": 8684,
+          "data": "yQE="
+        },
+        {
+          "offset": 8688,
+          "data": "yQE="
+        },
+        {
+          "offset": 8692,
+          "data": "yQE="
+        },
+        {
+          "offset": 8696,
+          "data": "bAI="
+        },
+        {
+          "offset": 8700,
+          "data": "bAI="
+        },
+        {
+          "offset": 8704,
+          "data": "bAI="
+        },
+        {
+          "offset": 8708,
+          "data": "bAI="
+        },
+        {
+          "offset": 8712,
+          "data": "bAI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_282.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3184,
+      "targetLength": 3184,
+      "sourceSha256": "b08724e762c2e7f189a9dcfeee5be663e446af4b57b1b6e9886d091af327f913",
+      "targetSha256": "ece0853286e3085d7132f35b825690406ea2b527e511e85ed258c821b1f6950f",
+      "hunks": [
+        {
+          "offset": 2808,
+          "data": "cAE="
+        },
+        {
+          "offset": 2812,
+          "data": "qwE="
+        },
+        {
+          "offset": 2816,
+          "data": "WQE="
+        },
+        {
+          "offset": 2820,
+          "data": "qAI="
+        },
+        {
+          "offset": 2824,
+          "data": "dgE="
+        },
+        {
+          "offset": 2828,
+          "data": "Aw=="
+        },
+        {
+          "offset": 2832,
+          "data": "GA=="
+        },
+        {
+          "offset": 2836,
+          "data": "YQE="
+        },
+        {
+          "offset": 2840,
+          "data": "NAE="
+        },
+        {
+          "offset": 2844,
+          "data": "xwE="
+        },
+        {
+          "offset": 2848,
+          "data": "EwA="
+        },
+        {
+          "offset": 2852,
+          "data": "eQA="
+        },
+        {
+          "offset": 2952,
+          "data": "wQA="
+        },
+        {
+          "offset": 2956,
+          "data": "1wA="
+        },
+        {
+          "offset": 2960,
+          "data": "FwA="
+        },
+        {
+          "offset": 2964,
+          "data": "zgE="
+        },
+        {
+          "offset": 2968,
+          "data": "Jgo="
+        },
+        {
+          "offset": 2972,
+          "data": "LQ=="
+        },
+        {
+          "offset": 2976,
+          "data": "bgE="
+        },
+        {
+          "offset": 2980,
+          "data": "uAA="
+        },
+        {
+          "offset": 2984,
+          "data": "SAE="
+        },
+        {
+          "offset": 2988,
+          "data": "PQ=="
+        },
+        {
+          "offset": 2992,
+          "data": "vQ=="
+        },
+        {
+          "offset": 2996,
+          "data": "PwA="
+        },
+        {
+          "offset": 3124,
+          "data": "kAE="
+        },
+        {
+          "offset": 3128,
+          "data": "kAE="
+        },
+        {
+          "offset": 3132,
+          "data": "kAE="
+        },
+        {
+          "offset": 3136,
+          "data": "kAE="
+        },
+        {
+          "offset": 3140,
+          "data": "kAE="
+        },
+        {
+          "offset": 3144,
+          "data": "8gA="
+        },
+        {
+          "offset": 3148,
+          "data": "8gA="
+        },
+        {
+          "offset": 3152,
+          "data": "8gA="
+        },
+        {
+          "offset": 3156,
+          "data": "8gA="
+        },
+        {
+          "offset": 3160,
+          "data": "8gA="
+        },
+        {
+          "offset": 3164,
+          "data": "1AE="
+        },
+        {
+          "offset": 3168,
+          "data": "1AE="
+        },
+        {
+          "offset": 3172,
+          "data": "1AE="
+        },
+        {
+          "offset": 3176,
+          "data": "1AE="
+        },
+        {
+          "offset": 3180,
+          "data": "1AE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_283.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2412,
+      "targetLength": 2412,
+      "sourceSha256": "90963499cb06e84e80ab49af4fd059de5b2906c80d4624aabd093cf44b336828",
+      "targetSha256": "3259c7cb03464aeff54f406843e2ce9eee6a84d3feb26941d729c0279688d4c8",
+      "hunks": [
+        {
+          "offset": 2132,
+          "data": "BgA="
+        },
+        {
+          "offset": 2136,
+          "data": "VAI="
+        },
+        {
+          "offset": 2140,
+          "data": "UQ=="
+        },
+        {
+          "offset": 2144,
+          "data": "jAI="
+        },
+        {
+          "offset": 2148,
+          "data": "vgI="
+        },
+        {
+          "offset": 2152,
+          "data": "8AA="
+        },
+        {
+          "offset": 2156,
+          "data": "ugI="
+        },
+        {
+          "offset": 2160,
+          "data": "OwI="
+        },
+        {
+          "offset": 2164,
+          "data": "ghE="
+        },
+        {
+          "offset": 2168,
+          "data": "RAE="
+        },
+        {
+          "offset": 2172,
+          "data": "HAI="
+        },
+        {
+          "offset": 2176,
+          "data": "CA=="
+        },
+        {
+          "offset": 2180,
+          "data": "UgI="
+        },
+        {
+          "offset": 2184,
+          "data": "kQ=="
+        },
+        {
+          "offset": 2188,
+          "data": "IQI="
+        },
+        {
+          "offset": 2192,
+          "data": "hQI="
+        },
+        {
+          "offset": 2196,
+          "data": "UAA="
+        },
+        {
+          "offset": 2200,
+          "data": "wAE="
+        },
+        {
+          "offset": 2204,
+          "data": "KA=="
+        },
+        {
+          "offset": 2208,
+          "data": "Sg=="
+        },
+        {
+          "offset": 2212,
+          "data": "SwA="
+        },
+        {
+          "offset": 2216,
+          "data": "vAE="
+        },
+        {
+          "offset": 2220,
+          "data": "HgE="
+        },
+        {
+          "offset": 2224,
+          "data": "TAE="
+        },
+        {
+          "offset": 2276,
+          "data": "fQI="
+        },
+        {
+          "offset": 2280,
+          "data": "BAA="
+        },
+        {
+          "offset": 2284,
+          "data": "8wA="
+        },
+        {
+          "offset": 2288,
+          "data": "nAI="
+        },
+        {
+          "offset": 2292,
+          "data": "9wA="
+        },
+        {
+          "offset": 2316,
+          "data": "ew=="
+        },
+        {
+          "offset": 2320,
+          "data": "xAI="
+        },
+        {
+          "offset": 2324,
+          "data": "WAE="
+        },
+        {
+          "offset": 2328,
+          "data": "3QA="
+        },
+        {
+          "offset": 2332,
+          "data": "swE="
+        },
+        {
+          "offset": 2336,
+          "data": "JA=="
+        },
+        {
+          "offset": 2340,
+          "data": "pQ=="
+        },
+        {
+          "offset": 2344,
+          "data": "wgE="
+        },
+        {
+          "offset": 2348,
+          "data": "3A=="
+        },
+        {
+          "offset": 2352,
+          "data": "MgI="
+        },
+        {
+          "offset": 2356,
+          "data": "MgI="
+        },
+        {
+          "offset": 2360,
+          "data": "MgI="
+        },
+        {
+          "offset": 2364,
+          "data": "MgI="
+        },
+        {
+          "offset": 2368,
+          "data": "MgI="
+        },
+        {
+          "offset": 2372,
+          "data": "lwI="
+        },
+        {
+          "offset": 2376,
+          "data": "lwI="
+        },
+        {
+          "offset": 2380,
+          "data": "lwI="
+        },
+        {
+          "offset": 2384,
+          "data": "lwI="
+        },
+        {
+          "offset": 2388,
+          "data": "lwI="
+        },
+        {
+          "offset": 2392,
+          "data": "FQE="
+        },
+        {
+          "offset": 2396,
+          "data": "FQE="
+        },
+        {
+          "offset": 2400,
+          "data": "FQE="
+        },
+        {
+          "offset": 2404,
+          "data": "FQE="
+        },
+        {
+          "offset": 2408,
+          "data": "FQE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_285.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3380,
+      "targetLength": 3380,
+      "sourceSha256": "a08165d58791069b1ccf9a74dca9d51e0af9fd6ba5c4c8c013b7aa69e6ad1b2d",
+      "targetSha256": "90482d6a6fb3396373f44b7d6fdd22d8a8070c2cdcd9cfbf02036a2cb03b302b",
+      "hunks": [
+        {
+          "offset": 3004,
+          "data": "WgE="
+        },
+        {
+          "offset": 3008,
+          "data": "iQ=="
+        },
+        {
+          "offset": 3012,
+          "data": "vQ=="
+        },
+        {
+          "offset": 3016,
+          "data": "Xg=="
+        },
+        {
+          "offset": 3020,
+          "data": "CwI="
+        },
+        {
+          "offset": 3024,
+          "data": "6AA="
+        },
+        {
+          "offset": 3028,
+          "data": "dAI="
+        },
+        {
+          "offset": 3032,
+          "data": "2A=="
+        },
+        {
+          "offset": 3036,
+          "data": "fw=="
+        },
+        {
+          "offset": 3040,
+          "data": "swI="
+        },
+        {
+          "offset": 3044,
+          "data": "YgA="
+        },
+        {
+          "offset": 3048,
+          "data": "TwI="
+        },
+        {
+          "offset": 3052,
+          "data": "cQ=="
+        },
+        {
+          "offset": 3056,
+          "data": "LgI="
+        },
+        {
+          "offset": 3060,
+          "data": "vg=="
+        },
+        {
+          "offset": 3064,
+          "data": "Ug=="
+        },
+        {
+          "offset": 3068,
+          "data": "oQA="
+        },
+        {
+          "offset": 3072,
+          "data": "fgA="
+        },
+        {
+          "offset": 3076,
+          "data": "Hg=="
+        },
+        {
+          "offset": 3080,
+          "data": "wg=="
+        },
+        {
+          "offset": 3084,
+          "data": "YwI="
+        },
+        {
+          "offset": 3088,
+          "data": "lw=="
+        },
+        {
+          "offset": 3092,
+          "data": "cA=="
+        },
+        {
+          "offset": 3096,
+          "data": "nAA="
+        },
+        {
+          "offset": 3244,
+          "data": "yAI="
+        },
+        {
+          "offset": 3248,
+          "data": "yA=="
+        },
+        {
+          "offset": 3252,
+          "data": "vgE="
+        },
+        {
+          "offset": 3256,
+          "data": "VQ=="
+        },
+        {
+          "offset": 3260,
+          "data": "KAE="
+        },
+        {
+          "offset": 3284,
+          "data": "4w=="
+        },
+        {
+          "offset": 3288,
+          "data": "uA=="
+        },
+        {
+          "offset": 3292,
+          "data": "yQE="
+        },
+        {
+          "offset": 3296,
+          "data": "HAE="
+        },
+        {
+          "offset": 3300,
+          "data": "mWo="
+        },
+        {
+          "offset": 3304,
+          "data": "XQI="
+        },
+        {
+          "offset": 3308,
+          "data": "Qw=="
+        },
+        {
+          "offset": 3312,
+          "data": "sAE="
+        },
+        {
+          "offset": 3316,
+          "data": "nwA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_286.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 17020,
+      "targetLength": 17020,
+      "sourceSha256": "c391b97dec4de6971b49c63de5ae43df05f92f39a4b44f694203b3587e90aced",
+      "targetSha256": "298a01a253fdf3bba12ef6f6c2ac2d5c436484cbbe863fc9baeb23b8c9602abe",
+      "hunks": [
+        {
+          "offset": 702,
+          "data": "BQ=="
+        },
+        {
+          "offset": 16644,
+          "data": "4gA="
+        },
+        {
+          "offset": 16648,
+          "data": "FwE="
+        },
+        {
+          "offset": 16652,
+          "data": "xxI="
+        },
+        {
+          "offset": 16656,
+          "data": "uQE="
+        },
+        {
+          "offset": 16660,
+          "data": "lAE="
+        },
+        {
+          "offset": 16664,
+          "data": "Gw=="
+        },
+        {
+          "offset": 16668,
+          "data": "LgA="
+        },
+        {
+          "offset": 16672,
+          "data": "Sgo="
+        },
+        {
+          "offset": 16676,
+          "data": "1QE="
+        },
+        {
+          "offset": 16680,
+          "data": "/AE="
+        },
+        {
+          "offset": 16684,
+          "data": "ZgI="
+        },
+        {
+          "offset": 16688,
+          "data": "QAE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_302.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 15184,
+      "targetLength": 15184,
+      "sourceSha256": "d818cf3224fe83f9073e027eacecbce6af713b05f44b06b37671f650ec5fed95",
+      "targetSha256": "a0c2edff41b17ee42ad4369e17e13d67e6ac0c33446b33624fd6a16aa51831ab",
+      "hunks": [
+        {
+          "offset": 15088,
+          "data": "fQE="
+        },
+        {
+          "offset": 15092,
+          "data": "nSI="
+        },
+        {
+          "offset": 15096,
+          "data": "Cg=="
+        },
+        {
+          "offset": 15100,
+          "data": "JA=="
+        },
+        {
+          "offset": 15104,
+          "data": "/QA="
+        },
+        {
+          "offset": 15108,
+          "data": "0g=="
+        },
+        {
+          "offset": 15112,
+          "data": "2gE="
+        },
+        {
+          "offset": 15116,
+          "data": "lgE="
+        },
+        {
+          "offset": 15120,
+          "data": "Bw=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_303.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3088,
+      "targetLength": 3088,
+      "sourceSha256": "6704e5b399ee51fbeeeb0cd1acc7134a659e508f92537c0f4511ba45298ad190",
+      "targetSha256": "f6f93114482abc01e582a09e7a09c401de8e05fadf459ecad6e65661f7204886",
+      "hunks": [
+        {
+          "offset": 2712,
+          "data": "VwI="
+        },
+        {
+          "offset": 2716,
+          "data": "PA=="
+        },
+        {
+          "offset": 2720,
+          "data": "qg=="
+        },
+        {
+          "offset": 2724,
+          "data": "uw=="
+        },
+        {
+          "offset": 2728,
+          "data": "qw=="
+        },
+        {
+          "offset": 2732,
+          "data": "ogI="
+        },
+        {
+          "offset": 2736,
+          "data": "bAI="
+        },
+        {
+          "offset": 2740,
+          "data": "mw=="
+        },
+        {
+          "offset": 2744,
+          "data": "RQA="
+        },
+        {
+          "offset": 2748,
+          "data": "CQI="
+        },
+        {
+          "offset": 2752,
+          "data": "owI="
+        },
+        {
+          "offset": 2756,
+          "data": "ZA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_304.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 11332,
+      "targetLength": 11332,
+      "sourceSha256": "a8ac391a3380549451b6d2086688ca202206aff5505b791e8c70ba693e3f8e4f",
+      "targetSha256": "9ccfe7f24dd380cea50cecde4aee84252d7dfdbeb46745ead01e62de80ab5999",
+      "hunks": [
+        {
+          "offset": 11216,
+          "data": "MQA="
+        },
+        {
+          "offset": 11220,
+          "data": "wQI="
+        },
+        {
+          "offset": 11224,
+          "data": "qAA="
+        },
+        {
+          "offset": 11228,
+          "data": "6QE="
+        },
+        {
+          "offset": 11232,
+          "data": "WgI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_305.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4708,
+      "targetLength": 4708,
+      "sourceSha256": "b2865a2077b1e61134cbc78a560c4c433ccc813f3b2e13ffc9f9362b115c16d0",
+      "targetSha256": "483ec770378eaa01c04f8fa37a515815777084bfc8144a38ef990afc9b52fc7f",
+      "hunks": [
+        {
+          "offset": 4332,
+          "data": "SA=="
+        },
+        {
+          "offset": 4336,
+          "data": "jQ=="
+        },
+        {
+          "offset": 4340,
+          "data": "Tg=="
+        },
+        {
+          "offset": 4344,
+          "data": "Kg=="
+        },
+        {
+          "offset": 4348,
+          "data": "uA=="
+        },
+        {
+          "offset": 4352,
+          "data": "FAA="
+        },
+        {
+          "offset": 4356,
+          "data": "VAA="
+        },
+        {
+          "offset": 4360,
+          "data": "HAI="
+        },
+        {
+          "offset": 4364,
+          "data": "UA=="
+        },
+        {
+          "offset": 4368,
+          "data": "NgA="
+        },
+        {
+          "offset": 4372,
+          "data": "QQI="
+        },
+        {
+          "offset": 4376,
+          "data": "/w=="
+        },
+        {
+          "offset": 4648,
+          "data": "bw=="
+        },
+        {
+          "offset": 4652,
+          "data": "bw=="
+        },
+        {
+          "offset": 4656,
+          "data": "bw=="
+        },
+        {
+          "offset": 4660,
+          "data": "bw=="
+        },
+        {
+          "offset": 4664,
+          "data": "bw=="
+        },
+        {
+          "offset": 4668,
+          "data": "qgE="
+        },
+        {
+          "offset": 4672,
+          "data": "qgE="
+        },
+        {
+          "offset": 4676,
+          "data": "qgE="
+        },
+        {
+          "offset": 4680,
+          "data": "qgE="
+        },
+        {
+          "offset": 4684,
+          "data": "qgE="
+        },
+        {
+          "offset": 4688,
+          "data": "nyI="
+        },
+        {
+          "offset": 4692,
+          "data": "nyI="
+        },
+        {
+          "offset": 4696,
+          "data": "nyI="
+        },
+        {
+          "offset": 4700,
+          "data": "nyI="
+        },
+        {
+          "offset": 4704,
+          "data": "nyI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_306.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6100,
+      "targetLength": 6100,
+      "sourceSha256": "e2ec343d77937f648b9487391d8bf2fe71279574720799f60cb878b5d6be6964",
+      "targetSha256": "478e50e626a496d96acbb52c79c60959d7940c0d63b7fddae113e9e443ebf68d",
+      "hunks": [
+        {
+          "offset": 5724,
+          "data": "WA=="
+        },
+        {
+          "offset": 5728,
+          "data": "EwE="
+        },
+        {
+          "offset": 5732,
+          "data": "KQ=="
+        },
+        {
+          "offset": 5736,
+          "data": "SA=="
+        },
+        {
+          "offset": 5740,
+          "data": "4QA="
+        },
+        {
+          "offset": 5744,
+          "data": "twE="
+        },
+        {
+          "offset": 5748,
+          "data": "UwA="
+        },
+        {
+          "offset": 5752,
+          "data": "tQI="
+        },
+        {
+          "offset": 5756,
+          "data": "HQE="
+        },
+        {
+          "offset": 5760,
+          "data": "5gA="
+        },
+        {
+          "offset": 5764,
+          "data": "EQI="
+        },
+        {
+          "offset": 5768,
+          "data": "eQ=="
+        },
+        {
+          "offset": 6040,
+          "data": "MgA="
+        },
+        {
+          "offset": 6044,
+          "data": "MgA="
+        },
+        {
+          "offset": 6048,
+          "data": "MgA="
+        },
+        {
+          "offset": 6052,
+          "data": "MgA="
+        },
+        {
+          "offset": 6056,
+          "data": "MgA="
+        },
+        {
+          "offset": 6060,
+          "data": "hQE="
+        },
+        {
+          "offset": 6064,
+          "data": "hQE="
+        },
+        {
+          "offset": 6068,
+          "data": "hQE="
+        },
+        {
+          "offset": 6072,
+          "data": "hQE="
+        },
+        {
+          "offset": 6076,
+          "data": "hQE="
+        },
+        {
+          "offset": 6080,
+          "data": "aw=="
+        },
+        {
+          "offset": 6084,
+          "data": "aw=="
+        },
+        {
+          "offset": 6088,
+          "data": "aw=="
+        },
+        {
+          "offset": 6092,
+          "data": "aw=="
+        },
+        {
+          "offset": 6096,
+          "data": "aw=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_307.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2868,
+      "targetLength": 2868,
+      "sourceSha256": "f9f4fe6a5acab1552398aa8d55dac0949f5578087b69f201bfc522149512bc50",
+      "targetSha256": "886c8e2d3490dd6ad33018caeb496cbba1900f6c51bd6a09f2cadb94a7bfddcd",
+      "hunks": [
+        {
+          "offset": 2492,
+          "data": "3w=="
+        },
+        {
+          "offset": 2496,
+          "data": "8Q=="
+        },
+        {
+          "offset": 2500,
+          "data": "VwE="
+        },
+        {
+          "offset": 2504,
+          "data": "JgA="
+        },
+        {
+          "offset": 2508,
+          "data": "rAA="
+        },
+        {
+          "offset": 2512,
+          "data": "mpo="
+        },
+        {
+          "offset": 2516,
+          "data": "1gE="
+        },
+        {
+          "offset": 2520,
+          "data": "ZgA="
+        },
+        {
+          "offset": 2524,
+          "data": "DgI="
+        },
+        {
+          "offset": 2528,
+          "data": "6QA="
+        },
+        {
+          "offset": 2532,
+          "data": "NAA="
+        },
+        {
+          "offset": 2536,
+          "data": "ng=="
+        },
+        {
+          "offset": 2808,
+          "data": "ZQI="
+        },
+        {
+          "offset": 2812,
+          "data": "ZQI="
+        },
+        {
+          "offset": 2816,
+          "data": "ZQI="
+        },
+        {
+          "offset": 2820,
+          "data": "ZQI="
+        },
+        {
+          "offset": 2824,
+          "data": "ZQI="
+        },
+        {
+          "offset": 2828,
+          "data": "kgA="
+        },
+        {
+          "offset": 2832,
+          "data": "kgA="
+        },
+        {
+          "offset": 2836,
+          "data": "kgA="
+        },
+        {
+          "offset": 2840,
+          "data": "kgA="
+        },
+        {
+          "offset": 2844,
+          "data": "kgA="
+        },
+        {
+          "offset": 2848,
+          "data": "kg=="
+        },
+        {
+          "offset": 2852,
+          "data": "kg=="
+        },
+        {
+          "offset": 2856,
+          "data": "kg=="
+        },
+        {
+          "offset": 2860,
+          "data": "kg=="
+        },
+        {
+          "offset": 2864,
+          "data": "kg=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_308.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 928,
+      "targetLength": 928,
+      "sourceSha256": "7e096b230742e4ff6a260a0e4ccd2ea8e5405f31bdec0c6e79de91705b059475",
+      "targetSha256": "2070cade926657c0f50e3bd33754feef25a8f0acaa930222bc4c78cf8c6f9b59",
+      "hunks": [
+        {
+          "offset": 552,
+          "data": "\u002Bw=="
+        },
+        {
+          "offset": 556,
+          "data": "TQE="
+        },
+        {
+          "offset": 560,
+          "data": "DQE="
+        },
+        {
+          "offset": 564,
+          "data": "FQ=="
+        },
+        {
+          "offset": 568,
+          "data": "rgA="
+        },
+        {
+          "offset": 572,
+          "data": "nwE="
+        },
+        {
+          "offset": 576,
+          "data": "bgE="
+        },
+        {
+          "offset": 580,
+          "data": "LAI="
+        },
+        {
+          "offset": 584,
+          "data": "fAE="
+        },
+        {
+          "offset": 588,
+          "data": "1w=="
+        },
+        {
+          "offset": 592,
+          "data": "eA=="
+        },
+        {
+          "offset": 596,
+          "data": "DQA="
+        },
+        {
+          "offset": 868,
+          "data": "uA=="
+        },
+        {
+          "offset": 872,
+          "data": "uA=="
+        },
+        {
+          "offset": 876,
+          "data": "uA=="
+        },
+        {
+          "offset": 880,
+          "data": "uA=="
+        },
+        {
+          "offset": 884,
+          "data": "uA=="
+        },
+        {
+          "offset": 888,
+          "data": "gQE="
+        },
+        {
+          "offset": 892,
+          "data": "gQE="
+        },
+        {
+          "offset": 896,
+          "data": "gQE="
+        },
+        {
+          "offset": 900,
+          "data": "gQE="
+        },
+        {
+          "offset": 904,
+          "data": "gQE="
+        },
+        {
+          "offset": 908,
+          "data": "EwA="
+        },
+        {
+          "offset": 912,
+          "data": "EwA="
+        },
+        {
+          "offset": 916,
+          "data": "EwA="
+        },
+        {
+          "offset": 920,
+          "data": "EwA="
+        },
+        {
+          "offset": 924,
+          "data": "EwA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_313.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4544,
+      "targetLength": 4544,
+      "sourceSha256": "615a8e8bff0428be6d911518e3769780e20f00348fe51876e001520e515f43ad",
+      "targetSha256": "a4a3e44e21c4d229c6b9a600da31ed2fa7e0108d3c4c8aae5f56dfed644048cb",
+      "hunks": [
+        {
+          "offset": 4408,
+          "data": "2Q=="
+        },
+        {
+          "offset": 4412,
+          "data": "kAA="
+        },
+        {
+          "offset": 4416,
+          "data": "8wE="
+        },
+        {
+          "offset": 4420,
+          "data": "kg=="
+        },
+        {
+          "offset": 4424,
+          "data": "EQ=="
+        },
+        {
+          "offset": 4448,
+          "data": "Og=="
+        },
+        {
+          "offset": 4452,
+          "data": "sA=="
+        },
+        {
+          "offset": 4456,
+          "data": "LAE="
+        },
+        {
+          "offset": 4460,
+          "data": "ngA="
+        },
+        {
+          "offset": 4464,
+          "data": "IA=="
+        },
+        {
+          "offset": 4468,
+          "data": "JQE="
+        },
+        {
+          "offset": 4472,
+          "data": "LA=="
+        },
+        {
+          "offset": 4476,
+          "data": "wwE="
+        },
+        {
+          "offset": 4480,
+          "data": "ggE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_314.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2652,
+      "targetLength": 2652,
+      "sourceSha256": "e073d80cc4ca58023baa21189d0a77b930f3e3200efad09eec0946723fb06ab5",
+      "targetSha256": "88e2aee852e1e042dab9b4fa235441d48c0d504271ed6da3613f7ac54ae82f61",
+      "hunks": [
+        {
+          "offset": 2276,
+          "data": "jAI="
+        },
+        {
+          "offset": 2280,
+          "data": "VAE="
+        },
+        {
+          "offset": 2284,
+          "data": "wQA="
+        },
+        {
+          "offset": 2288,
+          "data": "dwE="
+        },
+        {
+          "offset": 2292,
+          "data": "qAE="
+        },
+        {
+          "offset": 2296,
+          "data": "TwE="
+        },
+        {
+          "offset": 2300,
+          "data": "UQI="
+        },
+        {
+          "offset": 2304,
+          "data": "\u002BQE="
+        },
+        {
+          "offset": 2308,
+          "data": "oQI="
+        },
+        {
+          "offset": 2312,
+          "data": "bg=="
+        },
+        {
+          "offset": 2316,
+          "data": "wQE="
+        },
+        {
+          "offset": 2320,
+          "data": "2g=="
+        },
+        {
+          "offset": 2592,
+          "data": "rgE="
+        },
+        {
+          "offset": 2596,
+          "data": "rgE="
+        },
+        {
+          "offset": 2600,
+          "data": "rgE="
+        },
+        {
+          "offset": 2604,
+          "data": "rgE="
+        },
+        {
+          "offset": 2608,
+          "data": "rgE="
+        },
+        {
+          "offset": 2612,
+          "data": "Pw=="
+        },
+        {
+          "offset": 2616,
+          "data": "Pw=="
+        },
+        {
+          "offset": 2620,
+          "data": "Pw=="
+        },
+        {
+          "offset": 2624,
+          "data": "Pw=="
+        },
+        {
+          "offset": 2628,
+          "data": "Pw=="
+        },
+        {
+          "offset": 2632,
+          "data": "MAI="
+        },
+        {
+          "offset": 2636,
+          "data": "MAI="
+        },
+        {
+          "offset": 2640,
+          "data": "MAI="
+        },
+        {
+          "offset": 2644,
+          "data": "MAI="
+        },
+        {
+          "offset": 2648,
+          "data": "MAI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_315.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1432,
+      "targetLength": 1432,
+      "sourceSha256": "44ac225ec8bfdc1432ca60a24a7fe0e81f05016175e07c5eefc7a5706f3faaaf",
+      "targetSha256": "2d9f950544f555847dc8374514203db0fd2d46cd571dd16a71e1e9ccea7d1e33",
+      "hunks": [
+        {
+          "offset": 1056,
+          "data": "tg=="
+        },
+        {
+          "offset": 1060,
+          "data": "mQ=="
+        },
+        {
+          "offset": 1064,
+          "data": "rQE="
+        },
+        {
+          "offset": 1068,
+          "data": "dg=="
+        },
+        {
+          "offset": 1072,
+          "data": "vAA="
+        },
+        {
+          "offset": 1076,
+          "data": "cwA="
+        },
+        {
+          "offset": 1080,
+          "data": "UAE="
+        },
+        {
+          "offset": 1084,
+          "data": "xgE="
+        },
+        {
+          "offset": 1088,
+          "data": "GgE="
+        },
+        {
+          "offset": 1092,
+          "data": "JwI="
+        },
+        {
+          "offset": 1100,
+          "data": "FgI="
+        },
+        {
+          "offset": 1296,
+          "data": "GgI="
+        },
+        {
+          "offset": 1300,
+          "data": "kw=="
+        },
+        {
+          "offset": 1304,
+          "data": "xw=="
+        },
+        {
+          "offset": 1308,
+          "data": "fwI="
+        },
+        {
+          "offset": 1312,
+          "data": "TgE="
+        },
+        {
+          "offset": 1336,
+          "data": "CgI="
+        },
+        {
+          "offset": 1340,
+          "data": "2w=="
+        },
+        {
+          "offset": 1344,
+          "data": "CgE="
+        },
+        {
+          "offset": 1348,
+          "data": "XAI="
+        },
+        {
+          "offset": 1352,
+          "data": "MwI="
+        },
+        {
+          "offset": 1356,
+          "data": "DAE="
+        },
+        {
+          "offset": 1360,
+          "data": "Hw=="
+        },
+        {
+          "offset": 1364,
+          "data": "KgE="
+        },
+        {
+          "offset": 1368,
+          "data": "GQ=="
+        },
+        {
+          "offset": 1372,
+          "data": "Yg=="
+        },
+        {
+          "offset": 1376,
+          "data": "Yg=="
+        },
+        {
+          "offset": 1380,
+          "data": "Yg=="
+        },
+        {
+          "offset": 1384,
+          "data": "Yg=="
+        },
+        {
+          "offset": 1388,
+          "data": "Yg=="
+        },
+        {
+          "offset": 1392,
+          "data": "vQA="
+        },
+        {
+          "offset": 1396,
+          "data": "vQA="
+        },
+        {
+          "offset": 1400,
+          "data": "vQA="
+        },
+        {
+          "offset": 1404,
+          "data": "vQA="
+        },
+        {
+          "offset": 1408,
+          "data": "vQA="
+        },
+        {
+          "offset": 1412,
+          "data": "xAI="
+        },
+        {
+          "offset": 1416,
+          "data": "xAI="
+        },
+        {
+          "offset": 1420,
+          "data": "xAI="
+        },
+        {
+          "offset": 1424,
+          "data": "xAI="
+        },
+        {
+          "offset": 1428,
+          "data": "xAI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_316.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 9212,
+      "targetLength": 9212,
+      "sourceSha256": "cc81599d993eae123ee91603f0853bba49f3e5cab8fa9b0a82d19a69b5d50a69",
+      "targetSha256": "1138823a4e3cb6cc9e2a1392f1274de26c3713d594742968a8853f63243181de",
+      "hunks": [
+        {
+          "offset": 8836,
+          "data": "wA=="
+        },
+        {
+          "offset": 8840,
+          "data": "gQI="
+        },
+        {
+          "offset": 8844,
+          "data": "NAE="
+        },
+        {
+          "offset": 8848,
+          "data": "/AA="
+        },
+        {
+          "offset": 8852,
+          "data": "3wE="
+        },
+        {
+          "offset": 8856,
+          "data": "sQA="
+        },
+        {
+          "offset": 8860,
+          "data": "JQI="
+        },
+        {
+          "offset": 8864,
+          "data": "PwE="
+        },
+        {
+          "offset": 8868,
+          "data": "PQI="
+        },
+        {
+          "offset": 8872,
+          "data": "tA=="
+        },
+        {
+          "offset": 8876,
+          "data": "Rw=="
+        },
+        {
+          "offset": 8880,
+          "data": "oAE="
+        },
+        {
+          "offset": 9152,
+          "data": "kwA="
+        },
+        {
+          "offset": 9156,
+          "data": "kwA="
+        },
+        {
+          "offset": 9160,
+          "data": "kwA="
+        },
+        {
+          "offset": 9164,
+          "data": "kwA="
+        },
+        {
+          "offset": 9168,
+          "data": "kwA="
+        },
+        {
+          "offset": 9172,
+          "data": "tA=="
+        },
+        {
+          "offset": 9176,
+          "data": "tA=="
+        },
+        {
+          "offset": 9180,
+          "data": "tA=="
+        },
+        {
+          "offset": 9184,
+          "data": "tA=="
+        },
+        {
+          "offset": 9188,
+          "data": "tA=="
+        },
+        {
+          "offset": 9192,
+          "data": "UAI="
+        },
+        {
+          "offset": 9196,
+          "data": "UAI="
+        },
+        {
+          "offset": 9200,
+          "data": "UAI="
+        },
+        {
+          "offset": 9204,
+          "data": "UAI="
+        },
+        {
+          "offset": 9208,
+          "data": "UAI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_317.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1240,
+      "targetLength": 1240,
+      "sourceSha256": "bd151e5f869ba54e696d114411a9c76512d670a426006b7ecb293c883c5afc6a",
+      "targetSha256": "c61cc845bc5090935bab53a981b075144690bd5cc7b8cd0a997f1c2da0581b9e",
+      "hunks": [
+        {
+          "offset": 864,
+          "data": "MAE="
+        },
+        {
+          "offset": 868,
+          "data": "PAE="
+        },
+        {
+          "offset": 872,
+          "data": "9AE="
+        },
+        {
+          "offset": 876,
+          "data": "AwA="
+        },
+        {
+          "offset": 880,
+          "data": "xQ=="
+        },
+        {
+          "offset": 884,
+          "data": "Iw=="
+        },
+        {
+          "offset": 888,
+          "data": "iA=="
+        },
+        {
+          "offset": 892,
+          "data": "WAI="
+        },
+        {
+          "offset": 896,
+          "data": "iQ=="
+        },
+        {
+          "offset": 900,
+          "data": "xg=="
+        },
+        {
+          "offset": 904,
+          "data": "Nw=="
+        },
+        {
+          "offset": 908,
+          "data": "RQE="
+        },
+        {
+          "offset": 1180,
+          "data": "lQA="
+        },
+        {
+          "offset": 1184,
+          "data": "lQA="
+        },
+        {
+          "offset": 1188,
+          "data": "lQA="
+        },
+        {
+          "offset": 1192,
+          "data": "lQA="
+        },
+        {
+          "offset": 1196,
+          "data": "lQA="
+        },
+        {
+          "offset": 1200,
+          "data": "LQ=="
+        },
+        {
+          "offset": 1204,
+          "data": "LQ=="
+        },
+        {
+          "offset": 1208,
+          "data": "LQ=="
+        },
+        {
+          "offset": 1212,
+          "data": "LQ=="
+        },
+        {
+          "offset": 1216,
+          "data": "LQ=="
+        },
+        {
+          "offset": 1220,
+          "data": "lwE="
+        },
+        {
+          "offset": 1224,
+          "data": "lwE="
+        },
+        {
+          "offset": 1228,
+          "data": "lwE="
+        },
+        {
+          "offset": 1232,
+          "data": "lwE="
+        },
+        {
+          "offset": 1236,
+          "data": "lwE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_318.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6320,
+      "targetLength": 6320,
+      "sourceSha256": "2fe3bbf7c3afacc0f657670f03f5289d48178f12c388df4bf00341f8b034605c",
+      "targetSha256": "58928528eb68607187be8a22c50aa368e18e9329739147fe7b7499bc6c694bad",
+      "hunks": [
+        {
+          "offset": 5992,
+          "data": "eg=="
+        },
+        {
+          "offset": 5996,
+          "data": "ugE="
+        },
+        {
+          "offset": 6000,
+          "data": "VA=="
+        },
+        {
+          "offset": 6004,
+          "data": "bAE="
+        },
+        {
+          "offset": 6008,
+          "data": "iw=="
+        },
+        {
+          "offset": 6012,
+          "data": "VgE="
+        },
+        {
+          "offset": 6016,
+          "data": "KQ=="
+        },
+        {
+          "offset": 6020,
+          "data": "6wE="
+        },
+        {
+          "offset": 6024,
+          "data": "WQA="
+        },
+        {
+          "offset": 6028,
+          "data": "KwA="
+        },
+        {
+          "offset": 6032,
+          "data": "yQ=="
+        },
+        {
+          "offset": 6036,
+          "data": "zw=="
+        },
+        {
+          "offset": 6040,
+          "data": "gwE="
+        },
+        {
+          "offset": 6044,
+          "data": "hg=="
+        },
+        {
+          "offset": 6048,
+          "data": "lQE="
+        },
+        {
+          "offset": 6052,
+          "data": "0AE="
+        },
+        {
+          "offset": 6056,
+          "data": "4AE="
+        },
+        {
+          "offset": 6060,
+          "data": "BA=="
+        },
+        {
+          "offset": 6064,
+          "data": "kw=="
+        },
+        {
+          "offset": 6068,
+          "data": "YwE="
+        },
+        {
+          "offset": 6072,
+          "data": "IgE="
+        },
+        {
+          "offset": 6076,
+          "data": "pQA="
+        },
+        {
+          "offset": 6080,
+          "data": "AgA="
+        },
+        {
+          "offset": 6084,
+          "data": "kQA="
+        },
+        {
+          "offset": 6184,
+          "data": "Ng=="
+        },
+        {
+          "offset": 6188,
+          "data": "aw=="
+        },
+        {
+          "offset": 6192,
+          "data": "og=="
+        },
+        {
+          "offset": 6196,
+          "data": "XA=="
+        },
+        {
+          "offset": 6200,
+          "data": "twI="
+        },
+        {
+          "offset": 6224,
+          "data": "EgI="
+        },
+        {
+          "offset": 6228,
+          "data": "5Q=="
+        },
+        {
+          "offset": 6232,
+          "data": "tgI="
+        },
+        {
+          "offset": 6236,
+          "data": "YAE="
+        },
+        {
+          "offset": 6240,
+          "data": "Rg=="
+        },
+        {
+          "offset": 6244,
+          "data": "0AA="
+        },
+        {
+          "offset": 6248,
+          "data": "pgk="
+        },
+        {
+          "offset": 6252,
+          "data": "SgE="
+        },
+        {
+          "offset": 6256,
+          "data": "NgI="
+        },
+        {
+          "offset": 6260,
+          "data": "5QE="
+        },
+        {
+          "offset": 6264,
+          "data": "5QE="
+        },
+        {
+          "offset": 6268,
+          "data": "5QE="
+        },
+        {
+          "offset": 6272,
+          "data": "5QE="
+        },
+        {
+          "offset": 6276,
+          "data": "5QE="
+        },
+        {
+          "offset": 6280,
+          "data": "SwE="
+        },
+        {
+          "offset": 6284,
+          "data": "SwE="
+        },
+        {
+          "offset": 6288,
+          "data": "SwE="
+        },
+        {
+          "offset": 6292,
+          "data": "SwE="
+        },
+        {
+          "offset": 6296,
+          "data": "SwE="
+        },
+        {
+          "offset": 6300,
+          "data": "2w=="
+        },
+        {
+          "offset": 6304,
+          "data": "2w=="
+        },
+        {
+          "offset": 6308,
+          "data": "2w=="
+        },
+        {
+          "offset": 6312,
+          "data": "2w=="
+        },
+        {
+          "offset": 6316,
+          "data": "2w=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_322.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1312,
+      "targetLength": 1312,
+      "sourceSha256": "3ec3d925b97e33d2a3c0e20dc681f49b412b81adf89b94d6a9b9b88ee002b755",
+      "targetSha256": "8100fa9ca8cd22f10b15c48686d097688f0acdac9e1b2f3f710f9153ba10feff",
+      "hunks": [
+        {
+          "offset": 936,
+          "data": "YwA="
+        },
+        {
+          "offset": 940,
+          "data": "qQE="
+        },
+        {
+          "offset": 944,
+          "data": "Fw=="
+        },
+        {
+          "offset": 948,
+          "data": "Vg=="
+        },
+        {
+          "offset": 952,
+          "data": "KgA="
+        },
+        {
+          "offset": 956,
+          "data": "CwE="
+        },
+        {
+          "offset": 960,
+          "data": "pwk="
+        },
+        {
+          "offset": 964,
+          "data": "SQ=="
+        },
+        {
+          "offset": 968,
+          "data": "AgE="
+        },
+        {
+          "offset": 972,
+          "data": "YQI="
+        },
+        {
+          "offset": 976,
+          "data": "bQE="
+        },
+        {
+          "offset": 980,
+          "data": "FAE="
+        },
+        {
+          "offset": 1176,
+          "data": "6w=="
+        },
+        {
+          "offset": 1180,
+          "data": "YQ=="
+        },
+        {
+          "offset": 1184,
+          "data": "NQE="
+        },
+        {
+          "offset": 1188,
+          "data": "LwA="
+        },
+        {
+          "offset": 1192,
+          "data": "pAE="
+        },
+        {
+          "offset": 1196,
+          "data": "9wE="
+        },
+        {
+          "offset": 1200,
+          "data": "eA=="
+        },
+        {
+          "offset": 1204,
+          "data": "rgI="
+        },
+        {
+          "offset": 1208,
+          "data": "MQE="
+        },
+        {
+          "offset": 1212,
+          "data": "/gE="
+        },
+        {
+          "offset": 1216,
+          "data": "oAI="
+        },
+        {
+          "offset": 1220,
+          "data": "mA=="
+        },
+        {
+          "offset": 1224,
+          "data": "ZQE="
+        },
+        {
+          "offset": 1228,
+          "data": "lAI="
+        },
+        {
+          "offset": 1232,
+          "data": "Vg=="
+        },
+        {
+          "offset": 1236,
+          "data": "SwI="
+        },
+        {
+          "offset": 1240,
+          "data": "TA=="
+        },
+        {
+          "offset": 1244,
+          "data": "Rg=="
+        },
+        {
+          "offset": 1248,
+          "data": "CQE="
+        },
+        {
+          "offset": 1252,
+          "data": "6AE="
+        },
+        {
+          "offset": 1256,
+          "data": "6AE="
+        },
+        {
+          "offset": 1260,
+          "data": "6AE="
+        },
+        {
+          "offset": 1264,
+          "data": "6AE="
+        },
+        {
+          "offset": 1268,
+          "data": "6AE="
+        },
+        {
+          "offset": 1272,
+          "data": "XwI="
+        },
+        {
+          "offset": 1276,
+          "data": "XwI="
+        },
+        {
+          "offset": 1280,
+          "data": "XwI="
+        },
+        {
+          "offset": 1284,
+          "data": "XwI="
+        },
+        {
+          "offset": 1288,
+          "data": "XwI="
+        },
+        {
+          "offset": 1292,
+          "data": "tQE="
+        },
+        {
+          "offset": 1296,
+          "data": "tQE="
+        },
+        {
+          "offset": 1300,
+          "data": "tQE="
+        },
+        {
+          "offset": 1304,
+          "data": "tQE="
+        },
+        {
+          "offset": 1308,
+          "data": "tQE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_324.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1648,
+      "targetLength": 1648,
+      "sourceSha256": "9695428ceb494a61bc0468ab18ca76b12df718c2139f52de6d5526cfd08b75fb",
+      "targetSha256": "0298381c6651991dcbc0a2c055f4bcf5ad6594058454312e387b3340964c3c5d",
+      "hunks": [
+        {
+          "offset": 1272,
+          "data": "LQE="
+        },
+        {
+          "offset": 1276,
+          "data": "AwE="
+        },
+        {
+          "offset": 1280,
+          "data": "zQE="
+        },
+        {
+          "offset": 1284,
+          "data": "RQ=="
+        },
+        {
+          "offset": 1288,
+          "data": "UQE="
+        },
+        {
+          "offset": 1292,
+          "data": "HQ=="
+        },
+        {
+          "offset": 1296,
+          "data": "zg=="
+        },
+        {
+          "offset": 1300,
+          "data": "Dg=="
+        },
+        {
+          "offset": 1304,
+          "data": "EAE="
+        },
+        {
+          "offset": 1308,
+          "data": "4QE="
+        },
+        {
+          "offset": 1312,
+          "data": "eQ=="
+        },
+        {
+          "offset": 1316,
+          "data": "pw=="
+        },
+        {
+          "offset": 1532,
+          "data": "OQI="
+        },
+        {
+          "offset": 1536,
+          "data": "dQI="
+        },
+        {
+          "offset": 1540,
+          "data": "1w=="
+        },
+        {
+          "offset": 1544,
+          "data": "TQI="
+        },
+        {
+          "offset": 1548,
+          "data": "SAE="
+        },
+        {
+          "offset": 1588,
+          "data": "sgI="
+        },
+        {
+          "offset": 1592,
+          "data": "sgI="
+        },
+        {
+          "offset": 1596,
+          "data": "sgI="
+        },
+        {
+          "offset": 1600,
+          "data": "sgI="
+        },
+        {
+          "offset": 1604,
+          "data": "sgI="
+        },
+        {
+          "offset": 1608,
+          "data": "IgI="
+        },
+        {
+          "offset": 1612,
+          "data": "IgI="
+        },
+        {
+          "offset": 1616,
+          "data": "IgI="
+        },
+        {
+          "offset": 1620,
+          "data": "IgI="
+        },
+        {
+          "offset": 1624,
+          "data": "IgI="
+        },
+        {
+          "offset": 1628,
+          "data": "TAE="
+        },
+        {
+          "offset": 1632,
+          "data": "TAE="
+        },
+        {
+          "offset": 1636,
+          "data": "TAE="
+        },
+        {
+          "offset": 1640,
+          "data": "TAE="
+        },
+        {
+          "offset": 1644,
+          "data": "TAE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_326.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1456,
+      "targetLength": 1456,
+      "sourceSha256": "d12a7bd8aa76f1e0d9bf9d2a42f6a5806d74e0643b7fd25cf4ae139827526853",
+      "targetSha256": "cef1c891f4d1d48624f28321382fbbd39965d5367d2caf06c52b54576afc6042",
+      "hunks": [
+        {
+          "offset": 1080,
+          "data": "JgE="
+        },
+        {
+          "offset": 1084,
+          "data": "DwE="
+        },
+        {
+          "offset": 1088,
+          "data": "kQE="
+        },
+        {
+          "offset": 1092,
+          "data": "jgA="
+        },
+        {
+          "offset": 1096,
+          "data": "EQE="
+        },
+        {
+          "offset": 1100,
+          "data": "Tg=="
+        },
+        {
+          "offset": 1104,
+          "data": "Jw=="
+        },
+        {
+          "offset": 1108,
+          "data": "Wg=="
+        },
+        {
+          "offset": 1112,
+          "data": "lA=="
+        },
+        {
+          "offset": 1116,
+          "data": "vAE="
+        },
+        {
+          "offset": 1120,
+          "data": "WwA="
+        },
+        {
+          "offset": 1124,
+          "data": "pQE="
+        },
+        {
+          "offset": 1396,
+          "data": "gA=="
+        },
+        {
+          "offset": 1400,
+          "data": "gA=="
+        },
+        {
+          "offset": 1404,
+          "data": "gA=="
+        },
+        {
+          "offset": 1408,
+          "data": "gA=="
+        },
+        {
+          "offset": 1412,
+          "data": "gA=="
+        },
+        {
+          "offset": 1416,
+          "data": "hA=="
+        },
+        {
+          "offset": 1420,
+          "data": "hA=="
+        },
+        {
+          "offset": 1424,
+          "data": "hA=="
+        },
+        {
+          "offset": 1428,
+          "data": "hA=="
+        },
+        {
+          "offset": 1432,
+          "data": "hA=="
+        },
+        {
+          "offset": 1436,
+          "data": "vgI="
+        },
+        {
+          "offset": 1440,
+          "data": "vgI="
+        },
+        {
+          "offset": 1444,
+          "data": "vgI="
+        },
+        {
+          "offset": 1448,
+          "data": "vgI="
+        },
+        {
+          "offset": 1452,
+          "data": "vgI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_327.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1312,
+      "targetLength": 1312,
+      "sourceSha256": "c18b6184c8408fd2eebe88086c646bea7613dbb109cc1a528c8308f18364ef1d",
+      "targetSha256": "c0b0050a666035f81be9d96d919fcb761291884570af29a4ccd8e6b580420fab",
+      "hunks": [
+        {
+          "offset": 1176,
+          "data": "wwA="
+        },
+        {
+          "offset": 1180,
+          "data": "xA=="
+        },
+        {
+          "offset": 1184,
+          "data": "zwA="
+        },
+        {
+          "offset": 1188,
+          "data": "NQI="
+        },
+        {
+          "offset": 1192,
+          "data": "vwI="
+        },
+        {
+          "offset": 1216,
+          "data": "CAI="
+        },
+        {
+          "offset": 1220,
+          "data": "mwI="
+        },
+        {
+          "offset": 1224,
+          "data": "ugI="
+        },
+        {
+          "offset": 1228,
+          "data": "6gA="
+        },
+        {
+          "offset": 1232,
+          "data": "HwE="
+        },
+        {
+          "offset": 1236,
+          "data": "dAE="
+        },
+        {
+          "offset": 1240,
+          "data": "ZgE="
+        },
+        {
+          "offset": 1244,
+          "data": "7AA="
+        },
+        {
+          "offset": 1248,
+          "data": "EwI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_328.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1024,
+      "targetLength": 1024,
+      "sourceSha256": "62d81ca1d9363cbbd484943d8c4d8c2100b8c16b1f1d456a38f01daea0ff3d59",
+      "targetSha256": "ac6e0afcfed0f627c483a61f8f3580347c4ea71685fae03e3a2cbeeb3713e5df",
+      "hunks": [
+        {
+          "offset": 648,
+          "data": "AQ=="
+        },
+        {
+          "offset": 652,
+          "data": "ewA="
+        },
+        {
+          "offset": 656,
+          "data": "hQA="
+        },
+        {
+          "offset": 660,
+          "data": "Pg=="
+        },
+        {
+          "offset": 664,
+          "data": "LQA="
+        },
+        {
+          "offset": 668,
+          "data": "KA=="
+        },
+        {
+          "offset": 672,
+          "data": "dA=="
+        },
+        {
+          "offset": 676,
+          "data": "oA=="
+        },
+        {
+          "offset": 680,
+          "data": "cQI="
+        },
+        {
+          "offset": 684,
+          "data": "OgI="
+        },
+        {
+          "offset": 688,
+          "data": "5wA="
+        },
+        {
+          "offset": 692,
+          "data": "9QA="
+        },
+        {
+          "offset": 888,
+          "data": "GAE="
+        },
+        {
+          "offset": 892,
+          "data": "AAI="
+        },
+        {
+          "offset": 896,
+          "data": "aAI="
+        },
+        {
+          "offset": 900,
+          "data": "AA=="
+        },
+        {
+          "offset": 904,
+          "data": "Nw=="
+        },
+        {
+          "offset": 928,
+          "data": "sw=="
+        },
+        {
+          "offset": 932,
+          "data": "egE="
+        },
+        {
+          "offset": 936,
+          "data": "qAI="
+        },
+        {
+          "offset": 940,
+          "data": "PgA="
+        },
+        {
+          "offset": 944,
+          "data": "Ig=="
+        },
+        {
+          "offset": 948,
+          "data": "rAI="
+        },
+        {
+          "offset": 952,
+          "data": "sQI="
+        },
+        {
+          "offset": 956,
+          "data": "Bg=="
+        },
+        {
+          "offset": 960,
+          "data": "8w=="
+        },
+        {
+          "offset": 964,
+          "data": "hwI="
+        },
+        {
+          "offset": 968,
+          "data": "hwI="
+        },
+        {
+          "offset": 972,
+          "data": "hwI="
+        },
+        {
+          "offset": 976,
+          "data": "hwI="
+        },
+        {
+          "offset": 980,
+          "data": "hwI="
+        },
+        {
+          "offset": 984,
+          "data": "TwA="
+        },
+        {
+          "offset": 988,
+          "data": "TwA="
+        },
+        {
+          "offset": 992,
+          "data": "TwA="
+        },
+        {
+          "offset": 996,
+          "data": "TwA="
+        },
+        {
+          "offset": 1000,
+          "data": "TwA="
+        },
+        {
+          "offset": 1004,
+          "data": "3gE="
+        },
+        {
+          "offset": 1008,
+          "data": "3gE="
+        },
+        {
+          "offset": 1012,
+          "data": "3gE="
+        },
+        {
+          "offset": 1016,
+          "data": "3gE="
+        },
+        {
+          "offset": 1020,
+          "data": "3gE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_334.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3984,
+      "targetLength": 3984,
+      "sourceSha256": "c2eb4e283c5a2994d5717bcb7f151d0b6b3034f7138b09c34651185dbe4a7a7e",
+      "targetSha256": "0c662e32140f7887481a70c074fc2b5a9196f1e9f8e32c2d4d273bde3e42f3b5",
+      "hunks": [
+        {
+          "offset": 3608,
+          "data": "uwI="
+        },
+        {
+          "offset": 3612,
+          "data": "0AI="
+        },
+        {
+          "offset": 3616,
+          "data": "PwA="
+        },
+        {
+          "offset": 3620,
+          "data": "Fg=="
+        },
+        {
+          "offset": 3624,
+          "data": "IQI="
+        },
+        {
+          "offset": 3628,
+          "data": "GgA="
+        },
+        {
+          "offset": 3632,
+          "data": "kAI="
+        },
+        {
+          "offset": 3636,
+          "data": "VQI="
+        },
+        {
+          "offset": 3640,
+          "data": "Iw=="
+        },
+        {
+          "offset": 3644,
+          "data": "Ag=="
+        },
+        {
+          "offset": 3648,
+          "data": "SQE="
+        },
+        {
+          "offset": 3652,
+          "data": "vQE="
+        },
+        {
+          "offset": 3924,
+          "data": "UwI="
+        },
+        {
+          "offset": 3928,
+          "data": "UwI="
+        },
+        {
+          "offset": 3932,
+          "data": "UwI="
+        },
+        {
+          "offset": 3936,
+          "data": "UwI="
+        },
+        {
+          "offset": 3940,
+          "data": "UwI="
+        },
+        {
+          "offset": 3944,
+          "data": "1g=="
+        },
+        {
+          "offset": 3948,
+          "data": "1g=="
+        },
+        {
+          "offset": 3952,
+          "data": "1g=="
+        },
+        {
+          "offset": 3956,
+          "data": "1g=="
+        },
+        {
+          "offset": 3960,
+          "data": "1g=="
+        },
+        {
+          "offset": 3964,
+          "data": "2QE="
+        },
+        {
+          "offset": 3968,
+          "data": "2QE="
+        },
+        {
+          "offset": 3972,
+          "data": "2QE="
+        },
+        {
+          "offset": 3976,
+          "data": "2QE="
+        },
+        {
+          "offset": 3980,
+          "data": "2QE="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_338.bin",
+      "operation": "patch",
+      "patchMode": "delta",
+      "length": 4600,
+      "targetLength": 4696,
+      "sourceSha256": "f20467cc11f62927d3ebc0f388297f2859d9cd13732fb7ba503b2d099775f5d8",
+      "targetSha256": "6b5ad84597cb4bbeea651f101e0da7173495899787cf986ca09afa972ebefc17",
+      "hunks": [],
+      "delta": [
+        {
+          "copyOffset": -1,
+          "length": 22,
+          "data": "Wk8EABgAAABQAAAA2AIAAFgSAABYEg=="
+        },
+        {
+          "copyOffset": 22,
+          "length": 58,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 6,
+          "data": "0AEAAAAJ"
+        },
+        {
+          "copyOffset": 86,
+          "length": 342,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 12,
+          "data": "BwA7AAAAAAAAADQI"
+        },
+        {
+          "copyOffset": 200,
+          "length": 28,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 20,
+          "data": "CgAIAAAAAAAIAF8AAAAAAAAA0Qc="
+        },
+        {
+          "copyOffset": 200,
+          "length": 28,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 3,
+          "data": "DgAI"
+        },
+        {
+          "copyOffset": 423,
+          "length": 4177,
+          "data": ""
+        }
+      ]
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_343.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 1168,
+      "targetLength": 1168,
+      "sourceSha256": "265bc9ca6c1eb8baaab29f04a2b4a41f1c3cb29fc2de715da97013f4d7c4a38e",
+      "targetSha256": "97390a01a0bbdaaf9b98ac14d76b1fac68d0d99c59833f91b95d7c8c9a41e1ca",
+      "hunks": [
+        {
+          "offset": 792,
+          "data": "8Q=="
+        },
+        {
+          "offset": 796,
+          "data": "pgI="
+        },
+        {
+          "offset": 800,
+          "data": "GA=="
+        },
+        {
+          "offset": 804,
+          "data": "rQ=="
+        },
+        {
+          "offset": 808,
+          "data": "wA=="
+        },
+        {
+          "offset": 812,
+          "data": "nRE="
+        },
+        {
+          "offset": 816,
+          "data": "5AA="
+        },
+        {
+          "offset": 820,
+          "data": "1QA="
+        },
+        {
+          "offset": 824,
+          "data": "9QE="
+        },
+        {
+          "offset": 828,
+          "data": "7Q=="
+        },
+        {
+          "offset": 832,
+          "data": "UgI="
+        },
+        {
+          "offset": 836,
+          "data": "hQI="
+        },
+        {
+          "offset": 1052,
+          "data": "GQI="
+        },
+        {
+          "offset": 1056,
+          "data": "Eg=="
+        },
+        {
+          "offset": 1060,
+          "data": "uQI="
+        },
+        {
+          "offset": 1064,
+          "data": "PQ=="
+        },
+        {
+          "offset": 1068,
+          "data": "tQ=="
+        },
+        {
+          "offset": 1108,
+          "data": "GA=="
+        },
+        {
+          "offset": 1112,
+          "data": "GA=="
+        },
+        {
+          "offset": 1116,
+          "data": "GA=="
+        },
+        {
+          "offset": 1120,
+          "data": "GA=="
+        },
+        {
+          "offset": 1124,
+          "data": "GA=="
+        },
+        {
+          "offset": 1128,
+          "data": "RAE="
+        },
+        {
+          "offset": 1132,
+          "data": "RAE="
+        },
+        {
+          "offset": 1136,
+          "data": "RAE="
+        },
+        {
+          "offset": 1140,
+          "data": "RAE="
+        },
+        {
+          "offset": 1144,
+          "data": "RAE="
+        },
+        {
+          "offset": 1148,
+          "data": "0Q=="
+        },
+        {
+          "offset": 1152,
+          "data": "0Q=="
+        },
+        {
+          "offset": 1156,
+          "data": "0Q=="
+        },
+        {
+          "offset": 1160,
+          "data": "0Q=="
+        },
+        {
+          "offset": 1164,
+          "data": "0Q=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_344.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 3160,
+      "targetLength": 3160,
+      "sourceSha256": "16526ce1d6cfa2b661f5941392a3a94ae07da11b1da724c4ec9cc2641ba3dd95",
+      "targetSha256": "5cce1bd45213ce07c2b776f862ffd2641b1ca618b5edebb063c57fa8f859c9b2",
+      "hunks": [
+        {
+          "offset": 2784,
+          "data": "ogA="
+        },
+        {
+          "offset": 2788,
+          "data": "Qg=="
+        },
+        {
+          "offset": 2792,
+          "data": "KQE="
+        },
+        {
+          "offset": 2796,
+          "data": "xQ=="
+        },
+        {
+          "offset": 2800,
+          "data": "owA="
+        },
+        {
+          "offset": 2804,
+          "data": "BQ=="
+        },
+        {
+          "offset": 2808,
+          "data": "uQA="
+        },
+        {
+          "offset": 2812,
+          "data": "fQA="
+        },
+        {
+          "offset": 2816,
+          "data": "IwE="
+        },
+        {
+          "offset": 2820,
+          "data": "OwI="
+        },
+        {
+          "offset": 2824,
+          "data": "CAE="
+        },
+        {
+          "offset": 2828,
+          "data": "/w=="
+        },
+        {
+          "offset": 3044,
+          "data": "oQE="
+        },
+        {
+          "offset": 3048,
+          "data": "jAE="
+        },
+        {
+          "offset": 3052,
+          "data": "mw=="
+        },
+        {
+          "offset": 3056,
+          "data": "hwE="
+        },
+        {
+          "offset": 3060,
+          "data": "bA=="
+        },
+        {
+          "offset": 3100,
+          "data": "4AA="
+        },
+        {
+          "offset": 3104,
+          "data": "4AA="
+        },
+        {
+          "offset": 3108,
+          "data": "4AA="
+        },
+        {
+          "offset": 3112,
+          "data": "4AA="
+        },
+        {
+          "offset": 3116,
+          "data": "4AA="
+        },
+        {
+          "offset": 3120,
+          "data": "yw=="
+        },
+        {
+          "offset": 3124,
+          "data": "yw=="
+        },
+        {
+          "offset": 3128,
+          "data": "yw=="
+        },
+        {
+          "offset": 3132,
+          "data": "yw=="
+        },
+        {
+          "offset": 3136,
+          "data": "yw=="
+        },
+        {
+          "offset": 3140,
+          "data": "fgI="
+        },
+        {
+          "offset": 3144,
+          "data": "fgI="
+        },
+        {
+          "offset": 3148,
+          "data": "fgI="
+        },
+        {
+          "offset": 3152,
+          "data": "fgI="
+        },
+        {
+          "offset": 3156,
+          "data": "fgI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_345.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 2032,
+      "targetLength": 2032,
+      "sourceSha256": "8a8b1fd2ac467a289899efbb09d5bd9ede72ea987f2896b27dd32f25861d7f95",
+      "targetSha256": "47440232b1e81d475adb294ba6be4045e97e8b5598edeaffa20db03d2669dfa8",
+      "hunks": [
+        {
+          "offset": 1656,
+          "data": "Pg=="
+        },
+        {
+          "offset": 1660,
+          "data": "rQI="
+        },
+        {
+          "offset": 1664,
+          "data": "hAE="
+        },
+        {
+          "offset": 1668,
+          "data": "Fg=="
+        },
+        {
+          "offset": 1672,
+          "data": "jQE="
+        },
+        {
+          "offset": 1676,
+          "data": "agE="
+        },
+        {
+          "offset": 1680,
+          "data": "0Q=="
+        },
+        {
+          "offset": 1684,
+          "data": "6gE="
+        },
+        {
+          "offset": 1688,
+          "data": "cgI="
+        },
+        {
+          "offset": 1692,
+          "data": "ZA=="
+        },
+        {
+          "offset": 1696,
+          "data": "pQI="
+        },
+        {
+          "offset": 1700,
+          "data": "ygE="
+        },
+        {
+          "offset": 1916,
+          "data": "sAI="
+        },
+        {
+          "offset": 1920,
+          "data": "\u002BA=="
+        },
+        {
+          "offset": 1924,
+          "data": "BgE="
+        },
+        {
+          "offset": 1928,
+          "data": "swE="
+        },
+        {
+          "offset": 1932,
+          "data": "xgI="
+        },
+        {
+          "offset": 1972,
+          "data": "GQE="
+        },
+        {
+          "offset": 1976,
+          "data": "GQE="
+        },
+        {
+          "offset": 1980,
+          "data": "GQE="
+        },
+        {
+          "offset": 1984,
+          "data": "GQE="
+        },
+        {
+          "offset": 1988,
+          "data": "GQE="
+        },
+        {
+          "offset": 1992,
+          "data": "cQ=="
+        },
+        {
+          "offset": 1996,
+          "data": "cQ=="
+        },
+        {
+          "offset": 2000,
+          "data": "cQ=="
+        },
+        {
+          "offset": 2004,
+          "data": "cQ=="
+        },
+        {
+          "offset": 2008,
+          "data": "cQ=="
+        },
+        {
+          "offset": 2012,
+          "data": "cw=="
+        },
+        {
+          "offset": 2016,
+          "data": "cw=="
+        },
+        {
+          "offset": 2020,
+          "data": "cw=="
+        },
+        {
+          "offset": 2024,
+          "data": "cw=="
+        },
+        {
+          "offset": 2028,
+          "data": "cw=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_347.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 904,
+      "targetLength": 904,
+      "sourceSha256": "1074d4640e05677dfa0ad293b473983b4dff525655697567bf7698acd09595f6",
+      "targetSha256": "1ebe3ce72651cac2df755797c43a6c1f8950ec3b3cef21680803a91b3589c50d",
+      "hunks": [
+        {
+          "offset": 528,
+          "data": "3Q=="
+        },
+        {
+          "offset": 532,
+          "data": "SwA="
+        },
+        {
+          "offset": 536,
+          "data": "RgE="
+        },
+        {
+          "offset": 540,
+          "data": "YgE="
+        },
+        {
+          "offset": 544,
+          "data": "dgE="
+        },
+        {
+          "offset": 548,
+          "data": "HgE="
+        },
+        {
+          "offset": 552,
+          "data": "bg=="
+        },
+        {
+          "offset": 556,
+          "data": "ZQA="
+        },
+        {
+          "offset": 560,
+          "data": "AQ=="
+        },
+        {
+          "offset": 564,
+          "data": "xA=="
+        },
+        {
+          "offset": 568,
+          "data": "cA=="
+        },
+        {
+          "offset": 572,
+          "data": "HQI="
+        },
+        {
+          "offset": 844,
+          "data": "dgA="
+        },
+        {
+          "offset": 848,
+          "data": "dgA="
+        },
+        {
+          "offset": 852,
+          "data": "dgA="
+        },
+        {
+          "offset": 856,
+          "data": "dgA="
+        },
+        {
+          "offset": 860,
+          "data": "dgA="
+        },
+        {
+          "offset": 864,
+          "data": "zQ=="
+        },
+        {
+          "offset": 868,
+          "data": "zQ=="
+        },
+        {
+          "offset": 872,
+          "data": "zQ=="
+        },
+        {
+          "offset": 876,
+          "data": "zQ=="
+        },
+        {
+          "offset": 880,
+          "data": "zQ=="
+        },
+        {
+          "offset": 884,
+          "data": "MQI="
+        },
+        {
+          "offset": 888,
+          "data": "MQI="
+        },
+        {
+          "offset": 892,
+          "data": "MQI="
+        },
+        {
+          "offset": 896,
+          "data": "MQI="
+        },
+        {
+          "offset": 900,
+          "data": "MQI="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_348.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 904,
+      "targetLength": 904,
+      "sourceSha256": "0ee5dc68dbaada4aef639e85516ff3532a382fdddc99992ea7be6bc7228ba0e9",
+      "targetSha256": "2a474689f1422f3871554791cf940a86d007cc9ee578a4af029233ce10f33c01",
+      "hunks": [
+        {
+          "offset": 528,
+          "data": "RAA="
+        },
+        {
+          "offset": 532,
+          "data": "MAA="
+        },
+        {
+          "offset": 536,
+          "data": "gw=="
+        },
+        {
+          "offset": 540,
+          "data": "YA=="
+        },
+        {
+          "offset": 544,
+          "data": "8AA="
+        },
+        {
+          "offset": 548,
+          "data": "qQA="
+        },
+        {
+          "offset": 552,
+          "data": "0gE="
+        },
+        {
+          "offset": 556,
+          "data": "ig=="
+        },
+        {
+          "offset": 560,
+          "data": "PAI="
+        },
+        {
+          "offset": 564,
+          "data": "BQ=="
+        },
+        {
+          "offset": 568,
+          "data": "aA=="
+        },
+        {
+          "offset": 572,
+          "data": "QgI="
+        },
+        {
+          "offset": 844,
+          "data": "VQE="
+        },
+        {
+          "offset": 848,
+          "data": "VQE="
+        },
+        {
+          "offset": 852,
+          "data": "VQE="
+        },
+        {
+          "offset": 856,
+          "data": "VQE="
+        },
+        {
+          "offset": 860,
+          "data": "VQE="
+        },
+        {
+          "offset": 864,
+          "data": "WwI="
+        },
+        {
+          "offset": 868,
+          "data": "WwI="
+        },
+        {
+          "offset": 872,
+          "data": "WwI="
+        },
+        {
+          "offset": 876,
+          "data": "WwI="
+        },
+        {
+          "offset": 880,
+          "data": "WwI="
+        },
+        {
+          "offset": 884,
+          "data": "yA=="
+        },
+        {
+          "offset": 888,
+          "data": "yA=="
+        },
+        {
+          "offset": 892,
+          "data": "yA=="
+        },
+        {
+          "offset": 896,
+          "data": "yA=="
+        },
+        {
+          "offset": 900,
+          "data": "yA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_349.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 6508,
+      "targetLength": 6508,
+      "sourceSha256": "9e296634c616a4b2a3c5015573a9ab0a66cd813cfddd1019d1462c8ba122cdad",
+      "targetSha256": "448fec92184bfff5260a4ce9a1f541f258c96965f6400f0cfabf43a26c66ebfe",
+      "hunks": [
+        {
+          "offset": 6132,
+          "data": "nAE="
+        },
+        {
+          "offset": 6136,
+          "data": "/QE="
+        },
+        {
+          "offset": 6140,
+          "data": "VwA="
+        },
+        {
+          "offset": 6144,
+          "data": "aQE="
+        },
+        {
+          "offset": 6148,
+          "data": "Aw=="
+        },
+        {
+          "offset": 6152,
+          "data": "ewE="
+        },
+        {
+          "offset": 6156,
+          "data": "tgE="
+        },
+        {
+          "offset": 6160,
+          "data": "jwE="
+        },
+        {
+          "offset": 6164,
+          "data": "BgA="
+        },
+        {
+          "offset": 6168,
+          "data": "Hg=="
+        },
+        {
+          "offset": 6172,
+          "data": "7gA="
+        },
+        {
+          "offset": 6176,
+          "data": "ygA="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "encdata",
+      "path": "dec_357.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 4132,
+      "targetLength": 4132,
+      "sourceSha256": "458264c9ee9b503ebebddb05d18607e6c5972f5a9b336b99b709d07f44559d39",
+      "targetSha256": "aa3783c23cf344f417d435f2f759a2a5e8b794371f28d64758b3d398a48c246b",
+      "hunks": [
+        {
+          "offset": 3756,
+          "data": "ewI="
+        },
+        {
+          "offset": 3760,
+          "data": "Ow=="
+        },
+        {
+          "offset": 3764,
+          "data": "8g=="
+        },
+        {
+          "offset": 3768,
+          "data": "DwI="
+        },
+        {
+          "offset": 3772,
+          "data": "eAI="
+        },
+        {
+          "offset": 3776,
+          "data": "2AA="
+        },
+        {
+          "offset": 3780,
+          "data": "QQE="
+        },
+        {
+          "offset": 3784,
+          "data": "nio="
+        },
+        {
+          "offset": 3788,
+          "data": "zgE="
+        },
+        {
+          "offset": 3792,
+          "data": "SgA="
+        },
+        {
+          "offset": 3796,
+          "data": "qwI="
+        },
+        {
+          "offset": 3800,
+          "data": "jwA="
+        },
+        {
+          "offset": 3996,
+          "data": "kAE="
+        },
+        {
+          "offset": 4000,
+          "data": "PQE="
+        },
+        {
+          "offset": 4004,
+          "data": "bwI="
+        },
+        {
+          "offset": 4008,
+          "data": "yfg="
+        },
+        {
+          "offset": 4012,
+          "data": "ywE="
+        },
+        {
+          "offset": 4016,
+          "data": "WAE="
+        },
+        {
+          "offset": 4020,
+          "data": "cgA="
+        },
+        {
+          "offset": 4024,
+          "data": "4gE="
+        },
+        {
+          "offset": 4028,
+          "data": "XQA="
+        },
+        {
+          "offset": 4032,
+          "data": "Qw=="
+        },
+        {
+          "offset": 4036,
+          "data": "Rw=="
+        },
+        {
+          "offset": 4040,
+          "data": "pAI="
+        },
+        {
+          "offset": 4044,
+          "data": "vAI="
+        },
+        {
+          "offset": 4048,
+          "data": "NAI="
+        },
+        {
+          "offset": 4052,
+          "data": "aAE="
+        },
+        {
+          "offset": 4056,
+          "data": "Qg=="
+        },
+        {
+          "offset": 4060,
+          "data": "gA=="
+        },
+        {
+          "offset": 4064,
+          "data": "8AE="
+        },
+        {
+          "offset": 4068,
+          "data": "/g=="
+        },
+        {
+          "offset": 4072,
+          "data": "WQ=="
+        },
+        {
+          "offset": 4076,
+          "data": "WQ=="
+        },
+        {
+          "offset": 4080,
+          "data": "WQ=="
+        },
+        {
+          "offset": 4084,
+          "data": "WQ=="
+        },
+        {
+          "offset": 4088,
+          "data": "WQ=="
+        },
+        {
+          "offset": 4092,
+          "data": "aQ=="
+        },
+        {
+          "offset": 4096,
+          "data": "aQ=="
+        },
+        {
+          "offset": 4100,
+          "data": "aQ=="
+        },
+        {
+          "offset": 4104,
+          "data": "aQ=="
+        },
+        {
+          "offset": 4108,
+          "data": "aQ=="
+        },
+        {
+          "offset": 4112,
+          "data": "3Q=="
+        },
+        {
+          "offset": 4116,
+          "data": "3Q=="
+        },
+        {
+          "offset": 4120,
+          "data": "3Q=="
+        },
+        {
+          "offset": 4124,
+          "data": "3Q=="
+        },
+        {
+          "offset": 4128,
+          "data": "3Q=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "mapGR",
+      "path": "dec_0032.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 358144,
+      "targetLength": 358144,
+      "sourceSha256": "2ceab22844cadf6e59c23319554810df3fdea0e0d8002e25a4e451867dcc7efc",
+      "targetSha256": "15157bcdfef00c69c0fc7a6f0400878bf7bc0f6f188948d1187250a93872ae8d",
+      "hunks": [
+        {
+          "offset": 3340,
+          "data": "BCA="
+        },
+        {
+          "offset": 3343,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3347,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3351,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3355,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3359,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3363,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3367,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3371,
+          "data": "IA=="
+        },
+        {
+          "offset": 3500,
+          "data": "BCA="
+        },
+        {
+          "offset": 3503,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3507,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3511,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3515,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3519,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3523,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3527,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3531,
+          "data": "IA=="
+        },
+        {
+          "offset": 3660,
+          "data": "BCA="
+        },
+        {
+          "offset": 3663,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3667,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3671,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3675,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3679,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3683,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3687,
+          "data": "IAQg"
+        },
+        {
+          "offset": 3691,
+          "data": "IA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "mapGR",
+      "path": "dec_0065.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 262144,
+      "targetLength": 262144,
+      "sourceSha256": "9f14e2adeb39e5745df084b8f75322e3c180957600ae64c1d67f25a015af24b0",
+      "targetSha256": "c8b694a35b285fdbbb8f73bf44a794822d192900c8a862546ff563123c9c0aa8",
+      "hunks": [
+        {
+          "offset": 192,
+          "data": "BCA="
+        },
+        {
+          "offset": 195,
+          "data": "IAQg"
+        },
+        {
+          "offset": 199,
+          "data": "IAQg"
+        },
+        {
+          "offset": 203,
+          "data": "IA=="
+        },
+        {
+          "offset": 224,
+          "data": "BCA="
+        },
+        {
+          "offset": 227,
+          "data": "IAQg"
+        },
+        {
+          "offset": 231,
+          "data": "IAQg"
+        },
+        {
+          "offset": 235,
+          "data": "IA=="
+        },
+        {
+          "offset": 352,
+          "data": "BCA="
+        },
+        {
+          "offset": 355,
+          "data": "IAQg"
+        },
+        {
+          "offset": 359,
+          "data": "IAQg"
+        },
+        {
+          "offset": 363,
+          "data": "IA=="
+        },
+        {
+          "offset": 384,
+          "data": "BCA="
+        },
+        {
+          "offset": 387,
+          "data": "IAQg"
+        },
+        {
+          "offset": 391,
+          "data": "IAQg"
+        },
+        {
+          "offset": 395,
+          "data": "IA=="
+        },
+        {
+          "offset": 512,
+          "data": "BCA="
+        },
+        {
+          "offset": 515,
+          "data": "IAQg"
+        },
+        {
+          "offset": 519,
+          "data": "IAQg"
+        },
+        {
+          "offset": 523,
+          "data": "IA=="
+        },
+        {
+          "offset": 544,
+          "data": "BCA="
+        },
+        {
+          "offset": 547,
+          "data": "IAQg"
+        },
+        {
+          "offset": 551,
+          "data": "IAQg"
+        },
+        {
+          "offset": 555,
+          "data": "IA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "mapGR",
+      "path": "dec_0909.bin",
+      "operation": "patch",
+      "patchMode": "hunks",
+      "length": 269696,
+      "targetLength": 269696,
+      "sourceSha256": "8e08fc84589e9f4af366c8a842b5f4948a4bbe804a8f393a9a017cb16e8e157c",
+      "targetSha256": "85394c7ac5baf319e371a9cb65bdeb264766ab7f4b22abf1f4dcdf6572e98aef",
+      "hunks": [
+        {
+          "offset": 960,
+          "data": "BCA="
+        },
+        {
+          "offset": 963,
+          "data": "IAQg"
+        },
+        {
+          "offset": 967,
+          "data": "IAQg"
+        },
+        {
+          "offset": 971,
+          "data": "IAQg"
+        },
+        {
+          "offset": 975,
+          "data": "IAQg"
+        },
+        {
+          "offset": 979,
+          "data": "IAQg"
+        },
+        {
+          "offset": 983,
+          "data": "IAQg"
+        },
+        {
+          "offset": 987,
+          "data": "IAQg"
+        },
+        {
+          "offset": 991,
+          "data": "IAQg"
+        },
+        {
+          "offset": 995,
+          "data": "IAQg"
+        },
+        {
+          "offset": 999,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1003,
+          "data": "IA=="
+        },
+        {
+          "offset": 1120,
+          "data": "BCA="
+        },
+        {
+          "offset": 1123,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1127,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1131,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1135,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1139,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1143,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1147,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1151,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1155,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1159,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1163,
+          "data": "IA=="
+        },
+        {
+          "offset": 1280,
+          "data": "BCA="
+        },
+        {
+          "offset": 1283,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1287,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1291,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1295,
+          "data": "IA=="
+        },
+        {
+          "offset": 1300,
+          "data": "BCA="
+        },
+        {
+          "offset": 1303,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1307,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1311,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1315,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1319,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1323,
+          "data": "IA=="
+        },
+        {
+          "offset": 1440,
+          "data": "BCA="
+        },
+        {
+          "offset": 1443,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1447,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1451,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1455,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1459,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1463,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1467,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1471,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1475,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1479,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1483,
+          "data": "IA=="
+        },
+        {
+          "offset": 1600,
+          "data": "BCA="
+        },
+        {
+          "offset": 1603,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1607,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1611,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1615,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1619,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1623,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1627,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1631,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1635,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1639,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1643,
+          "data": "IA=="
+        },
+        {
+          "offset": 1760,
+          "data": "BCA="
+        },
+        {
+          "offset": 1763,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1767,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1771,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1775,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1779,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1783,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1787,
+          "data": "IA=="
+        },
+        {
+          "offset": 1792,
+          "data": "BCA="
+        },
+        {
+          "offset": 1795,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1799,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1803,
+          "data": "IA=="
+        },
+        {
+          "offset": 1920,
+          "data": "BCA="
+        },
+        {
+          "offset": 1923,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1927,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1931,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1935,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1939,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1943,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1947,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1951,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1955,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1959,
+          "data": "IAQg"
+        },
+        {
+          "offset": 1963,
+          "data": "IA=="
+        },
+        {
+          "offset": 2080,
+          "data": "BCA="
+        },
+        {
+          "offset": 2083,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2087,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2091,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2095,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2099,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2103,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2107,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2111,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2115,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2119,
+          "data": "IAQg"
+        },
+        {
+          "offset": 2123,
+          "data": "IA=="
+        }
+      ],
+      "delta": []
+    },
+    {
+      "scope": "raw",
+      "path": "a/1/4/9",
+      "operation": "patch",
+      "patchMode": "delta",
+      "length": 37568,
+      "targetLength": 37592,
+      "sourceSha256": "bd3924b48ac6a91354a5d6160931b677cd18d40b64b1ace33ddff1234bfbf50c",
+      "targetSha256": "b435222505fc706cc4def934febdc37be27109ba668727fecbac755cc9d47673",
+      "hunks": [],
+      "delta": [
+        {
+          "copyOffset": 0,
+          "length": 20,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 1,
+          "data": "2A=="
+        },
+        {
+          "copyOffset": 21,
+          "length": 1455,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 453,
+          "data": "8C0AAMAAAAABAAAA8C0AACgvAAA4AQAAAQAAACgvAADoLwAAwAAAAAEAAADoLwAAkDAAAKgAAAABAAAAkDAAAJAwAAAAAAAAAQAAAJAwAAA4MQAAqAAAAAEAAAA4MQAAyDEAAJAAAAABAAAAyDEAAAAzAAA4AQAAAQAAAAAzAAAAMwAAAAAAAAEAAAAAMwAASDMAAEgAAAABAAAASDMAACA0AADYAAAAAQAAACA0AACYNAAAeAAAAAEAAACYNAAA\u002BDQAAGAAAAABAAAA\u002BDQAAIg1AACQAAAAAQAAAIg1AABgNgAA2AAAAAEAAABgNgAAiDgAACgCAAABAAAAiDgAAAA5AAB4AAAAAQAAAAA5AACQOQAAkAAAAAEAAACQOQAACDoAAHgAAAABAAAACDoAAGg6AABgAAAAAQAAAGg6AADgOgAAeAAAAAEAAADgOgAAcDsAAJAAAAABAAAAcDsAANA7AABgAAAAAQAAANA7AAAwPAAAYAAAAAEAAAAwPAAAYDwAADAAAAABAAAAYDwAAMA8AABgAAAAAQAAAMA8AAAIPQAASAAAAAEAAAAIPQAAuD4AALABAAABAAAAuD4AAGA/AACo"
+        },
+        {
+          "copyOffset": 1945,
+          "length": 91,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 1077,
+          "data": "8D8AABgAAAABAAAA8D8AAEBBAABQAQAAAQAAAEBBAABAQQAAAAAAAAEAAABAQQAAiEEAAEgAAAABAAAAiEEAADBCAACoAAAAAQAAADBCAAAwQgAAAAAAAAEAAAAwQgAAeEIAAEgAAAABAAAAeEIAAAhDAACQAAAAAQAAAAhDAAAgQwAAGAAAAAEAAAAgQwAAyEMAAKgAAAABAAAAyEMAAIhEAADAAAAAAQAAAIhEAACoRQAAIAEAAAEAAACoRQAAyEYAACABAAABAAAAyEYAAPBIAAAoAgAAAQAAAPBIAABYSgAAaAEAAAEAAABYSgAAAEsAAKgAAAABAAAAAEsAADBLAAAwAAAAAQAAADBLAAA4TAAACAEAAAEAAAA4TAAAaEwAADAAAAABAAAAaEwAAJBOAAAoAgAAAQAAAJBOAAD4TwAAaAEAAAEAAAD4TwAAMFEAADgBAAABAAAAMFEAADhSAAAIAQAAAQAAADhSAAAwVAAA\u002BAEAAAEAAAAwVAAAaFUAADgBAAABAAAAaFUAAChWAADAAAAAAQAAAChWAABIVwAAIAEAAAEAAABIVwAAkFcAAEgAAAABAAAAkFcAAIBYAADwAAAAAQAAAIBYAAAoWQAAqAAAAAEAAAAoWQAAcFkAAEgAAAABAAAAcFkAABhaAACoAAAAAQAAABhaAADIWwAAsAEAAAEAAADIWwAASF0AAIABAAABAAAASF0AAGheAAAgAQAAAQAAAGheAADoXwAAgAEAAAEAAADoXwAAeGAAAJAAAAABAAAAeGAAAPhhAACAAQAAAQAAAPhhAAD4YQAAAAAAAAEAAAD4YQAAYGMAAGgBAAABAAAAYGMAAIBkAAAgAQAAAQAAAIBkAACIZQAACAEAAAEAAACIZQAAuGUAADAAAAABAAAAuGUAAJBmAADYAAAAAQAAAJBmAADwZgAAYAAAAAEAAADwZgAACGcAABgAAAABAAAACGcAAAhnAAAAAAAAAQAAAAhnAAAIZwAAAAAAAAEAAAAIZwAA4GcAANgAAAABAAAA4GcAAKBoAADAAAAAAQAAAKBoAABIaQAAqAAAAAEAAABIaQAAOGoAAPAAAAABAAAAOGoAABBrAADYAAAAAQAAABBrAADoawAA2AAAAAEAAADoawAA8GwAAAgBAAABAAAA8GwAAJhtAACoAAAAAQAAAJhtAAAobgAAkAAAAAEAAAAobgAAuG4AAJAAAAABAAAAuG4AAMhwAAAQAgAAAQAAAMhwAACocgAA4AEAAAEAAACocgAAsHMAAAgBAAABAAAAsHMAAEh1AACYAQAAAQAAAEh1AABYdwAAEAIAAAEAAABYdwAAuHcAAGAAAAABAAAAuHcAADB4AAB4AAAAAQAAADB4AADweAAAwAAAAAEAAADweAAAOHkAAEgAAAABAAAAOHkAACh6AADw"
+        },
+        {
+          "copyOffset": 3113,
+          "length": 27,
+          "data": ""
+        },
+        {
+          "copyOffset": -1,
+          "length": 337,
+          "data": "WHoAABgAAAABAAAAWHoAAGB7AAAIAQAAAQAAAGB7AAAgfAAAwAAAAAEAAAAgfAAAgHwAAGAAAAABAAAAgHwAANB9AABQAQAAAQAAANB9AACAfwAAsAEAAAEAAACAfwAA\u002BH8AAHgAAAABAAAA\u002BH8AAPh/AAAAAAAAAQAAAPh/AADwgQAA\u002BAEAAAEAAADwgQAAIIIAADAAAAABAAAAIIIAAPiCAADYAAAAAQAAAPiCAAD4ggAAAAAAAAEAAAD4ggAA\u002BIIAAAAAAAABAAAA\u002BIIAAPiCAAAAAAAAAQAAAPiCAAD4ggAAAAAAAAEAAAD4ggAA\u002BIIAAAAAAAABAAAA\u002BIIAAPiCAAAAAAAAAQAAAPiCAADogwAA8AAAAAEAAADogwAAeIQAAJAAAAABAAAAeIQAACCFAACoAAAAAQAAACCFAABQhQAAMAAAAEJNSUYMAAAAUA=="
+        },
+        {
+          "copyOffset": 3461,
+          "length": 11595,
+          "data": ""
+        },
+        {
+          "copyOffset": 17432,
+          "length": 24,
+          "data": ""
+        },
+        {
+          "copyOffset": 15056,
+          "length": 22512,
+          "data": ""
+        }
+      ]
+    }
+  ]
+}
