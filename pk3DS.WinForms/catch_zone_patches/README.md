@@ -23,12 +23,15 @@ The generated JSON is written next to the executable under `catch_zone_patches/`
 
 After validating it on a second clean dump, copy the generated manifest into this source folder so it is included automatically in future builds/publishes.
 
-## Current format limitations
+## Current format
 
-Format 1 intentionally supports only:
+Format 2 supports:
 
-- same-length byte replacements;
+- compact same-length byte replacements;
+- length-changing files through copy/literal delta operations;
 - deletion of files from full-replacement `encdata` / `mapGR` templates;
 - raw RomFS files that already exist in the clean dump.
 
-If a legacy template adds a new file or changes a file length, generation stops instead of embedding a complete replacement file. That case should be implemented with a semantic generator or a future delta format.
+For length-changing files, unchanged ranges are referenced from the user's clean source file instead of being embedded in the manifest. Only unmatched literal bytes are stored.
+
+The remaining intentional limitation is a legacy template that introduces a completely new game file that does not exist in the clean dump. Generation stops for that case instead of embedding the complete added file; it should be implemented with a semantic generator or another source-derived transformation.
