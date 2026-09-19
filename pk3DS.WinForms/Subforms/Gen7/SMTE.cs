@@ -74,6 +74,15 @@ public partial class SMTE : Form
         trpoke = trp;
         TrainerNames = new TextData(trName);
         InitializeComponent();
+
+        // Allow an exact trainer shiny chance from 0.00% through 100.00%.
+        // Keep the control inside the existing RandSettings/Global Template flow.
+        NUD_Shiny.DecimalPlaces = 2;
+        NUD_Shiny.Increment = 0.01m;
+        NUD_Shiny.Minimum = 0m;
+        NUD_Shiny.Maximum = 100m;
+        NUD_Shiny.Left = 264;
+        NUD_Shiny.Width = 64;
         TrainerHeldItemTemplate.EnsureDefaultFile();
         TrainerBetterMovesetTemplate.EnsureDefaultFile();
         AddSmartHeldItemControls();
@@ -1695,7 +1704,8 @@ public partial class SMTE : Form
                 }
 
                 if (CHK_RandomShiny.Checked)
-                    pk.Shiny = Util.Rand.Next(0, 100 + 1) < NUD_Shiny.Value;
+                    // 10,000 equally likely outcomes gives true 0.01% precision.
+                    pk.Shiny = Util.Rand.Next(0, 10_000) < NUD_Shiny.Value * 100m;
                 if (CHK_RandomAbilities.Checked)
                     pk.Ability = (int)Util.Random32() % 4;
                 if (CHK_MaxDiffPKM.Checked)
