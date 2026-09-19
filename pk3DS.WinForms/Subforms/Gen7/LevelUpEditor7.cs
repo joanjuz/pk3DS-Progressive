@@ -106,6 +106,14 @@ public partial class LevelUpEditor7 : Form
     private void SetList()
     {
         if (entry < 1 || dumping) return;
+
+        // Commit the active DataGridView edit before reading the cells.
+        // Without this, closing the editor immediately after changing a move
+        // or level can leave the latest value only in the editing control.
+        if (dgv.IsCurrentCellDirty)
+            dgv.CommitEdit(DataGridViewDataErrorContexts.Commit);
+        dgv.EndEdit();
+
         List<int> moves = [];
         List<int> levels = [];
         for (int i = 0; i < dgv.Rows.Count - 1; i++)
