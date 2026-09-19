@@ -130,8 +130,16 @@ public partial class PersonalEditor7 : Form
 
         if (Main.Config.USUM)
         {
-            foreach (var tutor in Tutors_USUM)
-                CLB_BeachTutors.Items.Add(moves[tutor]);
+            ushort[] currentTutors = TutorEditor7.GetTutorMoveList();
+
+            if (currentTutors.Length == 0)
+                currentTutors = Tutors_USUM.Select(z => (ushort)z).ToArray();
+
+            foreach (ushort tutor in currentTutors)
+            {
+                string name = tutor < moves.Length ? moves[tutor] : $"Move {tutor}";
+                CLB_BeachTutors.Items.Add(name);
+            }
         }
 
         // toggle usum content

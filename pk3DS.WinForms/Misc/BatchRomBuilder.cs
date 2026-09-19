@@ -449,6 +449,7 @@ internal static class BatchGen7ActionExecutor
         "marts.add-ev-items",
         "marts.free-mega-stones",
         "marts.ban-ability-capsule",
+        "move-tutors.randomize",
         "move-tutors.free",
         "field-items.randomize",
         "shiny-rate.apply",
@@ -760,14 +761,27 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunTutors(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "move-tutors.free"))
+        if (!Has(actions, "move-tutors.randomize") && !Has(actions, "move-tutors.free"))
             return;
+
         if (!Main.Config.USUM)
-            throw new NotSupportedException("Free Move Tutors batch action is only supported for USUM.");
+            throw new NotSupportedException("Move Tutor batch actions are currently supported for USUM only.");
 
         BatchRuntime.Log("Move Tutors...");
         using var form = new TutorEditor7();
-        InvokeEvent(form, "B_FreeTutors_Click");
+
+        if (Has(actions, "move-tutors.randomize"))
+        {
+            BatchRuntime.QueuePromptResults(DialogResult.Yes);
+            InvokeEvent(form, "B_Randomize_Click");
+        }
+
+        if (Has(actions, "move-tutors.free"))
+        {
+            BatchRuntime.QueuePromptResults(DialogResult.Yes);
+            InvokeEvent(form, "B_FreeTutors_Click");
+        }
+
         InvokeEvent(form, "B_Save_Click");
     }
 
