@@ -39,9 +39,19 @@ public partial class SMWE : Form
 
         LoadData();
         AddProgressiveWildControls();
-        RandSettings.GetFormSettings(this, GB_Tweak.Controls);
-        SyncProgressiveWildUI();
         AddAdvancedWildLevelScaler();
+        RandSettings.GetFormSettings(this, GB_Tweak.Controls);
+
+        if (WildRandomizerTemplateFile.TryGetCurrent(CurrentWildTemplateGame, out var currentWildTemplate))
+        {
+            ApplyWildTemplate(currentWildTemplate, showMessage: false);
+        }
+        else if (WildRandomizerTemplateFile.TryLoadLastState(CurrentWildTemplateGame, out var savedWildTemplate))
+        {
+            ApplyProgressiveWildRanges(savedWildTemplate.ProgressiveBST?.Ranges);
+        }
+
+        SyncProgressiveWildUI();
 
         var weather = string.Format("If weather is active, create a random number.{0}If 0, use slot 0.{0}If <= 10, use slot 1.{0}Else, pick an SOS table and a slot.", Environment.NewLine);
         new ToolTip().SetToolTip(L_AddSOS, weather);
@@ -493,6 +503,7 @@ public partial class SMWE : Form
 
     private CheckBox? CHK_ProgressiveWildBST;
     private Button? B_SetProgressiveWildBST;
+    private Button? B_WildTemplate;
 
     private System.Collections.Generic.List<ProgressiveBSTRule> ProgressiveWildBSTRules =
         GetDefaultProgressiveWildBSTRules();
@@ -525,6 +536,14 @@ public partial class SMWE : Form
             Enabled = false,
         };
 
+        B_WildTemplate = new Button
+        {
+            Name = "B_WildTemplate",
+            Text = "Template...",
+            Size = new System.Drawing.Size(105, 24),
+            Location = new System.Drawing.Point(285, y),
+        };
+
         CHK_ProgressiveWildBST.CheckedChanged += (_, _) =>
         {
             if (CHK_ProgressiveWildBST.Checked)
@@ -542,8 +561,12 @@ public partial class SMWE : Form
         B_SetProgressiveWildBST.Click += (_, _) =>
             ShowProgressiveWildBSTDialog();
 
+        B_WildTemplate.Click += (_, _) =>
+            ShowWildTemplateMenu();
+
         GB_Tweak.Controls.Add(CHK_ProgressiveWildBST);
         GB_Tweak.Controls.Add(B_SetProgressiveWildBST);
+        GB_Tweak.Controls.Add(B_WildTemplate);
 
         new ToolTip().SetToolTip(
             CHK_ProgressiveWildBST,
@@ -572,6 +595,222 @@ public partial class SMWE : Form
         if (B_SetProgressiveWildBST is not null)
             B_SetProgressiveWildBST.Enabled =
                 CHK_ProgressiveWildBST.Checked;
+    }
+
+    private string CurrentWildTemplateGame => Main.Config.USUM ? "USUM" : "SM";
+
+    private void ShowWildTemplateMenu()
+    {
+        if (B_WildTemplate is null)
+            return;
+
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Load template...", null, (_, _) => LoadWildTemplate());
+        menu.Items.Add("Save current template...", null, (_, _) => SaveWildTemplate());
+        menu.Show(B_WildTemplate, new System.Drawing.Point(0, B_WildTemplate.Height));
+    }
+
+    private void LoadWildTemplate()
+    {
+        try
+        {
+            Directory.CreateDirectory(WildRandomizerTemplateFile.TemplateDirectory);
+            using var dialog = new OpenFileDialog
+            {
+                Title = "Load Wild Encounter template",
+                Filter = "Wild Encounter template (*.json)|*.json|All files (*.*)|*.*",
+                InitialDirectory = WildRandomizerTemplateFile.TemplateDirectory,
+                CheckFileExists = true,
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var template = WildRandomizerTemplateFile.Load(dialog.FileName, CurrentWildTemplateGame);
+            WildRandomizerTemplateFile.SetCurrent(template, CurrentWildTemplateGame);
+            WildRandomizerTemplateFile.SaveLastState(template, CurrentWildTemplateGame);
+            ApplyWildTemplate(template, showMessage: false);
+            WinFormsUtil.Alert("Wild Encounter template loaded successfully.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert($"Could not load Wild Encounter template.\n\n{ex.Message}");
+        }
+    }
+
+    private void SaveWildTemplate()
+    {
+        try
+        {
+            Directory.CreateDirectory(WildRandomizerTemplateFile.TemplateDirectory);
+            using var dialog = new SaveFileDialog
+            {
+                Title = "Save Wild Encounter template",
+                Filter = "Wild Encounter template (*.json)|*.json",
+                InitialDirectory = WildRandomizerTemplateFile.TemplateDirectory,
+                FileName = $"wild_randomizer_{CurrentWildTemplateGame.ToLowerInvariant()}.json",
+                AddExtension = true,
+                DefaultExt = "json",
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var template = CaptureWildTemplate();
+            WildRandomizerTemplateFile.SetCurrent(template, CurrentWildTemplateGame);
+            WildRandomizerTemplateFile.Save(dialog.FileName, template, CurrentWildTemplateGame);
+            WildRandomizerTemplateFile.SaveLastState(template, CurrentWildTemplateGame);
+            WinFormsUtil.Alert("Wild Encounter template saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Alert($"Could not save Wild Encounter template.\n\n{ex.Message}");
+        }
+    }
+
+    private WildRandomizerTemplate CaptureWildTemplate()
+    {
+        return new WildRandomizerTemplate
+        {
+            Name = $"{CurrentWildTemplateGame} wild encounter randomizer",
+            Game = CurrentWildTemplateGame,
+            G1 = CHK_G1.Checked,
+            G2 = CHK_G2.Checked,
+            G3 = CHK_G3.Checked,
+            G4 = CHK_G4.Checked,
+            G5 = CHK_G5.Checked,
+            G6 = CHK_G6.Checked,
+            G7 = CHK_G7.Checked,
+            Legendaries = CHK_L.Checked,
+            Events = CHK_E.Checked,
+            MegaForms = CHK_MegaForm.Checked,
+            SimilarBST = CHK_BST.Checked,
+            SlotRandomizationOption = CB_SlotRand.SelectedIndex,
+            ModifyLevel = CHK_Level.Checked,
+            LevelAmplifier = NUD_LevelAmp.Value,
+            AdvancedLevelFlat = (int)(NUD_WildLevelFlat?.Value ?? 0),
+            AdvancedLevelMultiplier = (int)(NUD_WildLevelMultiplier?.Value ?? 100),
+            AdvancedKeepRange = CHK_WildLevelKeepRange?.Checked ?? true,
+            ProgressiveBST = new WildProgressiveBSTTemplate
+            {
+                Enabled = CHK_ProgressiveWildBST?.Checked ?? false,
+                Ranges = ProgressiveWildBSTRules
+                    .OrderBy(rule => rule.MinLevel)
+                    .Select(rule => new WildProgressiveBSTTemplateRule
+                    {
+                        MinLevel = rule.MinLevel,
+                        MaxLevel = rule.MaxLevel,
+                        MinBST = rule.MinBST,
+                        MaxBST = rule.MaxBST,
+                        FullRandom = rule.FullRandom,
+                    })
+                    .ToList(),
+            },
+        };
+    }
+
+    internal void ApplyWildTemplate(WildRandomizerTemplate template, bool showMessage = true)
+    {
+        WildRandomizerTemplateFile.Validate(template, CurrentWildTemplateGame);
+        CHK_ProgressiveWildBST.Checked = false;
+
+        CHK_G1.Checked = template.G1;
+        CHK_G2.Checked = template.G2;
+        CHK_G3.Checked = template.G3;
+        CHK_G4.Checked = template.G4;
+        CHK_G5.Checked = template.G5;
+        CHK_G6.Checked = template.G6;
+        CHK_G7.Checked = template.G7;
+        CHK_L.Checked = template.Legendaries;
+        CHK_E.Checked = template.Events;
+        CHK_MegaForm.Checked = template.MegaForms;
+        CHK_BST.Checked = template.SimilarBST;
+
+        if (template.SlotRandomizationOption >= 0 && template.SlotRandomizationOption < CB_SlotRand.Items.Count)
+            CB_SlotRand.SelectedIndex = template.SlotRandomizationOption;
+
+        CHK_Level.Checked = template.ModifyLevel;
+        SetWildNumeric(NUD_LevelAmp, template.LevelAmplifier);
+
+        if (NUD_WildLevelFlat is not null)
+            SetWildNumeric(NUD_WildLevelFlat, template.AdvancedLevelFlat);
+        if (NUD_WildLevelMultiplier is not null)
+            SetWildNumeric(NUD_WildLevelMultiplier, template.AdvancedLevelMultiplier);
+        if (CHK_WildLevelKeepRange is not null)
+            CHK_WildLevelKeepRange.Checked = template.AdvancedKeepRange;
+
+        ApplyProgressiveWildRanges(template.ProgressiveBST?.Ranges);
+        CHK_ProgressiveWildBST.Checked = template.ProgressiveBST?.Enabled ?? false;
+        SyncProgressiveWildUI();
+
+        if (showMessage)
+            WinFormsUtil.Alert("Wild Encounter settings applied.");
+    }
+
+    private void ApplyProgressiveWildRanges(System.Collections.Generic.IEnumerable<WildProgressiveBSTTemplateRule>? ranges)
+    {
+        if (ranges is null)
+            return;
+
+        var candidate = ranges
+            .Select(rule => new ProgressiveBSTRule
+            {
+                MinLevel = rule.MinLevel,
+                MaxLevel = rule.MaxLevel,
+                MinBST = rule.MinBST,
+                MaxBST = rule.MaxBST,
+                FullRandom = rule.FullRandom,
+            })
+            .OrderBy(rule => rule.MinLevel)
+            .ToList();
+
+        if (candidate.Count == 0)
+            return;
+        if (!ValidateProgressiveWildBSTRules(candidate, showMessage: false))
+            throw new InvalidDataException("Invalid Progressive Wild BST ranges.");
+
+        ProgressiveWildBSTRules = candidate;
+    }
+
+    internal void ApplyProgressiveWildRules(string serialized)
+    {
+        if (string.IsNullOrWhiteSpace(serialized))
+            throw new InvalidDataException("Progressive Wild action has no saved BST ranges.");
+
+        var rules = new System.Collections.Generic.List<ProgressiveBSTRule>();
+        foreach (string token in serialized.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] fields = token.Split(',');
+            if (fields.Length != 5 ||
+                !int.TryParse(fields[0], out int minLevel) ||
+                !int.TryParse(fields[1], out int maxLevel) ||
+                !int.TryParse(fields[2], out int minBST) ||
+                !int.TryParse(fields[3], out int maxBST) ||
+                !bool.TryParse(fields[4], out bool fullRandom))
+            {
+                throw new InvalidDataException($"Invalid Progressive Wild rule '{token}'.");
+            }
+
+            rules.Add(new ProgressiveBSTRule
+            {
+                MinLevel = minLevel,
+                MaxLevel = maxLevel,
+                MinBST = minBST,
+                MaxBST = maxBST,
+                FullRandom = fullRandom,
+            });
+        }
+
+        rules = rules.OrderBy(rule => rule.MinLevel).ToList();
+        if (!ValidateProgressiveWildBSTRules(rules, showMessage: false))
+            throw new InvalidDataException("Invalid Progressive Wild BST ranges.");
+
+        ProgressiveWildBSTRules = rules;
+    }
+
+    private static void SetWildNumeric(NumericUpDown control, decimal value)
+    {
+        control.Value = Math.Max(control.Minimum, Math.Min(control.Maximum, value));
     }
 
     private void ShowProgressiveWildBSTDialog()
@@ -1076,6 +1315,17 @@ public partial class SMWE : Form
 
     private void SMWE_FormClosing(object sender, FormClosingEventArgs e)
     {
+        try
+        {
+            var template = CaptureWildTemplate();
+            WildRandomizerTemplateFile.SetCurrent(template, CurrentWildTemplateGame);
+            WildRandomizerTemplateFile.SaveLastState(template, CurrentWildTemplateGame);
+        }
+        catch
+        {
+            // Closing the editor should not be blocked by a persistence failure.
+        }
+
         RandSettings.SetFormSettings(this, GB_Tweak.Controls);
     }
 }
