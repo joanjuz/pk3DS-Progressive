@@ -18,7 +18,7 @@ public partial class TutorEditor7 : Form
             Close();
         }
         InitializeComponent();
-        B_Randomize.Visible = false;
+        B_Randomize.Visible = Main.Config.USUM;
         AddFreeTutorsButton();
 
         data = File.ReadAllBytes(CROPath);
@@ -34,7 +34,7 @@ public partial class TutorEditor7 : Form
         B_FreeTutors = new Button
         {
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
-            Location = new System.Drawing.Point(B_Randomize.Left, B_Randomize.Top),
+            Location = new System.Drawing.Point(B_Randomize.Right + 6, B_Randomize.Top),
             Name = "B_FreeTutors",
             Size = new System.Drawing.Size(80, B_Randomize.Height),
             TabIndex = B_Randomize.TabIndex,
@@ -54,6 +54,7 @@ public partial class TutorEditor7 : Form
     private readonly byte[] data;
     private Button B_FreeTutors;
     private bool freeTutorsOnSave;
+    private bool randomizeTutorsOnSave;
 
     private readonly string[] locationsTutor =
     [
@@ -67,6 +68,9 @@ public partial class TutorEditor7 : Form
     {
         if (entryBPMove > -1) SetListBPMove();
         File.WriteAllBytes(CROPath, data);
+
+        if (randomizeTutorsOnSave)
+            RandomizationSessionState.MarkAction("move-tutors.randomize");
 
         if (freeTutorsOnSave)
             RandomizationSessionState.MarkAction("move-tutors.free", ("price", "0"));
@@ -154,6 +158,94 @@ public partial class TutorEditor7 : Form
 
     private void B_Randomize_Click(object sender, EventArgs e)
     {
-        WinFormsUtil.Alert("Not currently implemented.");
+        if (!Main.Config.USUM)
+        {
+            WinFormsUtil.Alert("Move Tutor randomization is currently supported for USUM only.");
+            return;
+        }
+
+        if (DialogResult.Yes != WinFormsUtil.Prompt(
+            MessageBoxButtons.YesNo,
+            "Randomize all USUM Move Tutor moves?",
+            "Tutor prices and the number of slots at each location will be preserved."))
+        {
+            return;
+        }
+
+        if (entryBPMove > -1)
+            SetListBPMove();
+
+        int[] banned = [.. Legal.Z_Moves, .. new[] { 165, 621, 166, 226 }];
+        int[] randomMoves = Enumerable.Range(1, movelist.Length - 1)
+            .Where(move => !banned.Contains(move) && !string.IsNullOrWhiteSpace(movelist[move]))
+            .ToArray();
+
+        int slotCount = len_BPTutor.Sum(z => z);
+        if (randomMoves.Length < slotCount)
+        {
+            WinFormsUtil.Error(
+                "Not enough valid moves to randomize every Tutor slot.",
+                $"Valid moves: {randomMoves.Length}; Tutor slots: {slotCount}.");
+            return;
+        }
+
+        Util.Shuffle(randomMoves);
+
+        int moveIndex = 0;
+        for (int location = 0; location < len_BPTutor.Length; location++)
+        {
+            int count = len_BPTutor[location];
+            int ofs = ofs_BPTutor + (len_BPTutor.Take(location).Sum(z => z) * 4);
+
+            for (int i = 0; i < count; i++)
+            {
+                ushort move = (ushort)randomMoves[moveIndex++];
+                Array.Copy(BitConverter.GetBytes(move), 0, data, ofs + (4 * i), 2);
+                // The following 2 bytes are the BP price and are intentionally preserved.
+            }
+        }
+
+        randomizeTutorsOnSave = true;
+
+        if (entryBPMove > -1)
+            GetListBPMove();
+
+        WinFormsUtil.Alert(
+            "Move Tutors randomized!",
+            $"{slotCount} unique Tutor moves were assigned. Prices were preserved. Click Save to write Shop.cro.");
+    }
+
+    internal static ushort[] GetTutorMoveList()
+    {
+        if (!Main.Config.USUM || string.IsNullOrWhiteSpace(Main.RomFSPath))
+            return [];
+
+        string croPath = Path.Combine(Main.RomFSPath, "Shop.cro");
+        if (!File.Exists(croPath))
+            return [];
+
+        byte[] tutorData = File.ReadAllBytes(croPath);
+        const int countOffset = 0x52D2;
+        const int tutorOffset = 0x54DE;
+
+        if (tutorData.Length < countOffset + 4)
+            return [];
+
+        byte[] counts = tutorData.Skip(countOffset).Take(4).ToArray();
+        var result = new System.Collections.Generic.List<ushort>(counts.Sum(z => z));
+
+        for (int location = 0; location < counts.Length; location++)
+        {
+            int count = counts[location];
+            int ofs = tutorOffset + (counts.Take(location).Sum(z => z) * 4);
+
+            if (ofs < 0 || ofs + (count * 4) > tutorData.Length)
+                return [];
+
+            for (int i = 0; i < count; i++)
+                result.Add(BitConverter.ToUInt16(tutorData, ofs + (4 * i)));
+        }
+
+        return [.. result];
     }
 }
