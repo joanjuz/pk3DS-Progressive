@@ -21,6 +21,7 @@ public partial class TutorEditor7 : Form
         B_Randomize.Visible = Main.Config.USUM;
         AddFreeTutorsButton();
         AddTutorSanityCheckBox();
+        AddTutorFollowEvolutionsCheckBox();
 
         data = File.ReadAllBytes(CROPath);
         len_BPTutor = data.Skip(0x52D2).Take(4).ToArray();
@@ -57,6 +58,7 @@ public partial class TutorEditor7 : Form
     private bool freeTutorsOnSave;
     private bool randomizeTutorsOnSave;
     private CheckBox CHK_TutorSanity;
+    private CheckBox CHK_TutorFollowEvolutions;
 
     // Fixed Gen 7 special/type tutors represented by PersonalInfo.TypeTutors bits.
     private static readonly ushort[] TypeTutorMoves =
@@ -104,6 +106,38 @@ public partial class TutorEditor7 : Form
         else
             RandomizationSessionState.RemoveAction("move-tutors.sanity");
     }
+
+    private void AddTutorFollowEvolutionsCheckBox()
+    {
+        const int minimumClientWidth = 680;
+        if (ClientSize.Width < minimumClientWidth)
+            ClientSize = new System.Drawing.Size(minimumClientWidth, ClientSize.Height);
+
+        MinimumSize = new System.Drawing.Size(
+            Math.Max(MinimumSize.Width, Width),
+            MinimumSize.Height);
+
+        CHK_TutorFollowEvolutions = new CheckBox
+        {
+            Name = "CHK_TutorFollowEvolutions",
+            AutoSize = true,
+            Location = new System.Drawing.Point(CHK_TutorSanity.Right + 12, CHK_TutorSanity.Top),
+            Text = "Follow Evolutions",
+            UseVisualStyleBackColor = true,
+        };
+
+        CHK_TutorFollowEvolutions.CheckedChanged += CHK_TutorFollowEvolutions_CheckedChanged;
+        Controls.Add(CHK_TutorFollowEvolutions);
+        CHK_TutorFollowEvolutions.BringToFront();
+    }
+
+    private void CHK_TutorFollowEvolutions_CheckedChanged(object sender, EventArgs e)
+    {
+        if (CHK_TutorFollowEvolutions.Checked)
+            RandomizationSessionState.MarkAction("move-tutors.follow-evolutions");
+        else
+            RandomizationSessionState.RemoveAction("move-tutors.follow-evolutions");
+    }
     private void B_Save_Click(object sender, EventArgs e)
     {
         if (entryBPMove > -1)
@@ -111,6 +145,9 @@ public partial class TutorEditor7 : Form
 
         if (CHK_TutorSanity?.Checked == true)
             ApplyTutorSanity();
+
+        if (CHK_TutorFollowEvolutions?.Checked == true)
+            ApplyTutorFollowEvolutions();
 
         File.WriteAllBytes(CROPath, data);
 
@@ -260,6 +297,139 @@ public partial class TutorEditor7 : Form
             $"{slotCount} unique Tutor moves were assigned. Prices were preserved. Click Save to write Shop.cro.");
     }
 
+    private void ApplyTutorFollowEvolutions()
+    {
+        if (!Main.Config.USUM)
+        {
+            if (!BatchRuntime.IsActive)
+                WinFormsUtil.Alert("Tutor Follow Evolutions is currently supported for USUM only.");
+            return;
+        }
+
+        var table = Main.SpeciesStat;
+        var evolutions = Main.Config.Evolutions;
+
+        if (table is null || evolutions is null)
+            return;
+
+        var edges = new System.Collections.Generic.HashSet<(int Source, int Target)>();
+        int sourceLimit = Math.Min(table.Length, evolutions.Length);
+
+        for (int source = 1; source < sourceLimit; source++)
+        {
+            var evolutionSet = evolutions[source];
+            if (evolutionSet?.PossibleEvolutions is null)
+                continue;
+
+            foreach (var evolution in evolutionSet.PossibleEvolutions)
+            {
+                if (evolution is null || evolution.Method <= 0 || evolution.Species <= 0)
+                    continue;
+
+                if (evolution.Species >= table.Length)
+                    continue;
+
+                int target = table[evolution.Species].FormeIndex(
+                    evolution.Species,
+                    evolution.Form);
+
+                if (target <= 0 || target >= table.Length || target == source)
+                    continue;
+
+                edges.Add((source, target));
+            }
+        }
+
+        int compatibilityAdded = 0;
+        var changedTargets = new System.Collections.Generic.HashSet<int>();
+
+        // Fixed-point propagation handles A -> B -> C regardless of edge order,
+        // and each branch independently inherits from its parent.
+        bool changed;
+        do
+        {
+            changed = false;
+
+            foreach (var edge in edges)
+            {
+                var source = table[edge.Source];
+                var target = table[edge.Target];
+
+                if (source is null || target is null)
+                    continue;
+
+                bool targetChanged = false;
+
+                int typeTutorCount = Math.Min(source.TypeTutors.Length, target.TypeTutors.Length);
+                for (int tutor = 0; tutor < typeTutorCount; tutor++)
+                {
+                    if (!source.TypeTutors[tutor] || target.TypeTutors[tutor])
+                        continue;
+
+                    target.TypeTutors[tutor] = true;
+                    compatibilityAdded++;
+                    targetChanged = true;
+                }
+
+                int specialGroupCount = Math.Min(source.SpecialTutors.Length, target.SpecialTutors.Length);
+                for (int group = 0; group < specialGroupCount; group++)
+                {
+                    bool[] sourceFlags = source.SpecialTutors[group];
+                    bool[] targetFlags = target.SpecialTutors[group];
+
+                    if (sourceFlags is null || targetFlags is null)
+                        continue;
+
+                    int specialTutorCount = Math.Min(sourceFlags.Length, targetFlags.Length);
+                    for (int tutor = 0; tutor < specialTutorCount; tutor++)
+                    {
+                        if (!sourceFlags[tutor] || targetFlags[tutor])
+                            continue;
+
+                        targetFlags[tutor] = true;
+                        compatibilityAdded++;
+                        targetChanged = true;
+                    }
+                }
+
+                if (!targetChanged)
+                    continue;
+
+                changed = true;
+                changedTargets.Add(edge.Target);
+            }
+        }
+        while (changed);
+
+        if (compatibilityAdded > 0)
+        {
+            byte[][] personalFiles = Main.Config.GARCPersonal.Files;
+            byte[][] serialized = table.Select(z => z.Write()).ToArray();
+
+            if (personalFiles.Length < serialized.Length + 1)
+                throw new InvalidOperationException("Personal GARC does not contain the expected master table.");
+
+            serialized.CopyTo(personalFiles, 0);
+
+            for (int i = 0; i < serialized.Length; i++)
+                serialized[i].CopyTo(personalFiles[^1], i * serialized[i].Length);
+
+            Main.Config.GARCPersonal.Files = personalFiles;
+            Main.Config.GARCPersonal.Save();
+            Main.Config.InitializePersonal();
+        }
+
+        RandomizationSessionState.MarkAction("move-tutors.follow-evolutions");
+
+        string detail = compatibilityAdded == 0
+            ? "Tutor Follow Evolutions found no missing inherited compatibility."
+            : $"Added {compatibilityAdded} inherited Tutor compatibility flag(s) across {changedTargets.Count} evolution entr{(changedTargets.Count == 1 ? "y" : "ies")}.";
+
+        if (BatchRuntime.IsActive)
+            BatchRuntime.Log(detail);
+        else
+            WinFormsUtil.Alert("Tutor Follow Evolutions complete!", detail);
+    }
     private ushort[] GetCurrentTutorMoveList()
     {
         var result = new System.Collections.Generic.List<ushort>(len_BPTutor.Sum(z => z));
