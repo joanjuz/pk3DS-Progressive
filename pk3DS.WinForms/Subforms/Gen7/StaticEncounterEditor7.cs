@@ -191,59 +191,73 @@ public partial class StaticEncounterEditor7 : Form
     private int tEntry = -1;
     private Button B_TradeAnyRequest;
     private Button B_TradeAcceptAnyRandomOffer;
+    private Button B_TradeHideSpeciesNames;
 
     private void AddTradeUtilityButtons()
     {
-        if (!Main.Config.USUM)
-            return;
-
         const int gap = 6;
         int width = 250;
         int height = Math.Max(CB_TRequest.Height, 24);
-        int left = Math.Max(CB_TRequest.Left, Tab_Trades.ClientSize.Width - width - 16);
-        int top = Math.Max(CB_TRequest.Bottom + gap, Tab_Trades.ClientSize.Height - (height * 2) - gap - 16);
 
-        B_TradeAnyRequest = new Button
+        B_TradeHideSpeciesNames = new Button
         {
-            Location = new System.Drawing.Point(left, top),
-            Name = "B_TradeAnyRequest",
+            Name = "B_TradeHideSpeciesNames",
             Size = new System.Drawing.Size(width, height),
-            Text = "Trades accept any Pokemon",
+            Text = "Hide Pokemon names in trade dialogue",
             UseVisualStyleBackColor = true,
         };
-        B_TradeAnyRequest.Click += B_TradeAnyRequest_Click;
+        B_TradeHideSpeciesNames.Click += B_TradeHideSpeciesNames_Click;
+        Tab_Trades.Controls.Add(B_TradeHideSpeciesNames);
 
-        B_TradeAcceptAnyRandomOffer = new Button
+        if (Main.Config.USUM)
         {
-            Location = new System.Drawing.Point(left, top + height + gap),
-            Name = "B_TradeAcceptAnyRandomOffer",
-            Size = new System.Drawing.Size(width, height),
-            Text = "Any request + random offer",
-            UseVisualStyleBackColor = true,
-        };
-        B_TradeAcceptAnyRandomOffer.Click += B_TradeAcceptAnyRandomOffer_Click;
+            B_TradeAnyRequest = new Button
+            {
+                Name = "B_TradeAnyRequest",
+                Size = new System.Drawing.Size(width, height),
+                Text = "Trades accept any Pokemon",
+                UseVisualStyleBackColor = true,
+            };
+            B_TradeAnyRequest.Click += B_TradeAnyRequest_Click;
 
-        Tab_Trades.Controls.Add(B_TradeAnyRequest);
-        Tab_Trades.Controls.Add(B_TradeAcceptAnyRandomOffer);
+            B_TradeAcceptAnyRandomOffer = new Button
+            {
+                Name = "B_TradeAcceptAnyRandomOffer",
+                Size = new System.Drawing.Size(width, height),
+                Text = "Any request + random offer",
+                UseVisualStyleBackColor = true,
+            };
+            B_TradeAcceptAnyRandomOffer.Click += B_TradeAcceptAnyRandomOffer_Click;
+
+            Tab_Trades.Controls.Add(B_TradeAnyRequest);
+            Tab_Trades.Controls.Add(B_TradeAcceptAnyRandomOffer);
+        }
+
         Tab_Trades.Resize += (_, _) => LayoutTradeUtilityButtons();
         LayoutTradeUtilityButtons();
-        B_TradeAnyRequest.BringToFront();
-        B_TradeAcceptAnyRandomOffer.BringToFront();
+        B_TradeHideSpeciesNames.BringToFront();
+        B_TradeAnyRequest?.BringToFront();
+        B_TradeAcceptAnyRandomOffer?.BringToFront();
     }
 
     private void LayoutTradeUtilityButtons()
     {
-        if (B_TradeAnyRequest == null || B_TradeAcceptAnyRandomOffer == null)
+        if (B_TradeHideSpeciesNames == null)
             return;
 
         const int gap = 6;
         int width = 250;
         int height = Math.Max(CB_TRequest.Height, 24);
         int left = Math.Max(CB_TRequest.Left, Tab_Trades.ClientSize.Width - width - 16);
-        int top = Math.Max(CB_TRequest.Bottom + gap, Tab_Trades.ClientSize.Height - (height * 2) - gap - 16);
+        int rows = Main.Config.USUM ? 3 : 1;
+        int totalHeight = (height * rows) + (gap * (rows - 1));
+        int top = Math.Max(CB_TRequest.Bottom + gap, Tab_Trades.ClientSize.Height - totalHeight - 16);
 
-        B_TradeAnyRequest.SetBounds(left, top, width, height);
-        B_TradeAcceptAnyRandomOffer.SetBounds(left, top + height + gap, width, height);
+        B_TradeHideSpeciesNames.SetBounds(left, top, width, height);
+        if (B_TradeAnyRequest != null)
+            B_TradeAnyRequest.SetBounds(left, top + height + gap, width, height);
+        if (B_TradeAcceptAnyRandomOffer != null)
+            B_TradeAcceptAnyRandomOffer.SetBounds(left, top + ((height + gap) * 2), width, height);
     }
 
     private void B_TradeAnyRequest_Click(object sender, EventArgs e)
@@ -324,6 +338,146 @@ public partial class StaticEncounterEditor7 : Form
     }
 
 
+   private void B_TradeHideSpeciesNames_Click(object sender, EventArgs e)
+{
+    try
+    {
+        ApplyHideTradeSpeciesNames();
+    }
+    catch (Exception ex)
+    {
+        WinFormsUtil.Error(
+            "Could not hide the in-game trade Pokemon names.",
+            ex.Message);
+    }
+}
+
+private void ApplyHideTradeSpeciesNames()
+{
+    const string offeredSpecies = "[VAR PKNAME(0001)]";
+    const string requestedSpecies = "[VAR PKNAME(0002)]";
+
+    // Unicode escape avoids source-file encoding problems.
+    const string genericPokemon = "Pok\u00E9mon";
+
+    int originalLanguage = Main.Config.Language;
+    int storyFile = Main.Config.USUM ? 14 : 12;
+    int speciesNameFile = Main.Config.USUM ? 60 : 55;
+    int updatedLanguages = 0;
+    int updatedLines = 0;
+
+    try
+    {
+        for (int language = 0; language < 10; language++)
+        {
+            Main.Config.Language = language;
+
+            var storyGarc = Main.Config.GetGARCData("storytext");
+            var gameTextGarc = Main.Config.GetGARCData("gametext");
+
+            byte[][] storyData = storyGarc.Files;
+
+            if ((uint)storyFile >= (uint)storyData.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Story text file {storyFile} is missing for language bank {language}.");
+            }
+
+            string[] storyText =
+                TextFile.GetStrings(Main.Config, storyData[storyFile]);
+
+            string[] localizedSpecies =
+                TextFile.GetStrings(
+                    Main.Config,
+                    gameTextGarc.Files[speciesNameFile]);
+
+            // Some Gen 7 trades use PKNAME variables, while others
+            // contain the requested/offered species as literal text.
+            string[] literalSpeciesNames = localizedSpecies
+                .Skip(1)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.Ordinal)
+                .OrderByDescending(name => name.Length)
+                .ToArray();
+
+            int changed = 0;
+
+            for (int i = 0; i < storyText.Length; i++)
+            {
+                string line = storyText[i];
+
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                string updated = line
+                    .Replace(
+                        offeredSpecies,
+                        genericPokemon,
+                        StringComparison.Ordinal)
+                    .Replace(
+                        requestedSpecies,
+                        genericPokemon,
+                        StringComparison.Ordinal);
+
+                foreach (string speciesName in literalSpeciesNames)
+                {
+                    string pattern =
+                        $@"(?<![\p{{L}}\p{{N}}])" +
+                        $"{System.Text.RegularExpressions.Regex.Escape(speciesName)}" +
+                        $@"(?![\p{{L}}\p{{N}}])";
+
+                    updated =
+                        System.Text.RegularExpressions.Regex.Replace(
+                            updated,
+                            pattern,
+                            genericPokemon,
+                            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+                }
+
+                if (string.Equals(
+                    updated,
+                    line,
+                    StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                storyText[i] = updated;
+                changed++;
+            }
+
+            if (changed == 0)
+                continue;
+
+            storyData[storyFile] =
+                TextFile.GetBytes(Main.Config, storyText);
+
+            storyGarc.Files = storyData;
+            storyGarc.Save();
+
+            updatedLanguages++;
+            updatedLines += changed;
+        }
+    }
+    finally
+    {
+        Main.Config.Language = originalLanguage;
+    }
+
+    RandomizationSessionState.MarkAction(
+        "trades.hide-species-names");
+
+    string detail = updatedLines == 0
+        ? "Trade dialogue already hides the requested/offered species names."
+        : $"Hidden requested/offered species names in {updatedLines} dialogue line(s) across {updatedLanguages} language bank(s).";
+
+    if (BatchRuntime.IsActive)
+        BatchRuntime.Log(detail);
+    else
+        WinFormsUtil.Alert(
+            "Trade dialogue updated!",
+            detail);
+}
     private void B_Save_Click(object sender, EventArgs e)
     {
         SetGift();
