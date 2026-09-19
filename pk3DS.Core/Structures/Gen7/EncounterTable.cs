@@ -89,7 +89,7 @@ public class EncounterTable
     public string GetAllies(int slotIndex, ReadOnlySpan<string> speciesList)
     {
         string result = "";
-        for (int i = 1; i < Encounter7s.Length; i++)
+        for (int i = 1; i < Encounter7s.Length - 1; i++)
         {
             var ally = Encounter7s[i][slotIndex];
             if (ally?.Species is null or 0)
