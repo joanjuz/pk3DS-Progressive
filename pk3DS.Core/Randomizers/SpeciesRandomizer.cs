@@ -27,6 +27,22 @@ public class SpeciesRandomizer
         RandSpec = new GenericRandomizer(list);
     }
 
+    public int[] GetAllowedSpeciesPool()
+    {
+        return InitializeSpeciesList();
+    }
+
+    public int[] GetSpeciesPoolByBST(int minBST, int maxBST)
+    {
+        return InitializeSpeciesList()
+            .Where(species =>
+            {
+                int bst = SpeciesStat[species].BST;
+                return bst >= minBST && bst <= maxBST;
+            })
+            .ToArray();
+    }
+
     #region Randomizer Settings
     public bool G1 = true;
     public bool G2 = true;
@@ -232,7 +248,11 @@ public class SpeciesRandomizer
     {
         list.AddRange(Enumerable.Range(495, 143)); // Snivy - Volcarona
         if (L) list.AddRange(Enumerable.Range(638, 9)); // Unova Legends
-        if (E) list.Add(494); list.AddRange(Enumerable.Range(647, 3)); // Victini, Keldeo, Meloetta, Genesect
+        if (E)
+        {
+            list.Add(494); // Victini
+            list.AddRange(Enumerable.Range(647, 3)); // Keldeo, Meloetta, Genesect
+        }
     }
 
     private void AddGen6Species(List<int> list)

@@ -26,6 +26,10 @@ public sealed class GlobalRandomizationTemplate
     // such as Progressive BST ranges, per-trainer caps and move rules.
     public TrainerRandomizerTemplate Trainer { get; set; }
 
+    // Wild encounter settings contain Progressive BST rows and other state that
+    // cannot be represented completely by RandSettings alone.
+    public WildRandomizerTemplate Wild { get; set; }
+
     // A recipe of actions actually used in the current ROM. Batch building can
     // consume this list later without changing the template format.
     public List<GlobalRandomizationAction> Actions { get; set; } = [];
@@ -125,6 +129,15 @@ public static class GlobalRandomizationTemplateFile
         if (TrainerRandomizerTemplateFile.TryGetCurrent(currentGame, out var currentTrainer))
             trainer = currentTrainer;
 
+        WildRandomizerTemplate wild = null;
+        if (generation == 7)
+        {
+            if (WildRandomizerTemplateFile.TryGetCurrent(currentGame, out var currentWild))
+                wild = currentWild;
+            else if (WildRandomizerTemplateFile.TryLoadLastState(currentGame, out var savedWild))
+                wild = savedWild;
+        }
+
         return new GlobalRandomizationTemplate
         {
             Name = string.IsNullOrWhiteSpace(name) ? $"{currentGame} global ROM template" : name.Trim(),
@@ -133,6 +146,7 @@ public static class GlobalRandomizationTemplateFile
             SavedUtc = DateTime.UtcNow,
             RandSettings = RandSettings.Save().ToList(),
             Trainer = trainer,
+            Wild = wild,
             Actions = RandomizationSessionState.ExportActions(),
             Assets = CaptureAssets(generation),
         };
@@ -184,6 +198,23 @@ public static class GlobalRandomizationTemplateFile
         else
             TrainerRandomizerTemplateFile.ClearCurrent(currentGame);
 
+        if (template.Wild is not null)
+        {
+            WildRandomizerTemplateFile.SetCurrent(template.Wild, currentGame);
+            try
+            {
+                WildRandomizerTemplateFile.SaveLastState(template.Wild, currentGame);
+            }
+            catch
+            {
+                // In-memory application remains valid if persistent state cannot be written.
+            }
+        }
+        else
+        {
+            WildRandomizerTemplateFile.ClearCurrent(currentGame);
+        }
+
         RandomizationSessionState.ImportActions(template.Actions ?? []);
         return ValidateAssets(template.Assets ?? [], template.Generation);
     }
@@ -203,12 +234,16 @@ public static class GlobalRandomizationTemplateFile
 
         if (template.Trainer is not null)
             TrainerRandomizerTemplateFile.Validate(template.Trainer, actualGame);
+
+        if (template.Wild is not null)
+            WildRandomizerTemplateFile.Validate(template.Wild, actualGame);
     }
 
     public static void ResetSession()
     {
         RandomizationSessionState.Clear();
         TrainerRandomizerTemplateFile.ClearCurrent();
+        WildRandomizerTemplateFile.ClearCurrent();
     }
 
     private static List<GlobalTemplateAsset> CaptureAssets(int generation)

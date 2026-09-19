@@ -432,6 +432,7 @@ internal static class BatchGen7ActionExecutor
         "tms.follow-evolutions",
         "trainers.randomize",
         "wild-encounters.randomize",
+        "wild-encounters.progressive",
         "wild-encounters.scale-levels",
         "wild-encounters.copy-sos",
         "wild-encounters.modify-levels",
@@ -481,7 +482,7 @@ internal static class BatchGen7ActionExecutor
         RunEggMoves(actions);
         RunTMs(actions);
         RunStaticEncounters(actions);
-        RunWildEncounters(actions);
+        RunWildEncounters(actions, template.Wild);
         RunPickup(actions);
         RunMarts(actions);
         RunTutors(actions);
@@ -634,11 +635,27 @@ internal static class BatchGen7ActionExecutor
         trpoke.Save();
     }
 
-    private static void RunWildEncounters(Dictionary<string, GlobalRandomizationAction> actions)
+    private static void RunWildEncounters(
+        Dictionary<string, GlobalRandomizationAction> actions,
+        WildRandomizerTemplate wildTemplate)
     {
-        string[] ids = { "wild-encounters.randomize", "wild-encounters.scale-levels", "wild-encounters.copy-sos", "wild-encounters.modify-levels" };
+        string[] ids =
+        {
+            "wild-encounters.randomize",
+            "wild-encounters.progressive",
+            "wild-encounters.scale-levels",
+            "wild-encounters.copy-sos",
+            "wild-encounters.modify-levels",
+        };
+
         if (!ids.Any(id => Has(actions, id)))
             return;
+
+        bool normal = Has(actions, "wild-encounters.randomize");
+        bool progressive = Has(actions, "wild-encounters.progressive");
+
+        if (normal && progressive)
+            throw new InvalidDataException("Global template contains both normal and Progressive Wild randomization actions.");
 
         BatchRuntime.Log("Wild encounters...");
         var ed = Main.Config.GetlzGARCData("encdata");
@@ -646,7 +663,29 @@ internal static class BatchGen7ActionExecutor
         var wd = Main.Config.GetlzGARCData("worlddata");
         using var form = new SMWE(ed, zd, wd);
 
-        if (Has(actions, "wild-encounters.randomize")) InvokeEvent(form, "B_Randomize_Click");
+        if (wildTemplate is not null)
+            form.ApplyWildTemplate(wildTemplate, showMessage: false);
+
+        if (progressive && wildTemplate is null)
+        {
+            var action = Get(actions, "wild-encounters.progressive");
+            if (action?.Parameters is null || !action.Parameters.TryGetValue("rules", out string serializedRules))
+                throw new InvalidDataException("Progressive Wild requires Wild template state or saved BST rules.");
+
+            form.ApplyProgressiveWildRules(serializedRules);
+        }
+
+        if (normal)
+        {
+            SetCheckBox(form, "CHK_ProgressiveWildBST", false);
+            InvokeEvent(form, "B_Randomize_Click");
+        }
+        else if (progressive)
+        {
+            SetCheckBox(form, "CHK_ProgressiveWildBST", true);
+            InvokeEvent(form, "B_Randomize_Click");
+        }
+
         if (Has(actions, "wild-encounters.scale-levels"))
         {
             ApplyWildScaleParameters(form, Get(actions, "wild-encounters.scale-levels"));
