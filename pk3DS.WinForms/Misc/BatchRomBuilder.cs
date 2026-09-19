@@ -428,6 +428,7 @@ internal static class BatchGen7ActionExecutor
         "level-up-moves.metronome",
         "egg-moves.randomize",
         "tms.randomize",
+        "tms.sanity",
         "trainers.randomize",
         "wild-encounters.randomize",
         "wild-encounters.scale-levels",
@@ -592,12 +593,18 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunTMs(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "tms.randomize"))
+        if (!Has(actions, "tms.randomize") && !Has(actions, "tms.sanity"))
             return;
 
         BatchRuntime.Log("TMs...");
         using var form = new TMEditor7();
-        InvokeEvent(form, "B_RandomTM_Click");
+
+        if (Has(actions, "tms.randomize"))
+            InvokeEvent(form, "B_RandomTM_Click");
+
+        if (Has(actions, "tms.sanity"))
+            SetCheckBox(form, "CHK_TMSanity", true);
+
         Invoke(form, "Form_Closing", form, new FormClosingEventArgs(CloseReason.None, false));
     }
 
