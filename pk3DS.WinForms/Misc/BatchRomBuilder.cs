@@ -450,6 +450,7 @@ internal static class BatchGen7ActionExecutor
         "marts.free-mega-stones",
         "marts.ban-ability-capsule",
         "move-tutors.randomize",
+        "move-tutors.sanity",
         "move-tutors.free",
         "field-items.randomize",
         "shiny-rate.apply",
@@ -761,7 +762,7 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunTutors(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "move-tutors.randomize") && !Has(actions, "move-tutors.free"))
+        if (!Has(actions, "move-tutors.randomize") && !Has(actions, "move-tutors.sanity") && !Has(actions, "move-tutors.free"))
             return;
 
         if (!Main.Config.USUM)
@@ -781,6 +782,9 @@ internal static class BatchGen7ActionExecutor
             BatchRuntime.QueuePromptResults(DialogResult.Yes);
             InvokeEvent(form, "B_FreeTutors_Click");
         }
+
+        if (Has(actions, "move-tutors.sanity"))
+            SetCheckBox(form, "CHK_TutorSanity", true);
 
         InvokeEvent(form, "B_Save_Click");
     }
