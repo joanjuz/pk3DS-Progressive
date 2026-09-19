@@ -39,6 +39,7 @@ public partial class LevelUpEditor6 : Form
         CB_Species.DataSource = newlist;
         CB_Species.SelectedIndex = 0;
         RandSettings.GetFormSettings(this, groupBox1.Controls);
+        NUD_STAB.Enabled = CHK_STAB.Checked;
     }
 
     private readonly byte[][] files;
@@ -213,7 +214,6 @@ public partial class LevelUpEditor6 : Form
     private void CHK_TypeBias_CheckedChanged(object sender, EventArgs e)
     {
         NUD_STAB.Enabled = CHK_STAB.Checked;
-        NUD_STAB.Value = CHK_STAB.Checked ? 52 : NUD_STAB.Minimum;
     }
 
     public void CalcStats() // Debug Function
