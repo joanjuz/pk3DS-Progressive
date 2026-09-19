@@ -429,6 +429,7 @@ internal static class BatchGen7ActionExecutor
         "egg-moves.randomize",
         "tms.randomize",
         "tms.sanity",
+        "tms.follow-evolutions",
         "trainers.randomize",
         "wild-encounters.randomize",
         "wild-encounters.scale-levels",
@@ -593,7 +594,7 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunTMs(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "tms.randomize") && !Has(actions, "tms.sanity"))
+        if (!Has(actions, "tms.randomize") && !Has(actions, "tms.sanity") && !Has(actions, "tms.follow-evolutions"))
             return;
 
         BatchRuntime.Log("TMs...");
@@ -604,6 +605,9 @@ internal static class BatchGen7ActionExecutor
 
         if (Has(actions, "tms.sanity"))
             SetCheckBox(form, "CHK_TMSanity", true);
+
+        if (Has(actions, "tms.follow-evolutions"))
+            SetCheckBox(form, "CHK_TMFollowEvolutions", true);
 
         Invoke(form, "Form_Closing", form, new FormClosingEventArgs(CloseReason.None, false));
     }

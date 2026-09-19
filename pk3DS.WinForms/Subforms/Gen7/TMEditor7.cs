@@ -25,6 +25,7 @@ public partial class TMEditor7 : Form
         SetupDGV();
         GetList();
         AddTMSanityCheckBox();
+        AddTMFollowEvolutionsCheckBox();
     }
 
     private static readonly byte[] Signature = [0x03, 0x40, 0x03, 0x41, 0x03, 0x42, 0x03, 0x43, 0x03]; // tail end of item::ITEM_CheckBeads
@@ -82,6 +83,7 @@ public partial class TMEditor7 : Form
     }
 
     private CheckBox CHK_TMSanity;
+    private CheckBox CHK_TMFollowEvolutions;
 
     private void AddTMSanityCheckBox()
     {
@@ -106,6 +108,38 @@ public partial class TMEditor7 : Form
             RandomizationSessionState.RemoveAction("tms.sanity");
     }
 
+    private void AddTMFollowEvolutionsCheckBox()
+    {
+        CHK_TMFollowEvolutions = new CheckBox
+        {
+            Name = "CHK_TMFollowEvolutions",
+            AutoSize = true,
+            Location = new System.Drawing.Point(CHK_TMSanity.Right + 12, CHK_TMSanity.Top),
+            Text = "Follow Evolutions",
+            UseVisualStyleBackColor = true,
+        };
+
+        CHK_TMFollowEvolutions.CheckedChanged += CHK_TMFollowEvolutions_CheckedChanged;
+        Controls.Add(CHK_TMFollowEvolutions);
+        CHK_TMFollowEvolutions.BringToFront();
+
+        // Keep both TM options visible even at the minimum window size.
+        int requiredClientWidth = CHK_TMFollowEvolutions.Right + 12;
+        if (ClientSize.Width < requiredClientWidth)
+            ClientSize = new System.Drawing.Size(requiredClientWidth, ClientSize.Height);
+
+        MinimumSize = new System.Drawing.Size(
+            Math.Max(MinimumSize.Width, Width),
+            MinimumSize.Height);
+    }
+
+    private void CHK_TMFollowEvolutions_CheckedChanged(object sender, EventArgs e)
+    {
+        if (CHK_TMFollowEvolutions.Checked)
+            RandomizationSessionState.MarkAction("tms.follow-evolutions");
+        else
+            RandomizationSessionState.RemoveAction("tms.follow-evolutions");
+    }
     private ushort[] GetCurrentTMList()
     {
         var result = new ushort[Math.Min(100, dgvTM.Rows.Count)];
@@ -179,6 +213,124 @@ public partial class TMEditor7 : Form
         else
             WinFormsUtil.Alert("TM Sanity complete!", detail);
     }
+    private void ApplyTMFollowEvolutions()
+    {
+        var table = Main.SpeciesStat;
+        var evolutions = Main.Config.Evolutions;
+        var edges = new HashSet<(int Source, int Target)>();
+
+        int maxSpecies = Math.Min(Main.Config.MaxSpeciesID, table.Length - 1);
+
+        for (int species = 1; species <= maxSpecies; species++)
+        {
+            AddEvolutionEdges(species, species);
+
+            int formCount = table[species].FormeCount;
+            for (int form = 1; form < formCount; form++)
+            {
+                int sourceIndex = table[species].FormeIndex(species, form);
+
+                if (sourceIndex == species || sourceIndex <= 0 || sourceIndex >= table.Length)
+                    continue;
+
+                AddEvolutionEdges(sourceIndex, species);
+            }
+        }
+
+        int compatibilityAdded = 0;
+        var changedEntries = new HashSet<int>();
+        bool passChanged;
+
+        do
+        {
+            passChanged = false;
+
+            foreach (var edge in edges)
+            {
+                bool[] sourceFlags = table[edge.Source].TMHM;
+                bool[] targetFlags = table[edge.Target].TMHM;
+
+                if (sourceFlags is null || targetFlags is null)
+                    continue;
+
+                int tmCount = Math.Min(100, Math.Min(sourceFlags.Length, targetFlags.Length));
+                bool targetChanged = false;
+
+                for (int tm = 0; tm < tmCount; tm++)
+                {
+                    if (!sourceFlags[tm] || targetFlags[tm])
+                        continue;
+
+                    targetFlags[tm] = true;
+                    compatibilityAdded++;
+                    targetChanged = true;
+                    passChanged = true;
+                }
+
+                if (targetChanged)
+                    changedEntries.Add(edge.Target);
+            }
+        }
+        while (passChanged);
+
+        if (compatibilityAdded > 0)
+        {
+            byte[][] personalFiles = Main.Config.GARCPersonal.Files;
+            byte[][] serialized = table.Select(z => z.Write()).ToArray();
+
+            if (personalFiles.Length < serialized.Length + 1)
+                throw new InvalidOperationException("Personal GARC does not contain the expected master table.");
+
+            serialized.CopyTo(personalFiles, 0);
+
+            for (int i = 0; i < serialized.Length; i++)
+                serialized[i].CopyTo(personalFiles[^1], i * serialized[i].Length);
+
+            Main.Config.GARCPersonal.Files = personalFiles;
+            Main.Config.GARCPersonal.Save();
+            Main.Config.InitializePersonal();
+        }
+
+        RandomizationSessionState.MarkAction("tms.follow-evolutions");
+
+        string detail = compatibilityAdded == 0
+            ? "TM Follow Evolutions found no missing inherited compatibility."
+            : $"Inherited {compatibilityAdded} TM compatibility flag(s) across {changedEntries.Count} evolved Pokemon/form entr{(changedEntries.Count == 1 ? "y" : "ies")}.";
+
+        if (BatchRuntime.IsActive)
+            BatchRuntime.Log(detail);
+        else
+            WinFormsUtil.Alert("TM Follow Evolutions complete!", detail);
+
+        void AddEvolutionEdges(int sourceIndex, int fallbackSpecies)
+        {
+            int evolutionIndex = sourceIndex < evolutions.Length
+                ? sourceIndex
+                : fallbackSpecies;
+
+            if ((uint)evolutionIndex >= (uint)evolutions.Length)
+                return;
+
+            var evolutionSet = evolutions[evolutionIndex];
+            if (evolutionSet?.PossibleEvolutions is null)
+                return;
+
+            foreach (var evolution in evolutionSet.PossibleEvolutions)
+            {
+                if (evolution.Method <= 0 || evolution.Species <= 0 || evolution.Species >= table.Length)
+                    continue;
+
+                int targetIndex = table[evolution.Species].FormeIndex(
+                    evolution.Species,
+                    evolution.Form);
+
+                if (targetIndex <= 0 || targetIndex >= table.Length || targetIndex == sourceIndex)
+                    continue;
+
+                edges.Add((sourceIndex, targetIndex));
+            }
+        }
+    }
     private void SetList()
     {
         // Gather TM/HM list.
@@ -210,6 +362,9 @@ public partial class TMEditor7 : Form
 
         if (CHK_TMSanity?.Checked == true)
             ApplyTMSanity();
+
+        if (CHK_TMFollowEvolutions?.Checked == true)
+            ApplyTMFollowEvolutions();
 
         File.WriteAllBytes(codebin, data);
     }
