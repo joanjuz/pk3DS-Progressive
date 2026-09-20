@@ -440,6 +440,7 @@ internal static class BatchGen7ActionExecutor
         "static-encounters.randomize",
         "static-encounters.modify-levels",
         "static-encounters.totem-level-caps",
+        "static-encounters.totem-bst",
         "trades.accept-any",
         "trades.randomize-offers",
         "trades.hide-species-names",
@@ -711,7 +712,7 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunStaticEncounters(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        string[] ids = { "starters.randomize", "static-encounters.randomize", "static-encounters.modify-levels", "static-encounters.totem-level-caps", "trades.accept-any", "trades.randomize-offers", "trades.hide-species-names" };
+        string[] ids = { "starters.randomize", "static-encounters.randomize", "static-encounters.modify-levels", "static-encounters.totem-level-caps", "trades.accept-any", "trades.randomize-offers", "trades.hide-species-names", "static-encounters.totem-bst" };
         if (!ids.Any(id => Has(actions, id)))
             return;
 
@@ -725,6 +726,8 @@ internal static class BatchGen7ActionExecutor
         if (Has(actions, "trades.randomize-offers")) InvokeEvent(form, "B_TradeAcceptAnyRandomOffer_Click");
         if (Has(actions, "trades.hide-species-names")) Invoke(form, "ApplyHideTradeSpeciesNames");
         if (Has(actions, "static-encounters.modify-levels")) InvokeEvent(form, "ModifyLevels");
+        if (Has(actions, "static-encounters.totem-bst"))
+            Invoke(form, "ApplyTotemBSTFromTemplate", Get(actions, "static-encounters.totem-bst"));
         if (Has(actions, "static-encounters.totem-level-caps"))
             Invoke(form, "ApplyTotemLevelCapsFromTemplate", Get(actions, "static-encounters.totem-level-caps"));
         InvokeEvent(form, "B_Save_Click");

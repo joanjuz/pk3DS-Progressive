@@ -17,6 +17,10 @@ public partial class StaticEncounterEditor7
         InitializeTotemLevelCaps();
         AddTotemLevelCapsButton();
         B_RandAll.Click += B_RandAll_TotemLevelCapsPost;
+
+        InitializeTotemBST();
+        AddTotemBSTButton();
+        B_RandAll.Click += B_RandAll_TotemBSTPost;
     }
 
     private void AddArcanineGiftBaselineButton()
