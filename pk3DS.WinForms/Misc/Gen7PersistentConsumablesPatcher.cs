@@ -245,9 +245,9 @@ internal static class Gen7PersistentConsumablesPatcher
         if (changed == 0)
             return 0;
 
-        BackupOnce(
+        PatchBackupManager.BackupOnce(
             path,
-            ".bak_persistent_consumables");
+            "persistent-battle-consumables");
 
         if (!battleTypePatched)
         {
@@ -594,19 +594,5 @@ internal static class Gen7PersistentConsumablesPatcher
         return string.Empty;
     }
 
-    private static void BackupOnce(
-        string path,
-        string suffix)
-    {
-        string backup =
-            path +
-            suffix;
 
-        if (!File.Exists(backup))
-        {
-            File.Copy(
-                path,
-                backup);
-        }
-    }
 }

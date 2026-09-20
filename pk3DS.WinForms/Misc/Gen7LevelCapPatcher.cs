@@ -152,12 +152,12 @@ internal static class Gen7LevelCapPatcher
 
         if (sites.Any(z => z.Binary == "Battle.cro" && z.Changed))
         {
-            BackupOnce(battlePath, ".bak_player_level_caps");
+            PatchBackupManager.BackupOnce(battlePath, "player-level-caps");
             UpdateCroHashes(battle);
         }
 
         if (sites.Any(z => z.Binary == "code.bin" && z.Changed))
-            BackupOnce(codePath, ".bak_player_level_caps");
+            PatchBackupManager.BackupOnce(codePath, "player-level-caps");
 
         // Both in-memory binaries were validated before either disk file is written.
         // This avoids the common partial-install case where Battle.cro is changed before
@@ -231,12 +231,6 @@ internal static class Gen7LevelCapPatcher
         }
     }
 
-    private static void BackupOnce(string path, string suffix)
-    {
-        string backup = path + suffix;
-        if (!File.Exists(backup))
-            File.Copy(path, backup);
-    }
 
     private static void UpdateCroHashes(byte[] data)
     {
