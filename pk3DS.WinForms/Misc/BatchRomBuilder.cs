@@ -458,6 +458,7 @@ internal static class BatchGen7ActionExecutor
         "field-items.randomize",
         "shiny-rate.apply",
         "mega-evolution.unlock-from-start",
+        "battle.persistent-consumables",
     };
 
     internal static string[] GetUnsupported(IEnumerable<GlobalRandomizationAction> actions)
@@ -848,17 +849,38 @@ internal static class BatchGen7ActionExecutor
     private static void RunGameplayQoLPatches(
         Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "mega-evolution.unlock-from-start"))
+        bool mega =
+            Has(actions, "mega-evolution.unlock-from-start");
+
+        bool persistentConsumables =
+            Has(actions, "battle.persistent-consumables");
+
+        if (!mega && !persistentConsumables)
             return;
 
         BatchRuntime.Log("Gameplay QoL patches...");
 
-        int changed = Gen7MegaEventFlagPatcher.Apply();
+        if (mega)
+        {
+            int changed =
+                Gen7MegaEventFlagPatcher.Apply();
 
-        BatchRuntime.Log(
-            changed == 0
-                ? "Mega Evolution from Start was already enabled."
-                : "Mega Evolution from Start enabled.");
+            BatchRuntime.Log(
+                changed == 0
+                    ? "Mega Evolution from Start was already enabled."
+                    : "Mega Evolution from Start enabled.");
+        }
+
+        if (persistentConsumables)
+        {
+            int changed =
+                Gen7PersistentConsumablesPatcher.Apply();
+
+            BatchRuntime.Log(
+                changed == 0
+                    ? "Persistent Battle Consumables were already enabled."
+                    : $"Persistent Battle Consumables enabled ({changed} instruction(s) changed).");
+        }
     }
 
 
