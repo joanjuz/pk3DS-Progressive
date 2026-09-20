@@ -30,6 +30,10 @@ public sealed class GlobalRandomizationTemplate
     // cannot be represented completely by RandSettings alone.
     public WildRandomizerTemplate Wild { get; set; }
 
+    // Player Level Caps have a variable story-flag table that needs its own
+    // dedicated template instead of being flattened into action parameters.
+    public LevelCapTemplate LevelCaps { get; set; }
+
     // A recipe of actions actually used in the current ROM. Batch building can
     // consume this list later without changing the template format.
     public List<GlobalRandomizationAction> Actions { get; set; } = [];
@@ -130,12 +134,18 @@ public static class GlobalRandomizationTemplateFile
             trainer = currentTrainer;
 
         WildRandomizerTemplate wild = null;
+        LevelCapTemplate levelCaps = null;
         if (generation == 7)
         {
             if (WildRandomizerTemplateFile.TryGetCurrent(currentGame, out var currentWild))
                 wild = currentWild;
             else if (WildRandomizerTemplateFile.TryLoadLastState(currentGame, out var savedWild))
                 wild = savedWild;
+
+            if (LevelCapTemplateFile.TryGetCurrent(currentGame, out var currentCaps))
+                levelCaps = currentCaps;
+            else if (LevelCapTemplateFile.TryLoadLastState(currentGame, out var savedCaps))
+                levelCaps = savedCaps;
         }
 
         return new GlobalRandomizationTemplate
@@ -147,6 +157,7 @@ public static class GlobalRandomizationTemplateFile
             RandSettings = RandSettings.Save().ToList(),
             Trainer = trainer,
             Wild = wild,
+            LevelCaps = levelCaps,
             Actions = RandomizationSessionState.ExportActions(),
             Assets = CaptureAssets(generation),
         };
@@ -215,6 +226,23 @@ public static class GlobalRandomizationTemplateFile
             WildRandomizerTemplateFile.ClearCurrent(currentGame);
         }
 
+        if (template.LevelCaps is not null)
+        {
+            LevelCapTemplateFile.SetCurrent(template.LevelCaps, currentGame);
+            try
+            {
+                LevelCapTemplateFile.SaveLastState(template.LevelCaps, currentGame);
+            }
+            catch
+            {
+                // In-memory application remains valid if persistent state cannot be written.
+            }
+        }
+        else
+        {
+            LevelCapTemplateFile.ClearCurrent(currentGame);
+        }
+
         RandomizationSessionState.ImportActions(template.Actions ?? []);
         return ValidateAssets(template.Assets ?? [], template.Generation);
     }
@@ -237,6 +265,9 @@ public static class GlobalRandomizationTemplateFile
 
         if (template.Wild is not null)
             WildRandomizerTemplateFile.Validate(template.Wild, actualGame);
+
+        if (template.LevelCaps is not null)
+            LevelCapTemplateFile.Validate(template.LevelCaps, actualGame);
     }
 
     public static void ResetSession()
@@ -244,6 +275,7 @@ public static class GlobalRandomizationTemplateFile
         RandomizationSessionState.Clear();
         TrainerRandomizerTemplateFile.ClearCurrent();
         WildRandomizerTemplateFile.ClearCurrent();
+        LevelCapTemplateFile.ClearCurrent();
     }
 
     private static List<GlobalTemplateAsset> CaptureAssets(int generation)
