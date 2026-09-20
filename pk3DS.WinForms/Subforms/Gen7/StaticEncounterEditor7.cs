@@ -940,8 +940,10 @@ private void ApplyHideTradeSpeciesNames()
             t.Form = Randomizer.GetRandomForme(t.Species, CHK_AllowMega.Checked, true, Main.SpeciesStat);
             t.Nature = -1; // random
         }
-        foreach (EncounterStatic7 t in Encounters)
+        for (int encounterIndex = 0; encounterIndex < Encounters.Length; encounterIndex++)
         {
+            EncounterStatic7 t = Encounters[encounterIndex];
+
             // Legendary-for-Legendary
             if (CHK_ReplaceLegend.Checked && ReplaceLegend.Contains(t.Species))
                 t.Species = ReplaceLegend[randLegend()];
@@ -966,8 +968,8 @@ private void ApplyHideTradeSpeciesNames()
             if (CHK_RemoveShinyLock.Checked)
                 t.ShinyLock = false;
 
-            if (CHK_RandomAura.Checked && t.Aura != 0) // don't apply aura to a pkm without it
-                t.Aura = Util.Rand.Next(1, CB_Aura.Items.Count); // don't allow none
+            if (CHK_RandomAura.Checked)
+                RandomizeTotemAuraStat(encounterIndex, t);
 
             if (CHK_RandomAbility.Checked)
                 t.Ability = (sbyte)(Util.Rand.Next(1, 4)); // 1, 2, or H
