@@ -1,5 +1,6 @@
 using pk3DS.Core;
 using pk3DS.Core.CTR;
+using pk3DS.Core.Modding.Research;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -459,6 +460,7 @@ internal static class BatchGen7ActionExecutor
         "shiny-rate.apply",
         "mega-evolution.unlock-from-start",
         "battle.persistent-consumables",
+        "player.level-caps",
     };
 
     internal static string[] GetUnsupported(IEnumerable<GlobalRandomizationAction> actions)
@@ -494,6 +496,7 @@ internal static class BatchGen7ActionExecutor
         RunTrainers(actions); // last: Better Movesets sees final moves/learnsets/stats.
 
         RunGameplayQoLPatches(actions);
+        RunPlayerLevelCaps(actions, template.LevelCaps);
         Main.SaveGameText();
     }
 
@@ -881,6 +884,37 @@ internal static class BatchGen7ActionExecutor
                     ? "Persistent Battle Consumables were already enabled."
                     : $"Persistent Battle Consumables enabled ({changed} instruction(s) changed).");
         }
+    }
+
+
+    private static void RunPlayerLevelCaps(
+        Dictionary<string, GlobalRandomizationAction> actions,
+        LevelCapTemplate template)
+    {
+        if (!Has(actions, Gen7LevelCapPatcher.ActionId))
+            return;
+
+        if (Main.Config?.USUM != true)
+            throw new NotSupportedException("Player Level Caps batch replay is currently supported only for USUM.");
+
+        if (template is null)
+        {
+            throw new InvalidDataException(
+                "The Global ROM Template requests Player Level Caps, but it does not contain a Player Level Caps table.");
+        }
+
+        LevelCapTemplateFile.Validate(template, "USUM");
+        LevelCapTable table = template.ToTable();
+
+        BatchRuntime.Log("Player Level Caps...");
+        int changed = Gen7LevelCapPatcher.Apply(table, out string report);
+        BatchRuntime.Log(
+            changed == 0
+                ? "Player Level Caps were already enabled."
+                : $"Player Level Caps enabled ({changed} binary file(s) changed).");
+
+        foreach (string line in report.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries))
+            BatchRuntime.Log(line);
     }
 
 

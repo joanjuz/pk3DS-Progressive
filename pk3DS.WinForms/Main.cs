@@ -140,9 +140,10 @@ public sealed partial class Main : Form
 
             string trainer = template.Trainer is null ? "no trainer-specific state" : "trainer state included";
             string wild = template.Wild is null ? "no Wild Encounter state" : "Wild Encounter state included";
+            string caps = template.LevelCaps is null ? "no Player Level Caps state" : "Player Level Caps state included";
             WinFormsUtil.Alert(
                 "Global ROM template saved!",
-                $"{Path.GetFileName(dialog.FileName)}\n{template.Actions.Count} recorded action(s); {trainer}; {wild}.\n\nSaved in custom_balance_templates.");
+                $"{Path.GetFileName(dialog.FileName)}\n{template.Actions.Count} recorded action(s); {trainer}; {wild}; {caps}.\n\nSaved in custom_balance_templates.");
         }
         catch (Exception ex)
         {
@@ -181,7 +182,8 @@ public sealed partial class Main : Form
                 $"Loaded '{template.Name}'.\n" +
                 $"Recorded actions: {template.Actions.Count}.\n" +
                 $"Trainer state: {(template.Trainer is null ? "not included" : "included")}.\n" +
-                $"Wild Encounter state: {(template.Wild is null ? "not included" : "included")}.\n\n" +
+                $"Wild Encounter state: {(template.Wild is null ? "not included" : "included")}.\n" +
+                $"Player Level Caps state: {(template.LevelCaps is null ? "not included" : "included")}.\n\n" +
                 "Randomizer windows opened from now on will use the loaded settings.";
 
             if (warnings.Count != 0)
@@ -999,6 +1001,7 @@ public sealed partial class Main : Form
         AddGen6TradePatchButtonIfNeeded();
         AddUSUMMoveRelearnerButtonIfNeeded();
         FLP_CRO.Controls.AddRange(cro);
+        AddPlayerLevelCapsButtonIfNeeded();
     }
 
     private Button B_USUMMoveRelearner;
