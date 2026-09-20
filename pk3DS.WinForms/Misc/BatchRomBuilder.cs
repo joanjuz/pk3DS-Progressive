@@ -457,6 +457,7 @@ internal static class BatchGen7ActionExecutor
         "move-tutors.free",
         "field-items.randomize",
         "shiny-rate.apply",
+        "mega-evolution.unlock-from-start",
     };
 
     internal static string[] GetUnsupported(IEnumerable<GlobalRandomizationAction> actions)
@@ -491,6 +492,7 @@ internal static class BatchGen7ActionExecutor
         RunShinyRate(actions);
         RunTrainers(actions); // last: Better Movesets sees final moves/learnsets/stats.
 
+        RunGameplayQoLPatches(actions);
         Main.SaveGameText();
     }
 
@@ -843,6 +845,22 @@ internal static class BatchGen7ActionExecutor
         var result = FieldItemDumper.RandomizeDefault();
         BatchRuntime.Log(result.Summary);
     }
+    private static void RunGameplayQoLPatches(
+        Dictionary<string, GlobalRandomizationAction> actions)
+    {
+        if (!Has(actions, "mega-evolution.unlock-from-start"))
+            return;
+
+        BatchRuntime.Log("Gameplay QoL patches...");
+
+        int changed = Gen7MegaEventFlagPatcher.Apply();
+
+        BatchRuntime.Log(
+            changed == 0
+                ? "Mega Evolution from Start was already enabled."
+                : "Mega Evolution from Start enabled.");
+    }
+
 
     private static void RunShinyRate(Dictionary<string, GlobalRandomizationAction> actions)
     {
