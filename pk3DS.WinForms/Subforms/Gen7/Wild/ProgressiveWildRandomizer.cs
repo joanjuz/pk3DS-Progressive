@@ -18,6 +18,7 @@ public class ProgressiveWildRandomizer
     public decimal LevelAmplifier { private get; set; }
     public bool ModifyLevel { private get; set; }
     public bool USUM { private get; set; }
+    public bool AllCanCallAllies { private get; set; }
 
     private readonly Dictionary<PoolKey, SpeciesTierPool> Pools = [];
 
@@ -55,6 +56,9 @@ public class ProgressiveWildRandomizer
 
                 if (copy)
                     table.CopySlotsToSOS();
+
+                if (AllCanCallAllies)
+                    FillEmptySOSSlots(table, pool);
 
                 // The area's progression tier is calculated before any
                 // optional level modification. Encounter level scaling
@@ -270,6 +274,29 @@ public class ProgressiveWildRandomizer
                 enc.Forme =
                     (uint)RandForm.GetRandomForme(
                         newSpecies);
+            }
+        }
+    }
+
+    private void FillEmptySOSSlots(
+        EncounterTable table,
+        SpeciesTierPool pool)
+    {
+        var regular = table.Encounter7s[0];
+
+        // Encounter7s[8] is AdditionalSOS/weather. Do not create weather
+        // allies where the original table intentionally has no entry.
+        for (int s = 1; s < table.Encounter7s.Length - 1; s++)
+        {
+            var sos = table.Encounter7s[s];
+            for (int i = 0; i < sos.Length && i < regular.Length; i++)
+            {
+                if (sos[i].Species != 0 || regular[i].Species == 0)
+                    continue;
+
+                int species = pool.Next((int)regular[i].Species);
+                sos[i].Species = (uint)species;
+                sos[i].Forme = (uint)RandForm.GetRandomForme(species);
             }
         }
     }

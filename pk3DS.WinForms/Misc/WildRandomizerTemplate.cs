@@ -24,6 +24,7 @@ public sealed class WildRandomizerTemplate
     public bool Events { get; set; }
     public bool MegaForms { get; set; }
     public bool SimilarBST { get; set; }
+    public bool AllCanCallAllies { get; set; }
     public int SlotRandomizationOption { get; set; }
     public bool ModifyLevel { get; set; }
     public decimal LevelAmplifier { get; set; } = 1m;
