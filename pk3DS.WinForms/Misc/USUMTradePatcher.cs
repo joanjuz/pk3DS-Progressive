@@ -73,9 +73,9 @@ internal static class USUMTradePatcher
         if (hookPatched && wrapperPatched)
             return false;
 
-        string backupPath = codePath + ".pk3ds-usum-trade.bak";
-        if (!File.Exists(backupPath))
-            File.Copy(codePath, backupPath);
+        PatchBackupManager.BackupOnce(
+            codePath,
+            "usum-trade-patch");
 
         PatchedWrapper.CopyTo(data, WrapperOffset);
         PatchedHook.CopyTo(data, HookOffset);
