@@ -14,6 +14,7 @@ public class Wild7Randomizer
     public int TableRandomizationOption { private get; set; }
     public decimal LevelAmplifier { private get; set; }
     public bool ModifyLevel { private get; set; }
+    public bool AllCanCallAllies { private get; set; }
 
     private void RandomizeTable7(EncounterTable Table, int slotStart, int slotStop)
     {
@@ -25,6 +26,27 @@ public class Wild7Randomizer
             {
                 enc.Species = (uint)RandSpec.GetRandomSpecies((int)enc.Species);
                 enc.Forme = (uint)RandForm.GetRandomForme((int)enc.Species);
+            }
+        }
+    }
+
+    private void FillEmptySOSSlots(EncounterTable table)
+    {
+        var regular = table.Encounter7s[0];
+
+        // Encounter7s[8] is AdditionalSOS/weather. Keep those slots exactly
+        // as authored and only complete the seven normal SOS rows.
+        for (int s = 1; s < table.Encounter7s.Length - 1; s++)
+        {
+            var sos = table.Encounter7s[s];
+            for (int i = 0; i < sos.Length && i < regular.Length; i++)
+            {
+                if (sos[i].Species != 0 || regular[i].Species == 0)
+                    continue;
+
+                int species = RandSpec.GetRandomSpecies((int)regular[i].Species);
+                sos[i].Species = (uint)species;
+                sos[i].Forme = (uint)RandForm.GetRandomForme(species);
             }
         }
     }
@@ -46,6 +68,9 @@ public class Wild7Randomizer
                 RandomizeTable7(Table, slotStart, slotStop);
                 if (copy) // copy row 0 to rest
                     Table.CopySlotsToSOS();
+
+                if (AllCanCallAllies)
+                    FillEmptySOSSlots(Table);
 
                 Table.Write();
             }

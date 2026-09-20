@@ -484,6 +484,7 @@ public partial class SMWE : Form
                 LevelAmplifier = NUD_LevelAmp.Value,
                 ModifyLevel = CHK_Level.Checked,
                 USUM = Main.Config.USUM,
+                AllCanCallAllies = CHK_AllCanCallAllies?.Checked ?? false,
             };
 
             progressiveWild.Execute(Areas, encdata);
@@ -497,11 +498,13 @@ public partial class SMWE : Form
             TableRandomizationOption = CB_SlotRand.SelectedIndex,
             LevelAmplifier = NUD_LevelAmp.Value,
             ModifyLevel = CHK_Level.Checked,
+            AllCanCallAllies = CHK_AllCanCallAllies?.Checked ?? false,
         };
         wild7.Execute(Areas, encdata);
     }
 
     private CheckBox? CHK_ProgressiveWildBST;
+    private CheckBox? CHK_AllCanCallAllies;
     private Button? B_SetProgressiveWildBST;
     private Button? B_WildTemplate;
 
@@ -540,8 +543,16 @@ public partial class SMWE : Form
         {
             Name = "B_WildTemplate",
             Text = "Template...",
-            Size = new System.Drawing.Size(105, 24),
-            Location = new System.Drawing.Point(285, y),
+            Size = new System.Drawing.Size(130, 24),
+            Location = new System.Drawing.Point(145, y + 28),
+        };
+
+        CHK_AllCanCallAllies = new CheckBox
+        {
+            Name = "CHK_AllCanCallAllies",
+            Text = "All can call allies",
+            AutoSize = true,
+            Location = new System.Drawing.Point(8, y + 31),
         };
 
         CHK_ProgressiveWildBST.CheckedChanged += (_, _) =>
@@ -567,13 +578,19 @@ public partial class SMWE : Form
         GB_Tweak.Controls.Add(CHK_ProgressiveWildBST);
         GB_Tweak.Controls.Add(B_SetProgressiveWildBST);
         GB_Tweak.Controls.Add(B_WildTemplate);
+        GB_Tweak.Controls.Add(CHK_AllCanCallAllies);
 
         new ToolTip().SetToolTip(
             CHK_ProgressiveWildBST,
             "Uses one configurable BST tier for the whole encounter area. " +
             "Low-level fishing or special tables do not make a late-game area weak.");
 
-        int required = B_SetProgressiveWildBST.Bottom + 10;
+        new ToolTip().SetToolTip(
+            CHK_AllCanCallAllies,
+            "Fills empty normal SOS slots for wild Pokemon that have a regular encounter slot. " +
+            "Existing SOS allies and weather SOS slots are preserved.");
+
+        int required = Math.Max(B_SetProgressiveWildBST.Bottom, B_WildTemplate.Bottom) + 10;
         if (GB_Tweak.Height < required)
         {
             int extra = required - GB_Tweak.Height;
@@ -685,6 +702,7 @@ public partial class SMWE : Form
             Events = CHK_E.Checked,
             MegaForms = CHK_MegaForm.Checked,
             SimilarBST = CHK_BST.Checked,
+            AllCanCallAllies = CHK_AllCanCallAllies?.Checked ?? false,
             SlotRandomizationOption = CB_SlotRand.SelectedIndex,
             ModifyLevel = CHK_Level.Checked,
             LevelAmplifier = NUD_LevelAmp.Value,
@@ -725,6 +743,8 @@ public partial class SMWE : Form
         CHK_E.Checked = template.Events;
         CHK_MegaForm.Checked = template.MegaForms;
         CHK_BST.Checked = template.SimilarBST;
+        if (CHK_AllCanCallAllies is not null)
+            CHK_AllCanCallAllies.Checked = template.AllCanCallAllies;
 
         if (template.SlotRandomizationOption >= 0 && template.SlotRandomizationOption < CB_SlotRand.Items.Count)
             CB_SlotRand.SelectedIndex = template.SlotRandomizationOption;
