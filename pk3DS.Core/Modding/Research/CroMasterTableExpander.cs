@@ -117,6 +117,30 @@ public static class CroMasterTableLayouts
                     StockInstruction: 0xE35400E2u,
                     ExpandedInstruction: 0xE35400E3u),
             ]);
+
+    /// <summary>
+    /// USUM move master table discovered from the relocation graph and confirmed in-game:
+    /// 343 [id,pointer] entries with no trailing sentinel. Relocation #755 points to the table.
+    /// The consumer at 0x87304 loads the entry count from 0x873EC, which changes from
+    /// 343 to 344 when exactly one entry is appended.
+    /// </summary>
+    public static CroMasterTableLayout MoveUsumStock { get; } =
+        new(
+            Name: "Move",
+            TableStart: 0x00105DF0u,
+            EntryCount: 343,
+            EntrySize: 8,
+            IdFieldOffset: 0,
+            PointerFieldOffset: 4,
+            TerminatorBytes: 0,
+            InboundRelocationIndexes: [755],
+            AppendOneBoundPatches:
+            [
+                new CroMasterTableBoundPatch(
+                    Address: 0x000873ECu,
+                    StockInstruction: 0x00000157u,
+                    ExpandedInstruction: 0x00000158u),
+            ]);
 }
 
 /// <summary>
