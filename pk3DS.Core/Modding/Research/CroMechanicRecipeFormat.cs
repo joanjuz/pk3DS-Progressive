@@ -16,6 +16,11 @@ public sealed class CroMechanicRecipeDocument
 {
     public int FormatVersion { get; set; } = CroMechanicRecipeFormat.CurrentFormatVersion;
     public string Name { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string TargetGame { get; set; } = string.Empty;
+    public string TargetRegion { get; set; } = string.Empty;
+    public List<string> Tags { get; set; } = [];
     public List<CroMechanicRecipeDocumentEntry> Entries { get; set; } = [];
 }
 
@@ -104,7 +109,16 @@ public static class CroMechanicRecipeFormat
                     root,
                     "$",
                     ["formatVersion", "name", "entries"],
-                    ["formatVersion", "name", "entries"],
+                    [
+                        "formatVersion",
+                        "name",
+                        "author",
+                        "description",
+                        "targetGame",
+                        "targetRegion",
+                        "tags",
+                        "entries",
+                    ],
                     out error))
             {
                 return false;
@@ -130,6 +144,40 @@ public static class CroMechanicRecipeFormat
                     root.GetProperty("name"),
                     "$.name",
                     out string name,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryReadOptionalString(
+                    root,
+                    "author",
+                    "$.author",
+                    out string author,
+                    out error) ||
+                !TryReadOptionalString(
+                    root,
+                    "description",
+                    "$.description",
+                    out string description,
+                    out error) ||
+                !TryReadOptionalString(
+                    root,
+                    "targetGame",
+                    "$.targetGame",
+                    out string targetGame,
+                    out error) ||
+                !TryReadOptionalString(
+                    root,
+                    "targetRegion",
+                    "$.targetRegion",
+                    out string targetRegion,
+                    out error) ||
+                !TryReadOptionalStringArray(
+                    root,
+                    "tags",
+                    "$.tags",
+                    out List<string> tags,
                     out error))
             {
                 return false;
@@ -179,6 +227,11 @@ public static class CroMechanicRecipeFormat
                 {
                     FormatVersion = formatVersion,
                     Name = name,
+                    Author = author,
+                    Description = description,
+                    TargetGame = targetGame,
+                    TargetRegion = targetRegion,
+                    Tags = tags,
                     Entries = entries,
                 };
 
@@ -441,6 +494,49 @@ public static class CroMechanicRecipeFormat
             writer.WriteString(
                 "name",
                 document.Name ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(
+                    document.Author))
+            {
+                writer.WriteString(
+                    "author",
+                    document.Author);
+            }
+
+            if (!string.IsNullOrEmpty(
+                    document.Description))
+            {
+                writer.WriteString(
+                    "description",
+                    document.Description);
+            }
+
+            if (!string.IsNullOrEmpty(
+                    document.TargetGame))
+            {
+                writer.WriteString(
+                    "targetGame",
+                    document.TargetGame);
+            }
+
+            if (!string.IsNullOrEmpty(
+                    document.TargetRegion))
+            {
+                writer.WriteString(
+                    "targetRegion",
+                    document.TargetRegion);
+            }
+
+            if (document.Tags is { Count: > 0 })
+            {
+                writer.WriteStartArray(
+                    "tags");
+
+                foreach (string tag in document.Tags)
+                    writer.WriteStringValue(tag);
+
+                writer.WriteEndArray();
+            }
 
             writer.WriteStartArray(
                 "entries");
@@ -844,6 +940,36 @@ public static class CroMechanicRecipeFormat
             return false;
         }
 
+        if (document.Tags is null)
+        {
+            error = "recipe document tags are null.";
+            return false;
+        }
+
+        var seenTags =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < document.Tags.Count; i++)
+        {
+            string tag =
+                document.Tags[i];
+
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                error =
+                    $"recipe document tag #{i} is empty.";
+                return false;
+            }
+
+            if (!seenTags.Add(tag))
+            {
+                error =
+                    $"recipe document contains duplicate tag '{tag}'.";
+                return false;
+            }
+        }
+
         if (document.Entries is null ||
             document.Entries.Count == 0)
         {
@@ -1014,6 +1140,100 @@ public static class CroMechanicRecipeFormat
         value =
             element.GetString() ??
             string.Empty;
+
+        return true;
+    }
+
+    private static bool TryReadOptionalString(
+        JsonElement parent,
+        string propertyName,
+        string path,
+        out string value,
+        out string error)
+    {
+        value = string.Empty;
+        error = string.Empty;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element))
+        {
+            return true;
+        }
+
+        return TryReadString(
+            element,
+            path,
+            out value,
+            out error);
+    }
+
+    private static bool TryReadOptionalStringArray(
+        JsonElement parent,
+        string propertyName,
+        string path,
+        out List<string> values,
+        out string error)
+    {
+        values = [];
+        error = string.Empty;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element))
+        {
+            return true;
+        }
+
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+            error =
+                $"{path} must be an array.";
+            return false;
+        }
+
+        var result =
+            new List<string>(
+                element.GetArrayLength());
+
+        var seen =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
+        int index =
+            0;
+
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            if (!TryReadString(
+                    item,
+                    $"{path}[{index}]",
+                    out string value,
+                    out error))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                error =
+                    $"{path}[{index}] must not be empty.";
+                return false;
+            }
+
+            if (!seen.Add(value))
+            {
+                error =
+                    $"{path} contains duplicate tag '{value}'.";
+                return false;
+            }
+
+            result.Add(value);
+            index++;
+        }
+
+        values =
+            result;
 
         return true;
     }
