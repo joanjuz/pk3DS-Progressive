@@ -262,7 +262,7 @@ public static class CroMechanicInstaller
                 ? "mechanic-package"
                 : "mechanic:" + request.Name.Trim();
 
-        if (!session.TryAllocateCode(
+        if (!session.TryAllocateRelocatableCode(
                 totalBytes,
                 purpose,
                 out CroCodeGrant grant,
