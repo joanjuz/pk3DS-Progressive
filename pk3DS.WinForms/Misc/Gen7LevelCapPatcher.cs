@@ -1,9 +1,7 @@
 using pk3DS.Core.Modding.Research;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace pk3DS.WinForms;
@@ -132,11 +130,14 @@ internal static class Gen7LevelCapPatcher
                 "code.bin appears to be compressed. Decompress it before enabling Player Level Caps.");
         }
 
-        byte[] battle = (byte[])battleOriginal.Clone();
-        byte[] code = (byte[])codeOriginal.Clone();
+        LevelCapInstallResult install =
+            LevelCapPatch.InstallManaged(
+                battleOriginal,
+                codeOriginal,
+                table);
 
-        List<LevelCapSite> sites = LevelCapPatch.Install(battle, code, table);
-        if (sites.Count != 2 || sites.Any(z => !z.Success))
+        var sites = install.Sites;
+        if (!install.Success)
         {
             report = string.Join(Environment.NewLine, sites.Select(z => z.ToString()));
             throw new InvalidDataException(
@@ -144,17 +145,17 @@ internal static class Gen7LevelCapPatcher
                 Environment.NewLine + Environment.NewLine + report);
         }
 
-        int changed = sites.Count(z => z.Changed);
+        byte[] battle = install.BattleCro;
+        byte[] code = install.CodeBin;
+
+        int changed = install.ChangedCount;
         report = string.Join(Environment.NewLine, sites.Select(z => z.ToString()));
 
         if (changed == 0)
             return 0;
 
         if (sites.Any(z => z.Binary == "Battle.cro" && z.Changed))
-        {
             PatchBackupManager.BackupOnce(battlePath, "player-level-caps");
-            UpdateCroHashes(battle);
-        }
 
         if (sites.Any(z => z.Binary == "code.bin" && z.Changed))
             PatchBackupManager.BackupOnce(codePath, "player-level-caps");
@@ -231,45 +232,4 @@ internal static class Gen7LevelCapPatcher
         }
     }
 
-
-    private static void UpdateCroHashes(byte[] data)
-    {
-        int codeStart = ReadInt32(data, 0xB0);
-        int codeSize = ReadInt32(data, 0xB4);
-        int dataStart = ReadInt32(data, 0xB8);
-        int dataSize = ReadInt32(data, 0xBC);
-        int rodataStart = ReadInt32(data, 0xC0);
-
-        ValidateRange(data, 0x80, 0x100, "CRO header");
-        ValidateRange(data, codeStart, codeSize, "code segment");
-
-        int rodataSize = dataStart - rodataStart;
-        ValidateRange(data, rodataStart, rodataSize, "rodata segment");
-        ValidateRange(data, dataStart, dataSize, "data segment");
-
-        byte[][] hashes =
-        [
-            SHA256.HashData(data.AsSpan(0x80, 0x100)),
-            SHA256.HashData(data.AsSpan(codeStart, codeSize)),
-            SHA256.HashData(data.AsSpan(rodataStart, rodataSize)),
-            SHA256.HashData(data.AsSpan(dataStart, dataSize)),
-        ];
-
-        for (int i = 0; i < hashes.Length; i++)
-            hashes[i].CopyTo(data, i * 0x20);
-    }
-
-    private static int ReadInt32(byte[] data, int offset)
-    {
-        if (offset < 0 || offset + 4 > data.Length)
-            throw new InvalidDataException("Battle.cro has an invalid CRO header.");
-
-        return BitConverter.ToInt32(data, offset);
-    }
-
-    private static void ValidateRange(byte[] data, int offset, int length, string name)
-    {
-        if (offset < 0 || length < 0 || offset > data.Length || length > data.Length - offset)
-            throw new InvalidDataException($"Battle.cro contains an invalid {name} range.");
-    }
 }

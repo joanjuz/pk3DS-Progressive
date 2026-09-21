@@ -30,10 +30,27 @@ public sealed record LevelCapSite(
 }
 
 /// <summary>
+/// Atomic in-memory result for the managed Player Level Caps installer.
+/// The returned arrays are detached working copies; callers only persist them after every site succeeds.
+/// </summary>
+public sealed record LevelCapInstallResult(
+    byte[] BattleCro,
+    byte[] CodeBin,
+    IReadOnlyList<LevelCapSite> Sites)
+{
+    public bool Success =>
+        Sites.Count == 2 &&
+        Sites.All(z => z.Success);
+
+    public int ChangedCount =>
+        Sites.Count(z => z.Changed);
+}
+
+/// <summary>
 /// Installs the researched USUM player level-cap routine and hooks EXP gain plus Rare Candy.
 /// File offsets are used because each hook and injected block keep the same relative displacement
-/// in the mapped image. Battle.cro uses the executable padding in the final .text page so the block
-/// is not placed over CRO relocation placeholders.
+/// in the mapped image. The managed path allocates relocation-safe Battle.cro space and can grow
+/// segment 0 automatically when the existing executable padding is insufficient.
 /// </summary>
 public static class LevelCapPatch
 {
@@ -217,8 +234,268 @@ public static class LevelCapPatch
     }
 
     /// <summary>
-    /// Applies both halves to in-memory copies. Callers should validate all returned sites before
-    /// committing either binary to disk, which keeps installation atomic at the file level.
+    /// Applies both halves to detached in-memory copies. Battle.cro uses
+    /// <see cref="CroCodeSpaceManager"/> for new placement and can therefore grow .text when needed.
+    /// No caller-owned array is mutated.
+    /// </summary>
+    public static LevelCapInstallResult InstallManaged(
+        byte[] battleCro,
+        byte[] codeBin,
+        LevelCapTable table)
+    {
+        ArgumentNullException.ThrowIfNull(battleCro);
+        ArgumentNullException.ThrowIfNull(codeBin);
+        ArgumentNullException.ThrowIfNull(table);
+
+        byte[] battle = (byte[])battleCro.Clone();
+        byte[] code = (byte[])codeBin.Clone();
+
+        var problems = table.Validate();
+        if (problems.Count != 0)
+        {
+            return new LevelCapInstallResult(
+                battle,
+                code,
+                [
+                    new LevelCapSite(
+                        "(table)",
+                        false,
+                        false,
+                        0,
+                        0,
+                        "table is not valid: " + problems[0]),
+                ]);
+        }
+
+        byte[] block = BuildBlock(table);
+
+        LevelCapSite battleSite =
+            InstallBattleManaged(
+                ref battle,
+                block);
+
+        LevelCapSite candySite =
+            InstallCandy(
+                code,
+                block);
+
+        if (battleSite.Success &&
+            battleSite.Changed &&
+            !CroSegmentExpander.TryUpdateHashes(
+                battle,
+                out string hashError))
+        {
+            battleSite = new LevelCapSite(
+                "Battle.cro",
+                false,
+                false,
+                battleSite.BlockOffset,
+                BattleHook,
+                "the CRO was modified in memory, but its integrity hashes could not be finalized: " +
+                hashError);
+        }
+
+        return new LevelCapInstallResult(
+            battle,
+            code,
+            [battleSite, candySite]);
+    }
+
+    private static LevelCapSite InstallBattleManaged(
+        ref byte[] cro,
+        byte[] block)
+    {
+        LevelCapHookState state =
+            GetBattleState(
+                cro,
+                out uint existing);
+
+        // New installations always use the managed allocator. This is the production caller that
+        // exercises allocation -> optional expansion -> write -> final CRO image.
+        if (state == LevelCapHookState.Stock)
+        {
+            return InstallBattleViaSpaceManager(
+                ref cro,
+                block,
+                existing: 0,
+                oldLength: 0,
+                fallbackReason: string.Empty);
+        }
+
+        // Unsupported / malformed installs retain the existing diagnostics.
+        if (state != LevelCapHookState.Applied)
+            return InstallBattle(cro, block);
+
+        if (!TryGetInstalledBlockLength(
+                cro,
+                existing,
+                out int oldLength))
+        {
+            return InstallBattle(cro, block);
+        }
+
+        // Preserve the proven in-place / legacy-migration behavior when it succeeds.
+        // Work on a clone so a failed attempt can never contaminate the managed fallback.
+        byte[] direct = (byte[])cro.Clone();
+        LevelCapSite directSite =
+            InstallBattle(
+                direct,
+                block);
+
+        if (directSite.Success)
+        {
+            cro = direct;
+            return directSite;
+        }
+
+        return InstallBattleViaSpaceManager(
+            ref cro,
+            block,
+            existing,
+            oldLength,
+            directSite.Detail);
+    }
+
+    private static LevelCapSite InstallBattleViaSpaceManager(
+        ref byte[] cro,
+        byte[] block,
+        uint existing,
+        int oldLength,
+        string fallbackReason)
+    {
+        int originalLength = cro.Length;
+
+        if (!CroCodeSpaceManager.TryCreate(
+                cro,
+                out var manager,
+                out string managerError))
+        {
+            return new LevelCapSite(
+                "Battle.cro",
+                false,
+                false,
+                existing,
+                BattleHook,
+                "managed CRO space could not be initialized: " + managerError);
+        }
+
+        if (!manager.TryAllocate(
+                block.Length,
+                "Player Level Caps",
+                out CroCodeGrant grant,
+                out string allocationError))
+        {
+            return new LevelCapSite(
+                "Battle.cro",
+                false,
+                false,
+                existing,
+                BattleHook,
+                "managed CRO space could not reserve the level-cap routine: " +
+                allocationError);
+        }
+
+        if (!manager.TryWrite(
+                grant,
+                block,
+                out string writeError))
+        {
+            return new LevelCapSite(
+                "Battle.cro",
+                false,
+                false,
+                existing,
+                BattleHook,
+                "managed CRO space reserved a block but could not write it: " +
+                writeError);
+        }
+
+        if (!manager.TryBuildImage(
+                out byte[] managed,
+                out string buildError))
+        {
+            return new LevelCapSite(
+                "Battle.cro",
+                false,
+                false,
+                existing,
+                BattleHook,
+                "managed CRO image could not be finalized: " + buildError);
+        }
+
+        if (oldLength > 0)
+        {
+            if ((ulong)existing + (uint)oldLength > (ulong)managed.Length)
+            {
+                return new LevelCapSite(
+                    "Battle.cro",
+                    false,
+                    false,
+                    existing,
+                    BattleHook,
+                    "the existing level-cap block lies outside the managed CRO image");
+            }
+
+            Array.Clear(
+                managed,
+                checked((int)existing),
+                oldLength);
+        }
+
+        WriteWord(
+            managed,
+            BattleHook,
+            BranchLink(
+                BattleHook,
+                grant.Offset + EntryBattle));
+
+        WriteWord(
+            managed,
+            BattleHook + 4,
+            0xE3500001);
+
+        WriteWord(
+            managed,
+            BattleHook + 8,
+            0x1A000004);
+
+        int added = managed.Length - originalLength;
+
+        string detail;
+        if (oldLength > 0)
+        {
+            detail =
+                "relocated Player Level Caps through managed CRO space";
+
+            if (!string.IsNullOrWhiteSpace(fallbackReason))
+                detail += " after the direct update was rejected: " + fallbackReason;
+        }
+        else
+        {
+            detail =
+                $"{block.Length} bytes; EXP gain now asks the player level cap through managed CRO space";
+        }
+
+        if (added > 0)
+        {
+            detail +=
+                $"; Battle.cro auto-expanded by 0x{added:X} bytes";
+        }
+
+        cro = managed;
+
+        return new LevelCapSite(
+            "Battle.cro",
+            true,
+            true,
+            grant.Offset,
+            BattleHook,
+            detail);
+    }
+
+    /// <summary>
+    /// Legacy in-place installer retained for compatibility and focused regression tests.
+    /// It never replaces the caller's Battle.cro array with a larger image.
     /// </summary>
     public static List<LevelCapSite> Install(byte[] battleCro, byte[] codeBin, LevelCapTable table)
     {
