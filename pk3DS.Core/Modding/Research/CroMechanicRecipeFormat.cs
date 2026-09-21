@@ -45,6 +45,16 @@ public readonly record struct CroRecipeVersion(
 }
 
 /// <summary>
+/// One external recipe dependency.
+/// MinimumVersion, when present, is an inclusive lower bound.
+/// </summary>
+public sealed class CroMechanicRecipeDependency
+{
+    public string RecipeId { get; set; } = string.Empty;
+    public CroRecipeVersion? MinimumVersion { get; set; }
+}
+
+/// <summary>
 /// Normalized, versioned representation of one external CRO mechanic recipe document.
 /// Parsing is strict and conversion to the binary recipe model is explicit.
 /// </summary>
@@ -55,6 +65,8 @@ public sealed class CroMechanicRecipeDocument
     public string RecipeId { get; set; } = string.Empty;
     public CroRecipeVersion? Version { get; set; }
     public CroRecipeVersion? MinimumEngineVersion { get; set; }
+    public List<CroMechanicRecipeDependency> Dependencies { get; set; } = [];
+    public List<string> Conflicts { get; set; } = [];
     public string Author { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string TargetGame { get; set; } = string.Empty;
@@ -154,6 +166,8 @@ public static class CroMechanicRecipeFormat
                         "recipeId",
                         "version",
                         "minimumEngineVersion",
+                        "dependencies",
+                        "conflicts",
                         "author",
                         "description",
                         "targetGame",
@@ -208,6 +222,18 @@ public static class CroMechanicRecipeFormat
                     "minimumEngineVersion",
                     "$.minimumEngineVersion",
                     out CroRecipeVersion? minimumEngineVersion,
+                    out error) ||
+                !TryReadOptionalDependencies(
+                    root,
+                    "dependencies",
+                    "$.dependencies",
+                    out List<CroMechanicRecipeDependency> dependencies,
+                    out error) ||
+                !TryReadOptionalRecipeIdArray(
+                    root,
+                    "conflicts",
+                    "$.conflicts",
+                    out List<string> conflicts,
                     out error) ||
                 !TryReadOptionalString(
                     root,
@@ -301,6 +327,8 @@ public static class CroMechanicRecipeFormat
                     RecipeId = recipeId,
                     Version = version,
                     MinimumEngineVersion = minimumEngineVersion,
+                    Dependencies = dependencies,
+                    Conflicts = conflicts,
                     Author = author,
                     Description = description,
                     TargetGame = targetGame,
@@ -589,6 +617,43 @@ public static class CroMechanicRecipeFormat
                 writer.WriteString(
                     "minimumEngineVersion",
                     document.MinimumEngineVersion.Value.ToString());
+            }
+
+            if (document.Dependencies is { Count: > 0 })
+            {
+                writer.WriteStartArray(
+                    "dependencies");
+
+                foreach (CroMechanicRecipeDependency dependency in document.Dependencies)
+                {
+                    writer.WriteStartObject();
+
+                    writer.WriteString(
+                        "recipeId",
+                        dependency.RecipeId);
+
+                    if (dependency.MinimumVersion.HasValue)
+                    {
+                        writer.WriteString(
+                            "minimumVersion",
+                            dependency.MinimumVersion.Value.ToString());
+                    }
+
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+            }
+
+            if (document.Conflicts is { Count: > 0 })
+            {
+                writer.WriteStartArray(
+                    "conflicts");
+
+                foreach (string conflict in document.Conflicts)
+                    writer.WriteStringValue(conflict);
+
+                writer.WriteEndArray();
             }
 
             if (!string.IsNullOrEmpty(
@@ -1017,6 +1082,13 @@ public static class CroMechanicRecipeFormat
         return true;
     }
 
+    public static bool TryValidate(
+        CroMechanicRecipeDocument document,
+        out string error) =>
+        TryValidateDocument(
+            document,
+            out error);
+
     private static bool TryValidateDocument(
         CroMechanicRecipeDocument document,
         out string error)
@@ -1059,6 +1131,118 @@ public static class CroMechanicRecipeFormat
                 "recipe document recipeId " +
                 error;
             return false;
+        }
+
+        if (document.Dependencies is null)
+        {
+            error =
+                "recipe document dependencies are null.";
+            return false;
+        }
+
+        if (document.Conflicts is null)
+        {
+            error =
+                "recipe document conflicts are null.";
+            return false;
+        }
+
+        if (!hasRecipeId &&
+            (document.Dependencies.Count > 0 ||
+             document.Conflicts.Count > 0))
+        {
+            error =
+                "recipe document dependencies and conflicts require recipeId and version.";
+            return false;
+        }
+
+        var dependencyIds =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        for (int i = 0; i < document.Dependencies.Count; i++)
+        {
+            CroMechanicRecipeDependency dependency =
+                document.Dependencies[i];
+
+            if (dependency is null)
+            {
+                error =
+                    $"recipe document dependency #{i} is null.";
+                return false;
+            }
+
+            if (!TryValidateRecipeId(
+                    dependency.RecipeId,
+                    out error))
+            {
+                error =
+                    $"recipe document dependency #{i} recipeId " +
+                    error;
+                return false;
+            }
+
+            if (!dependencyIds.Add(
+                    dependency.RecipeId))
+            {
+                error =
+                    $"recipe document contains duplicate dependency '{dependency.RecipeId}'.";
+                return false;
+            }
+
+            if (hasRecipeId &&
+                dependency.RecipeId ==
+                    document.RecipeId)
+            {
+                error =
+                    $"recipe document cannot depend on itself ('{document.RecipeId}').";
+                return false;
+            }
+        }
+
+        var conflictIds =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        for (int i = 0; i < document.Conflicts.Count; i++)
+        {
+            string conflict =
+                document.Conflicts[i];
+
+            if (!TryValidateRecipeId(
+                    conflict,
+                    out error))
+            {
+                error =
+                    $"recipe document conflict #{i} " +
+                    error;
+                return false;
+            }
+
+            if (!conflictIds.Add(
+                    conflict))
+            {
+                error =
+                    $"recipe document contains duplicate conflict '{conflict}'.";
+                return false;
+            }
+
+            if (hasRecipeId &&
+                conflict ==
+                    document.RecipeId)
+            {
+                error =
+                    $"recipe document cannot conflict with itself ('{document.RecipeId}').";
+                return false;
+            }
+
+            if (dependencyIds.Contains(
+                    conflict))
+            {
+                error =
+                    $"recipe document cannot both depend on and conflict with '{conflict}'.";
+                return false;
+            }
         }
 
         if (document.Tags is null)
@@ -1433,6 +1617,168 @@ public static class CroMechanicRecipeFormat
                 "may contain only lowercase ASCII letters, digits, '.', '-' and '_'.";
             return false;
         }
+
+        return true;
+    }
+
+    private static bool TryReadOptionalDependencies(
+        JsonElement parent,
+        string propertyName,
+        string path,
+        out List<CroMechanicRecipeDependency> dependencies,
+        out string error)
+    {
+        dependencies = [];
+        error = string.Empty;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element))
+        {
+            return true;
+        }
+
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+            error =
+                $"{path} must be an array.";
+            return false;
+        }
+
+        var result =
+            new List<CroMechanicRecipeDependency>(
+                element.GetArrayLength());
+
+        int index =
+            0;
+
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            string itemPath =
+                $"{path}[{index}]";
+
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                error =
+                    $"{itemPath} must be an object.";
+                return false;
+            }
+
+            if (!TryValidateObjectProperties(
+                    item,
+                    itemPath,
+                    ["recipeId"],
+                    ["recipeId", "minimumVersion"],
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryReadString(
+                    item.GetProperty("recipeId"),
+                    itemPath + ".recipeId",
+                    out string recipeId,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryValidateRecipeId(
+                    recipeId,
+                    out string recipeIdError))
+            {
+                error =
+                    $"{itemPath}.recipeId " +
+                    recipeIdError;
+                return false;
+            }
+
+            if (!TryReadOptionalRecipeVersion(
+                    item,
+                    "minimumVersion",
+                    itemPath + ".minimumVersion",
+                    out CroRecipeVersion? minimumVersion,
+                    out error))
+            {
+                return false;
+            }
+
+            result.Add(
+                new CroMechanicRecipeDependency
+                {
+                    RecipeId = recipeId,
+                    MinimumVersion = minimumVersion,
+                });
+
+            index++;
+        }
+
+        dependencies =
+            result;
+
+        return true;
+    }
+
+    private static bool TryReadOptionalRecipeIdArray(
+        JsonElement parent,
+        string propertyName,
+        string path,
+        out List<string> values,
+        out string error)
+    {
+        values = [];
+        error = string.Empty;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element))
+        {
+            return true;
+        }
+
+        if (element.ValueKind != JsonValueKind.Array)
+        {
+            error =
+                $"{path} must be an array.";
+            return false;
+        }
+
+        var result =
+            new List<string>(
+                element.GetArrayLength());
+
+        int index =
+            0;
+
+        foreach (JsonElement item in element.EnumerateArray())
+        {
+            if (!TryReadString(
+                    item,
+                    $"{path}[{index}]",
+                    out string recipeId,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryValidateRecipeId(
+                    recipeId,
+                    out string recipeIdError))
+            {
+                error =
+                    $"{path}[{index}] " +
+                    recipeIdError;
+                return false;
+            }
+
+            result.Add(
+                recipeId);
+
+            index++;
+        }
+
+        values =
+            result;
 
         return true;
     }

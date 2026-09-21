@@ -52,10 +52,10 @@ public static class CroMechanicRecipeCompatibility
         error =
             string.Empty;
 
-        if (document is null)
+        if (!CroMechanicRecipeFormat.TryValidate(
+                document,
+                out error))
         {
-            error =
-                "recipe document is null.";
             return false;
         }
 
