@@ -9,6 +9,42 @@ using System.Text.Json;
 namespace pk3DS.Core.Modding.Research;
 
 /// <summary>
+/// Strict numeric version used by external recipe identity and compatibility metadata.
+/// Version 1 intentionally supports MAJOR.MINOR.PATCH only.
+/// </summary>
+public readonly record struct CroRecipeVersion(
+    uint Major,
+    uint Minor,
+    uint Patch) : IComparable<CroRecipeVersion>
+{
+    public int CompareTo(
+        CroRecipeVersion other)
+    {
+        int major =
+            Major.CompareTo(
+                other.Major);
+
+        if (major != 0)
+            return major;
+
+        int minor =
+            Minor.CompareTo(
+                other.Minor);
+
+        if (minor != 0)
+            return minor;
+
+        return Patch.CompareTo(
+            other.Patch);
+    }
+
+    public override string ToString() =>
+        string.Create(
+            CultureInfo.InvariantCulture,
+            $"{Major}.{Minor}.{Patch}");
+}
+
+/// <summary>
 /// Normalized, versioned representation of one external CRO mechanic recipe document.
 /// Parsing is strict and conversion to the binary recipe model is explicit.
 /// </summary>
@@ -16,6 +52,9 @@ public sealed class CroMechanicRecipeDocument
 {
     public int FormatVersion { get; set; } = CroMechanicRecipeFormat.CurrentFormatVersion;
     public string Name { get; set; } = string.Empty;
+    public string RecipeId { get; set; } = string.Empty;
+    public CroRecipeVersion? Version { get; set; }
+    public CroRecipeVersion? MinimumEngineVersion { get; set; }
     public string Author { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string TargetGame { get; set; } = string.Empty;
@@ -112,6 +151,9 @@ public static class CroMechanicRecipeFormat
                     [
                         "formatVersion",
                         "name",
+                        "recipeId",
+                        "version",
+                        "minimumEngineVersion",
                         "author",
                         "description",
                         "targetGame",
@@ -151,6 +193,24 @@ public static class CroMechanicRecipeFormat
 
             if (!TryReadOptionalString(
                     root,
+                    "recipeId",
+                    "$.recipeId",
+                    out string recipeId,
+                    out error) ||
+                !TryReadOptionalRecipeVersion(
+                    root,
+                    "version",
+                    "$.version",
+                    out CroRecipeVersion? version,
+                    out error) ||
+                !TryReadOptionalRecipeVersion(
+                    root,
+                    "minimumEngineVersion",
+                    "$.minimumEngineVersion",
+                    out CroRecipeVersion? minimumEngineVersion,
+                    out error) ||
+                !TryReadOptionalString(
+                    root,
                     "author",
                     "$.author",
                     out string author,
@@ -180,6 +240,17 @@ public static class CroMechanicRecipeFormat
                     out List<string> tags,
                     out error))
             {
+                return false;
+            }
+
+            if (root.TryGetProperty(
+                    "recipeId",
+                    out _) &&
+                string.IsNullOrEmpty(
+                    recipeId))
+            {
+                error =
+                    "$.recipeId must not be empty.";
                 return false;
             }
 
@@ -227,6 +298,9 @@ public static class CroMechanicRecipeFormat
                 {
                     FormatVersion = formatVersion,
                     Name = name,
+                    RecipeId = recipeId,
+                    Version = version,
+                    MinimumEngineVersion = minimumEngineVersion,
                     Author = author,
                     Description = description,
                     TargetGame = targetGame,
@@ -494,6 +568,28 @@ public static class CroMechanicRecipeFormat
             writer.WriteString(
                 "name",
                 document.Name ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(
+                    document.RecipeId))
+            {
+                writer.WriteString(
+                    "recipeId",
+                    document.RecipeId);
+            }
+
+            if (document.Version.HasValue)
+            {
+                writer.WriteString(
+                    "version",
+                    document.Version.Value.ToString());
+            }
+
+            if (document.MinimumEngineVersion.HasValue)
+            {
+                writer.WriteString(
+                    "minimumEngineVersion",
+                    document.MinimumEngineVersion.Value.ToString());
+            }
 
             if (!string.IsNullOrEmpty(
                     document.Author))
@@ -940,6 +1036,31 @@ public static class CroMechanicRecipeFormat
             return false;
         }
 
+        bool hasRecipeId =
+            !string.IsNullOrEmpty(
+                document.RecipeId);
+
+        bool hasVersion =
+            document.Version.HasValue;
+
+        if (hasRecipeId != hasVersion)
+        {
+            error =
+                "recipe document recipeId and version must either both be present or both be omitted.";
+            return false;
+        }
+
+        if (hasRecipeId &&
+            !TryValidateRecipeId(
+                document.RecipeId,
+                out error))
+        {
+            error =
+                "recipe document recipeId " +
+                error;
+            return false;
+        }
+
         if (document.Tags is null)
         {
             error = "recipe document tags are null.";
@@ -1166,6 +1287,154 @@ public static class CroMechanicRecipeFormat
             path,
             out value,
             out error);
+    }
+
+    private static bool TryReadOptionalRecipeVersion(
+        JsonElement parent,
+        string propertyName,
+        string path,
+        out CroRecipeVersion? value,
+        out string error)
+    {
+        value =
+            null;
+
+        error =
+            string.Empty;
+
+        if (!parent.TryGetProperty(
+                propertyName,
+                out JsonElement element))
+        {
+            return true;
+        }
+
+        if (!TryReadString(
+                element,
+                path,
+                out string text,
+                out error))
+        {
+            return false;
+        }
+
+        if (!TryParseRecipeVersion(
+                text,
+                out CroRecipeVersion parsed))
+        {
+            error =
+                $"{path} must use MAJOR.MINOR.PATCH with unsigned decimal components, for example '1.2.3'.";
+            return false;
+        }
+
+        value =
+            parsed;
+
+        return true;
+    }
+
+    private static bool TryParseRecipeVersion(
+        string text,
+        out CroRecipeVersion version)
+    {
+        version =
+            default;
+
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        string[] parts =
+            text.Split(
+                '.');
+
+        if (parts.Length != 3)
+            return false;
+
+        var values =
+            new uint[3];
+
+        for (int i = 0; i < parts.Length; i++)
+        {
+            string part =
+                parts[i];
+
+            if (part.Length == 0 ||
+                (part.Length > 1 &&
+                 part[0] == '0') ||
+                !uint.TryParse(
+                    part,
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out values[i]))
+            {
+                return false;
+            }
+        }
+
+        version =
+            new CroRecipeVersion(
+                Major: values[0],
+                Minor: values[1],
+                Patch: values[2]);
+
+        return true;
+    }
+
+    private static bool TryValidateRecipeId(
+        string recipeId,
+        out string error)
+    {
+        error =
+            string.Empty;
+
+        if (string.IsNullOrEmpty(recipeId))
+        {
+            error =
+                "must not be empty.";
+            return false;
+        }
+
+        if (recipeId.Length > 128)
+        {
+            error =
+                "must not exceed 128 characters.";
+            return false;
+        }
+
+        static bool IsAsciiLowerLetterOrDigit(
+            char c) =>
+            (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9');
+
+        if (!IsAsciiLowerLetterOrDigit(
+                recipeId[0]) ||
+            !IsAsciiLowerLetterOrDigit(
+                recipeId[^1]))
+        {
+            error =
+                "must start and end with a lowercase ASCII letter or digit.";
+            return false;
+        }
+
+        for (int i = 0; i < recipeId.Length; i++)
+        {
+            char c =
+                recipeId[i];
+
+            if (IsAsciiLowerLetterOrDigit(c) ||
+                c == '.' ||
+                c == '-' ||
+                c == '_')
+            {
+                continue;
+            }
+
+            error =
+                "may contain only lowercase ASCII letters, digits, '.', '-' and '_'.";
+            return false;
+        }
+
+        return true;
     }
 
     private static bool TryReadOptionalStringArray(
