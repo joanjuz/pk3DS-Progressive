@@ -94,6 +94,29 @@ public static class CroMasterTableLayouts
                     StockInstruction: 0xE35400BFu,
                     ExpandedInstruction: 0xE35400C0u),
             ]);
+
+    /// <summary>
+    /// USUM ability master table discovered from the relocation graph:
+    /// 226 [id,pointer] entries with no trailing sentinel. The structure beginning exactly at
+    /// 0x104E20 is separate and has its own inbound relocation.
+    /// </summary>
+    public static CroMasterTableLayout AbilityUsumStock { get; } =
+        new(
+            Name: "Ability",
+            TableStart: 0x00104710u,
+            EntryCount: 226,
+            EntrySize: 8,
+            IdFieldOffset: 0,
+            PointerFieldOffset: 4,
+            TerminatorBytes: 0,
+            InboundRelocationIndexes: [542],
+            AppendOneBoundPatches:
+            [
+                new CroMasterTableBoundPatch(
+                    Address: 0x0008497Cu,
+                    StockInstruction: 0xE35400E2u,
+                    ExpandedInstruction: 0xE35400E3u),
+            ]);
 }
 
 /// <summary>
@@ -578,7 +601,8 @@ public static class CroMasterTableExpander
             return false;
         }
 
-        if (!IsZeroRange(
+        if (layout.TerminatorBytes > 0 &&
+            !IsZeroRange(
                 working,
                 newSentinelStart,
                 layout.TerminatorBytes))
@@ -908,7 +932,8 @@ public static class CroMasterTableExpander
                 newTableStart +
                 (uint)(layout.EntryCount * layout.EntrySize));
 
-        if (!IsZeroRange(
+        if (layout.TerminatorBytes > 0 &&
+            !IsZeroRange(
                 edited,
                 sentinel,
                 layout.TerminatorBytes))
@@ -979,7 +1004,7 @@ public static class CroMasterTableExpander
             layout.PointerFieldOffset < 0 ||
             layout.PointerFieldOffset + 4 > layout.EntrySize ||
             layout.IdFieldOffset == layout.PointerFieldOffset ||
-            layout.TerminatorBytes <= 0)
+            layout.TerminatorBytes < 0)
         {
             error = "master-table layout dimensions are invalid.";
             return false;
@@ -1036,7 +1061,8 @@ public static class CroMasterTableExpander
                 layout.TableStart +
                 (uint)(layout.EntryCount * layout.EntrySize));
 
-        if (!IsZeroRange(
+        if (layout.TerminatorBytes > 0 &&
+            !IsZeroRange(
                 cro,
                 sentinel,
                 layout.TerminatorBytes))
