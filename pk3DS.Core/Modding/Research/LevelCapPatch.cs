@@ -259,32 +259,52 @@ public static class LevelCapPatch
 
             // Older builds searched zero runs inside .text. In USUM the tail of .text
             // contains relocation placeholders, so those zero bytes are not a safe code cave.
-            // Move any such installation to the executable padding of the final .text page.
+            // A block already in executable page padding must also be relocation-free: a CRO
+            // relocation target means the region belongs to the original module even when the
+            // loader does not overwrite the bytes themselves.
             bool inExecutablePadding =
                 existing >= installedTextEnd &&
                 (long)existing + oldLength <= installedExecutableEnd;
 
-            if (!inExecutablePadding)
+            if (!CroRelocationMap.TryCreate(cro, out var relocationMap, out string relocationError))
+            {
+                return new LevelCapSite(
+                    "Battle.cro", false, false, existing, BattleHook,
+                    "the CRO relocation table could not be validated: " + relocationError);
+            }
+
+            int relocationReferences = relocationMap.CountReferencesInRange(existing, oldLength);
+            bool relocationSafe = relocationReferences == 0;
+
+            if (!inExecutablePadding || !relocationSafe)
             {
                 uint? migratedSpot = FindCroExecutablePadding(cro, block.Length, installedTextEnd);
                 if (migratedSpot is not { } migratedAt)
                 {
+                    string unsafeReason = !inExecutablePadding
+                        ? "is inside .text"
+                        : $"overlaps {relocationReferences} CRO relocation reference(s)";
+
                     return new LevelCapSite(
                         "Battle.cro", false, false, existing, BattleHook,
-                        "the installed block is inside .text and no safe executable page padding is available");
+                        $"the installed block {unsafeReason} and no safe executable page padding is available");
                 }
 
-                // The old installer only wrote into an all-zero run, so clearing it restores
-                // the relocation placeholders that were present before Player Level Caps.
+                // Clearing the old injected block restores the bytes that were blank before
+                // Player Level Caps. Existing CRO relocation metadata is intentionally untouched.
                 Array.Clear(cro, (int)existing, oldLength);
                 block.CopyTo(cro, (int)migratedAt);
                 WriteWord(cro, BattleHook, BranchLink(BattleHook, migratedAt + EntryBattle));
                 WriteWord(cro, BattleHook + 4, 0xE3500001);
                 WriteWord(cro, BattleHook + 8, 0x1A000004);
 
+                string migrationReason = !inExecutablePadding
+                    ? "migrated Player Level Caps out of .text"
+                    : $"migrated Player Level Caps away from {relocationReferences} CRO relocation reference(s)";
+
                 return new LevelCapSite(
                     "Battle.cro", true, true, migratedAt, BattleHook,
-                    $"migrated Player Level Caps to safe executable page padding; {block.Length} bytes");
+                    $"{migrationReason}; {block.Length} bytes in safe executable page padding");
             }
 
             if (BlockEquals(cro, existing, block))
@@ -460,37 +480,10 @@ public static class LevelCapPatch
         if (end <= textEnd)
             return null;
 
-        return FindZeroRun(cro, need, textEnd, end);
-    }
-
-    private static uint? FindZeroRun(byte[] bin, int need, uint start, uint end)
-    {
-        if (need <= 0 || start >= end || end > (uint)bin.Length)
+        if (!CroRelocationMap.TryCreate(cro, out var relocationMap, out _))
             return null;
 
-        int want = (need + 3) & ~3;
-        long runStart = -1;
-
-        for (long i = start; i <= end; i++)
-        {
-            if (i < end && bin[i] == 0)
-            {
-                if (runStart < 0)
-                    runStart = i;
-                continue;
-            }
-
-            if (runStart >= 0)
-            {
-                long aligned = (runStart + 3) & ~3L;
-                if (i - aligned >= want)
-                    return (uint)aligned;
-            }
-
-            runStart = -1;
-        }
-
-        return null;
+        return relocationMap.FindFirstFreeRun(textEnd, end, need);
     }
 
     private static uint CodeTextEnd(byte[] code)
