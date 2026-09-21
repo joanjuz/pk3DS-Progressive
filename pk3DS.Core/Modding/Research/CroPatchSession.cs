@@ -106,6 +106,41 @@ public sealed class CroPatchSession
         out string error) =>
         TryAllocateCode(size, string.Empty, out grant, out error);
 
+    /// <summary>
+    /// Allocates code guaranteed to be inside declared segment 0, so it may safely contain CRO
+    /// relocation write slots and relocation targets.
+    /// </summary>
+    public bool TryAllocateRelocatableCode(
+        int size,
+        string purpose,
+        out CroCodeGrant grant,
+        out string error)
+    {
+        grant = default;
+        error = string.Empty;
+
+        if (Finalized)
+        {
+            error = "the CRO patch session is already finalized";
+            return false;
+        }
+
+        return codeManager.TryAllocateRelocatable(
+            size,
+            purpose,
+            out grant,
+            out error);
+    }
+
+    public bool TryAllocateRelocatableCode(
+        int size,
+        out CroCodeGrant grant,
+        out string error) =>
+        TryAllocateRelocatableCode(
+            size,
+            string.Empty,
+            out grant,
+            out error);
     public bool TryQueuePointer(
         uint writeAddress,
         uint targetAddress,

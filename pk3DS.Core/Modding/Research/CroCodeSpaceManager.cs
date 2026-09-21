@@ -266,6 +266,120 @@ public sealed class CroCodeSpaceManager
             out grant,
             out error);
 
+    /// <summary>
+    /// Allocates code that must already belong to declared segment 0 so CRO relocations can
+    /// address it safely. Unlike ordinary code allocation, executable page padding outside the
+    /// current segment-0 boundary is not eligible.
+    /// </summary>
+    public bool TryAllocateRelocatable(
+        int size,
+        string purpose,
+        out CroCodeGrant grant,
+        out string error)
+    {
+        grant = default;
+        error = string.Empty;
+
+        if (writesStarted)
+        {
+            error =
+                "cannot allocate more code space after payload writes have started; obtain every grant first";
+            return false;
+        }
+
+        if (size <= 0)
+        {
+            error = "requested size must be positive";
+            return false;
+        }
+
+        if (!TryAlign4(size, out int need, out error))
+            return false;
+
+        if (TryAllocateExpandedSpace(
+                need,
+                purpose,
+                out grant))
+        {
+            grants.Add(grant);
+            return true;
+        }
+
+        if (!TryCalculateExpansion(
+                need,
+                out int bytesToAdd,
+                out error))
+        {
+            return false;
+        }
+
+        if (!CroSegmentExpander.TryExpandCodeSegment(
+                image,
+                bytesToAdd,
+                out byte[] expanded,
+                out CroCodeExpansionReport report,
+                out error))
+        {
+            return false;
+        }
+
+        if (!TryRebuildAllocator(
+                expanded,
+                out var rebuilt,
+                out error))
+        {
+            return false;
+        }
+
+        image = expanded;
+        allocator = rebuilt;
+        expansions.Add(report);
+        expandedArenas.Add(report.ExpandedCodeRange);
+
+        if (!TryAllocateExpandedSpace(
+                need,
+                purpose,
+                out grant))
+        {
+            error =
+                $"CRO grew by 0x{bytesToAdd:X}, but no declared .text run of 0x{need:X} bytes was available afterwards";
+            return false;
+        }
+
+        grants.Add(grant);
+        return true;
+    }
+
+    public bool TryAllocateRelocatable(
+        int size,
+        out CroCodeGrant grant,
+        out string error) =>
+        TryAllocateRelocatable(
+            size,
+            string.Empty,
+            out grant,
+            out error);
+
+    private bool TryAllocateExpandedSpace(
+        int need,
+        string purpose,
+        out CroCodeGrant grant)
+    {
+        for (int i = 0; i < expandedArenas.Count; i++)
+        {
+            grant = allocator.AllocateInRange(
+                expandedArenas[i],
+                need,
+                $"expanded-code#{i + 1}",
+                purpose ?? string.Empty);
+
+            if (grant.Success)
+                return true;
+        }
+
+        grant = default;
+        return false;
+    }
     private bool TryAllocateKnownSpace(
         int need,
         string purpose,
