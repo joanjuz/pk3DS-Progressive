@@ -8,14 +8,59 @@ namespace pk3DS.Core.Modding.Research;
 /// Structural description of a CRO master mechanic table whose entries contain one loader-owned
 /// pointer field.
 /// </summary>
+public sealed record CroMasterTableBoundPatch(
+    uint Address,
+    uint StockInstruction,
+    uint ExpandedInstruction);
+
 public sealed record CroMasterTableLayout(
     string Name,
     uint TableStart,
     int EntryCount,
     int EntrySize,
+    int IdFieldOffset,
     int PointerFieldOffset,
     int TerminatorBytes,
-    IReadOnlyList<int> InboundRelocationIndexes);
+    IReadOnlyList<int> InboundRelocationIndexes,
+    IReadOnlyList<CroMasterTableBoundPatch> AppendOneBoundPatches);
+
+/// <summary>
+/// One entry appended to a master table. The handler target is an absolute file-backed address in
+/// the input CRO; it is captured segment-relative before any structural expansion.
+/// </summary>
+public sealed record CroMasterTableAppendRequest(
+    uint Id,
+    uint HandlerTarget,
+    string Purpose = "");
+
+/// <summary>
+/// Result of appending exactly one entry to a stock master table.
+/// </summary>
+public sealed record CroMasterTableAppendReport(
+    string Name,
+    uint NewEntryId,
+    uint OriginalTableStart,
+    uint FinalOriginalTableStart,
+    uint NewTableStart,
+    uint NewEntryStart,
+    uint NewPointerSlot,
+    uint NewSentinelStart,
+    uint HandlerTarget,
+    int OriginalEntryCount,
+    int FinalEntryCount,
+    int TableBytes,
+    int HandlerRelocationsMoved,
+    int InboundPointersRetargeted,
+    int ExistingRelocationsEdited,
+    int NewRelocationIndex,
+    uint OriginalPatchCount,
+    uint FinalPatchCount,
+    int OriginalFileSize,
+    int FinalFileSize,
+    int CodeBytesAdded,
+    CroCodeGrant Grant,
+    CroRelocationWriteReport NewRelocation,
+    IReadOnlyList<CroRelocationEditReport> RelocationEdits);
 
 /// <summary>
 /// Audited stock layouts for the Battle.cro currently supported by the progressive branch.
@@ -34,9 +79,21 @@ public static class CroMasterTableLayouts
             TableStart: 0x001031BCu,
             EntryCount: 190,
             EntrySize: 8,
+            IdFieldOffset: 0,
             PointerFieldOffset: 4,
             TerminatorBytes: 8,
-            InboundRelocationIndexes: [345, 537]);
+            InboundRelocationIndexes: [345, 537],
+            AppendOneBoundPatches:
+            [
+                new CroMasterTableBoundPatch(
+                    Address: 0x00082390u,
+                    StockInstruction: 0xE35400BFu,
+                    ExpandedInstruction: 0xE35400C0u),
+                new CroMasterTableBoundPatch(
+                    Address: 0x000BF824u,
+                    StockInstruction: 0xE35400BFu,
+                    ExpandedInstruction: 0xE35400C0u),
+            ]);
 }
 
 /// <summary>
@@ -78,6 +135,507 @@ public sealed record CroMasterTableRelocationReport(
 /// </summary>
 public static class CroMasterTableExpander
 {
+    /// <summary>
+    /// Appends one entry to an audited stock master table, reuses all existing handler relocation
+    /// records, appends exactly one new pointer relocation for the new entry, and applies the
+    /// layout's audited one-entry loop-bound patches.
+    /// </summary>
+    public static bool TryAppendEntry(
+        byte[] cro,
+        CroMasterTableLayout layout,
+        CroMasterTableAppendRequest request,
+        out byte[] updated,
+        out CroMasterTableAppendReport report,
+        out string error)
+    {
+        updated = null;
+        report = null;
+        error = string.Empty;
+
+        if (cro is null)
+        {
+            error = "CRO data is null.";
+            return false;
+        }
+
+        if (layout is null)
+        {
+            error = "master-table layout is null.";
+            return false;
+        }
+
+        if (request is null)
+        {
+            error = "master-table append request is null.";
+            return false;
+        }
+
+        if (layout.AppendOneBoundPatches is null ||
+            layout.AppendOneBoundPatches.Count == 0)
+        {
+            error =
+                $"master-table layout '{layout.Name}' has no audited append-one bound patches.";
+            return false;
+        }
+
+        if (!TryValidateLayout(
+                cro,
+                layout,
+                out CroRelocationMap originalMap,
+                out int sourceSegment,
+                out uint sourceRelative,
+                out int stockTableBytes,
+                out int[] handlerRelocationIndexes,
+                out int[] inboundRelocationIndexes,
+                out byte[] stockPayload,
+                out error))
+        {
+            return false;
+        }
+
+        if (!TryLocate(
+                originalMap,
+                request.HandlerTarget,
+                requiredBytes: 1,
+                out int handlerSegment,
+                out uint handlerRelative))
+        {
+            error =
+                $"new handler target 0x{request.HandlerTarget:X6} is not inside a declared file-backed CRO segment.";
+            return false;
+        }
+
+        for (int i = 0; i < layout.EntryCount; i++)
+        {
+            uint idAddress =
+                checked(
+                    layout.TableStart +
+                    (uint)(i * layout.EntrySize) +
+                    (uint)layout.IdFieldOffset);
+
+            uint existingId =
+                BitConverter.ToUInt32(
+                    cro,
+                    checked((int)idAddress));
+
+            if (existingId == request.Id)
+            {
+                error =
+                    $"master table '{layout.Name}' already contains id 0x{request.Id:X8} at entry #{i}.";
+                return false;
+            }
+        }
+
+        int stockEntryBytes;
+        int expandedTableBytes;
+
+        try
+        {
+            stockEntryBytes =
+                checked(
+                    layout.EntryCount *
+                    layout.EntrySize);
+
+            expandedTableBytes =
+                checked(
+                    stockEntryBytes +
+                    layout.EntrySize +
+                    layout.TerminatorBytes);
+        }
+        catch (OverflowException)
+        {
+            error = "expanded master-table byte length overflowed.";
+            return false;
+        }
+
+        byte[] expandedPayload =
+            new byte[expandedTableBytes];
+
+        stockPayload
+            .AsSpan(0, stockEntryBytes)
+            .CopyTo(expandedPayload);
+
+        int newEntryRelative =
+            stockEntryBytes;
+
+        WriteU32(
+            expandedPayload,
+            request.Id,
+            newEntryRelative + layout.IdFieldOffset);
+
+        // The new pointer field and the new terminator remain zero; the loader owns the pointer.
+        if (!CroPatchSession.TryCreate(
+                cro,
+                out var session,
+                out error))
+        {
+            return false;
+        }
+
+        string purpose =
+            string.IsNullOrWhiteSpace(request.Purpose)
+                ? $"master-table:{layout.Name}:append-one"
+                : request.Purpose.Trim();
+
+        if (!session.TryAllocateRelocatableCode(
+                expandedTableBytes,
+                purpose,
+                out CroCodeGrant grant,
+                out error))
+        {
+            return false;
+        }
+
+        if (!session.TryWriteCode(
+                grant,
+                expandedPayload,
+                out error))
+        {
+            return false;
+        }
+
+        if (!session.TryBuildImage(
+                out byte[] built,
+                out CroPatchSessionReport sessionReport,
+                out error))
+        {
+            return false;
+        }
+
+        if (sessionReport.Relocations.Count != 0)
+        {
+            error =
+                "master-table expansion unexpectedly appended relocations before the explicit new-entry relocation.";
+            return false;
+        }
+
+        if (!CroRelocationMap.TryCreate(
+                built,
+                out var builtMap,
+                out error))
+        {
+            return false;
+        }
+
+        if (!TryResolve(
+                builtMap,
+                sourceSegment,
+                sourceRelative,
+                stockTableBytes,
+                out uint finalOriginalTableStart))
+        {
+            error =
+                "original master table no longer resolves after code-segment expansion.";
+            return false;
+        }
+
+        if (!TryResolve(
+                builtMap,
+                handlerSegment,
+                handlerRelative,
+                requiredBytes: 1,
+                out uint finalHandlerTarget))
+        {
+            error =
+                "new-entry handler target no longer resolves after code-segment expansion.";
+            return false;
+        }
+
+        uint newTableStart =
+            grant.Offset;
+
+        uint newEntryStart =
+            checked(
+                newTableStart +
+                (uint)stockEntryBytes);
+
+        uint newPointerSlot =
+            checked(
+                newEntryStart +
+                (uint)layout.PointerFieldOffset);
+
+        uint newSentinelStart =
+            checked(
+                newEntryStart +
+                (uint)layout.EntrySize);
+
+        ulong newTableEnd =
+            (ulong)newTableStart +
+            (uint)expandedTableBytes;
+
+        if (newTableStart < builtMap.CodeStart ||
+            newTableEnd > builtMap.CodeEnd)
+        {
+            error =
+                $"expanded master table 0x{newTableStart:X6}+0x{expandedTableBytes:X} is not fully inside declared segment 0.";
+            return false;
+        }
+
+        var edits =
+            new List<CroRelocationPointerEdit>(
+                handlerRelocationIndexes.Length +
+                inboundRelocationIndexes.Length);
+
+        for (int i = 0; i < handlerRelocationIndexes.Length; i++)
+        {
+            int relocationIndex =
+                handlerRelocationIndexes[i];
+
+            var current =
+                builtMap.References[relocationIndex];
+
+            uint expectedOldWrite =
+                checked(
+                    finalOriginalTableStart +
+                    (uint)(i * layout.EntrySize) +
+                    (uint)layout.PointerFieldOffset);
+
+            if (!current.WriteFileBacked ||
+                !current.TargetFileBacked ||
+                current.WriteAddress != expectedOldWrite)
+            {
+                error =
+                    $"handler relocation #{relocationIndex} no longer writes expected stock slot 0x{expectedOldWrite:X6}.";
+                return false;
+            }
+
+            uint newWrite =
+                checked(
+                    newTableStart +
+                    (uint)(i * layout.EntrySize) +
+                    (uint)layout.PointerFieldOffset);
+
+            edits.Add(
+                new CroRelocationPointerEdit(
+                    RelocationIndex: relocationIndex,
+                    WriteAddress: newWrite,
+                    TargetAddress: current.TargetAddress,
+                    Purpose: $"{layout.Name}:entry#{i}"));
+        }
+
+        foreach (int relocationIndex in inboundRelocationIndexes)
+        {
+            var current =
+                builtMap.References[relocationIndex];
+
+            if (!current.WriteFileBacked ||
+                !current.TargetFileBacked ||
+                current.TargetAddress != finalOriginalTableStart)
+            {
+                error =
+                    $"inbound relocation #{relocationIndex} no longer targets stock table 0x{finalOriginalTableStart:X6}.";
+                return false;
+            }
+
+            edits.Add(
+                new CroRelocationPointerEdit(
+                    RelocationIndex: relocationIndex,
+                    WriteAddress: current.WriteAddress,
+                    TargetAddress: newTableStart,
+                    Purpose: $"{layout.Name}:table-pointer"));
+        }
+
+        if (!CroRelocationEditor.TryRewritePointers(
+                built,
+                edits,
+                out byte[] edited,
+                out IReadOnlyList<CroRelocationEditReport> editReports,
+                out error))
+        {
+            return false;
+        }
+
+        if (!CroRelocationWriter.TryAddPointer(
+                edited,
+                newPointerSlot,
+                finalHandlerTarget,
+                out byte[] withNewRelocation,
+                out CroRelocationWriteReport newRelocation,
+                out error))
+        {
+            return false;
+        }
+
+        byte[] working =
+            withNewRelocation;
+
+        foreach (var bound in layout.AppendOneBoundPatches)
+        {
+            if ((bound.Address & 3u) != 0 ||
+                (ulong)bound.Address + 4u > (ulong)working.Length)
+            {
+                error =
+                    $"bound patch address 0x{bound.Address:X6} is invalid.";
+                return false;
+            }
+
+            uint actual =
+                BitConverter.ToUInt32(
+                    working,
+                    checked((int)bound.Address));
+
+            if (actual != bound.StockInstruction)
+            {
+                error =
+                    $"bound patch at 0x{bound.Address:X6} expected 0x{bound.StockInstruction:X8}, found 0x{actual:X8}.";
+                return false;
+            }
+
+            WriteU32(
+                working,
+                bound.ExpandedInstruction,
+                checked((int)bound.Address));
+        }
+
+        if (!CroSegmentExpander.TryUpdateHashes(
+                working,
+                out error))
+        {
+            return false;
+        }
+
+        if (!CroRelocationMap.TryCreate(
+                working,
+                out var finalMap,
+                out error))
+        {
+            return false;
+        }
+
+        if (finalMap.PatchTableCount !=
+            originalMap.PatchTableCount + 1u)
+        {
+            error =
+                $"expanded master table changed patch count {originalMap.PatchTableCount} -> {finalMap.PatchTableCount}; expected exactly +1.";
+            return false;
+        }
+
+        int oldWrites =
+            finalMap.References.Count(r =>
+                r.WriteFileBacked &&
+                r.WriteAddress >= finalOriginalTableStart &&
+                (ulong)r.WriteAddress <
+                    (ulong)finalOriginalTableStart +
+                    (uint)stockTableBytes);
+
+        if (oldWrites != 0)
+        {
+            error =
+                $"old master-table range still contains {oldWrites} relocation write slots.";
+            return false;
+        }
+
+        int newWrites =
+            finalMap.References.Count(r =>
+                r.WriteFileBacked &&
+                r.WriteAddress >= newTableStart &&
+                (ulong)r.WriteAddress <
+                    (ulong)newTableStart +
+                    (uint)expandedTableBytes);
+
+        if (newWrites != layout.EntryCount + 1)
+        {
+            error =
+                $"expanded master table has {newWrites} relocation write slots; expected {layout.EntryCount + 1}.";
+            return false;
+        }
+
+        int oldStartTargets =
+            finalMap.References.Count(r =>
+                r.TargetFileBacked &&
+                r.TargetAddress == finalOriginalTableStart);
+
+        if (oldStartTargets != 0)
+        {
+            error =
+                $"old master-table start still has {oldStartTargets} inbound relocation target(s).";
+            return false;
+        }
+
+        int newStartTargets =
+            finalMap.References.Count(r =>
+                r.TargetFileBacked &&
+                r.TargetAddress == newTableStart);
+
+        if (newStartTargets != inboundRelocationIndexes.Length)
+        {
+            error =
+                $"expanded master-table start has {newStartTargets} inbound relocation target(s); " +
+                $"expected {inboundRelocationIndexes.Length}.";
+            return false;
+        }
+
+        var appendedReference =
+            finalMap.References[newRelocation.RelocationIndex];
+
+        if (!appendedReference.WriteFileBacked ||
+            !appendedReference.TargetFileBacked ||
+            appendedReference.WriteAddress != newPointerSlot ||
+            appendedReference.TargetAddress != finalHandlerTarget)
+        {
+            error =
+                "new-entry relocation does not resolve to the expected pointer slot and handler target.";
+            return false;
+        }
+
+        if (!IsZeroRange(
+                working,
+                newSentinelStart,
+                layout.TerminatorBytes))
+        {
+            error =
+                $"expanded {layout.Name} sentinel at 0x{newSentinelStart:X6} is not zero.";
+            return false;
+        }
+
+        foreach (var bound in layout.AppendOneBoundPatches)
+        {
+            uint actual =
+                BitConverter.ToUInt32(
+                    working,
+                    checked((int)bound.Address));
+
+            if (actual != bound.ExpandedInstruction)
+            {
+                error =
+                    $"expanded bound patch at 0x{bound.Address:X6} is 0x{actual:X8}, expected 0x{bound.ExpandedInstruction:X8}.";
+                return false;
+            }
+        }
+
+        report =
+            new CroMasterTableAppendReport(
+                Name: layout.Name ?? string.Empty,
+                NewEntryId: request.Id,
+                OriginalTableStart: layout.TableStart,
+                FinalOriginalTableStart: finalOriginalTableStart,
+                NewTableStart: newTableStart,
+                NewEntryStart: newEntryStart,
+                NewPointerSlot: newPointerSlot,
+                NewSentinelStart: newSentinelStart,
+                HandlerTarget: finalHandlerTarget,
+                OriginalEntryCount: layout.EntryCount,
+                FinalEntryCount: layout.EntryCount + 1,
+                TableBytes: expandedTableBytes,
+                HandlerRelocationsMoved: handlerRelocationIndexes.Length,
+                InboundPointersRetargeted: inboundRelocationIndexes.Length,
+                ExistingRelocationsEdited: editReports.Count,
+                NewRelocationIndex: newRelocation.RelocationIndex,
+                OriginalPatchCount: originalMap.PatchTableCount,
+                FinalPatchCount: finalMap.PatchTableCount,
+                OriginalFileSize: cro.Length,
+                FinalFileSize: working.Length,
+                CodeBytesAdded: sessionReport.TotalCodeBytesAdded,
+                Grant: grant,
+                NewRelocation: newRelocation,
+                RelocationEdits: editReports.ToArray());
+
+        updated =
+            working;
+
+        return true;
+    }
+
     public static bool TryRelocateStockTable(
         byte[] cro,
         CroMasterTableLayout layout,
@@ -416,8 +974,11 @@ public static class CroMasterTableExpander
 
         if (layout.EntryCount <= 0 ||
             layout.EntrySize <= 0 ||
+            layout.IdFieldOffset < 0 ||
+            layout.IdFieldOffset + 4 > layout.EntrySize ||
             layout.PointerFieldOffset < 0 ||
             layout.PointerFieldOffset + 4 > layout.EntrySize ||
+            layout.IdFieldOffset == layout.PointerFieldOffset ||
             layout.TerminatorBytes <= 0)
         {
             error = "master-table layout dimensions are invalid.";
@@ -699,6 +1260,15 @@ public static class CroMasterTableExpander
 
         return true;
     }
+
+    private static void WriteU32(
+        byte[] data,
+        uint value,
+        int offset) =>
+        BitConverter.GetBytes(value)
+            .CopyTo(
+                data,
+                offset);
 
     private static bool IsZeroRange(
         byte[] data,
