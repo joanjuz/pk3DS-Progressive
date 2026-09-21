@@ -476,14 +476,16 @@ public static class LevelCapPatch
 
     private static uint? FindCroExecutablePadding(byte[] cro, int need, uint textEnd)
     {
-        uint end = CroExecutablePaddingEnd(cro, textEnd);
-        if (end <= textEnd)
+        if (!CroCodeAllocator.TryCreate(cro, out var allocator, out _))
             return null;
 
-        if (!CroRelocationMap.TryCreate(cro, out var relocationMap, out _))
+        // Fail closed if the legacy helper and the allocator disagree about where .text ends.
+        // Once all CRO callers use CroCodeAllocator directly, this compatibility check can go.
+        if (allocator.CodeEnd != textEnd)
             return null;
 
-        return relocationMap.FindFirstFreeRun(textEnd, end, need);
+        CroCodeGrant grant = allocator.Allocate(need, "Player Level Caps");
+        return grant.Success ? grant.Offset : null;
     }
 
     private static uint CodeTextEnd(byte[] code)
