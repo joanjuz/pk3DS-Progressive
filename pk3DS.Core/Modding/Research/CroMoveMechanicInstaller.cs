@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace pk3DS.Core.Modding.Research;
 
@@ -23,7 +21,7 @@ public sealed record CroMoveMechanicInstallReport(
     int FinalFileSize);
 
 /// <summary>
-/// Installs one custom Move mechanic into the audited USUM Move master table.
+/// Move-specific compatibility wrapper over the generic audited CRO mechanic installer.
 /// </summary>
 public static class CroMoveMechanicInstaller
 {
@@ -39,382 +37,33 @@ public static class CroMoveMechanicInstaller
         report = null;
         error = string.Empty;
 
-        if (cro is null)
-        {
-            error = "CRO data is null.";
-            return false;
-        }
-
-        if (mechanic is null)
-        {
-            error = "Move mechanic request is null.";
-            return false;
-        }
-
-        byte[] inputSnapshot =
-            (byte[])cro.Clone();
-
-        CroMasterTableLayout layout =
-            CroMasterTableLayouts.MoveUsumStock;
-
-        if (!TryGetPlaceholderHandler(
+        if (!CroMechanicDomainInstaller.TryInstall(
                 cro,
-                layout,
-                out uint placeholderHandler,
-                out error))
-        {
-            return false;
-        }
-
-        string mechanicName =
-            string.IsNullOrWhiteSpace(mechanic.Name)
-                ? $"move-0x{moveId:X4}"
-                : mechanic.Name.Trim();
-
-        var append =
-            new CroMasterTableAppendRequest(
-                Id: moveId,
-                HandlerTarget: placeholderHandler,
-                Purpose: $"move-mechanic:{mechanicName}:master-entry");
-
-        if (!CroMasterTableExpander.TryAppendEntry(
-                cro,
-                layout,
-                append,
-                out byte[] expanded,
-                out CroMasterTableAppendReport tableReport,
-                out error))
-        {
-            error =
-                "could not append Move master-table entry: " +
-                error;
-            return false;
-        }
-
-        if (!CroPatchSession.TryCreate(
-                expanded,
-                out var session,
-                out error))
-        {
-            error =
-                "could not create Move mechanic patch session: " +
-                error;
-            return false;
-        }
-
-        if (!CroMechanicInstaller.TryPlan(
-                session,
+                CroMechanicDomains.MoveUsum,
+                moveId,
                 mechanic,
-                out CroMechanicPlan plan,
+                out updated,
+                out CroMechanicDomainInstallReport generic,
                 out error))
         {
-            error =
-                "could not plan Move mechanic package: " +
-                error;
-            return false;
-        }
-
-        if (!plan.TryWrite(out error))
-        {
-            error =
-                "could not write Move mechanic package: " +
-                error;
-            return false;
-        }
-
-        if (!session.TryBuildImage(
-                out byte[] mechanicImage,
-                out CroPatchSessionReport mechanicReport,
-                out error))
-        {
-            error =
-                "could not finalize Move mechanic package: " +
-                error;
-            return false;
-        }
-
-        if (mechanicReport.Relocations.Count !=
-            mechanic.Effects.Count + 1)
-        {
-            error =
-                $"Move mechanic generated {mechanicReport.Relocations.Count} relocation(s); " +
-                $"expected {mechanic.Effects.Count + 1}.";
-            return false;
-        }
-
-        if (!CroRelocationEditor.TryRewritePointer(
-                mechanicImage,
-                tableReport.NewRelocationIndex,
-                tableReport.NewPointerSlot,
-                plan.HandlerOffset,
-                out byte[] attached,
-                out CroRelocationEditReport attachment,
-                out error))
-        {
-            error =
-                "could not attach generated handler to Move master-table entry: " +
-                error;
-            return false;
-        }
-
-        if (!CroRelocationMap.TryCreate(
-                attached,
-                out var finalMap,
-                out error))
-        {
-            error =
-                "final Move mechanic CRO is invalid: " +
-                error;
-            return false;
-        }
-
-        uint expectedPatchCount;
-
-        try
-        {
-            expectedPatchCount =
-                checked(
-                    tableReport.FinalPatchCount +
-                    (uint)mechanicReport.Relocations.Count);
-        }
-        catch (OverflowException)
-        {
-            error =
-                "final Move mechanic relocation count overflowed.";
-            return false;
-        }
-
-        if (finalMap.PatchTableCount != expectedPatchCount)
-        {
-            error =
-                $"final Move mechanic patch count is {finalMap.PatchTableCount}; " +
-                $"expected {expectedPatchCount}.";
-            return false;
-        }
-
-        if (tableReport.NewRelocationIndex < 0 ||
-            (uint)tableReport.NewRelocationIndex >= finalMap.PatchTableCount)
-        {
-            error =
-                $"Move entry relocation #{tableReport.NewRelocationIndex} is outside the final patch table.";
-            return false;
-        }
-
-        var moveReference =
-            finalMap.References[
-                tableReport.NewRelocationIndex];
-
-        if (!moveReference.WriteFileBacked ||
-            !moveReference.TargetFileBacked ||
-            moveReference.WriteAddress != tableReport.NewPointerSlot ||
-            moveReference.TargetAddress != plan.HandlerOffset)
-        {
-            error =
-                "final Move entry relocation does not point to the generated handler.";
-            return false;
-        }
-
-        if ((ulong)tableReport.NewEntryStart + 4u >
-            (ulong)attached.Length)
-        {
-            error =
-                "final Move entry lies outside the CRO.";
-            return false;
-        }
-
-        uint finalMoveId =
-            BitConverter.ToUInt32(
-                attached,
-                checked((int)tableReport.NewEntryStart));
-
-        if (finalMoveId != moveId)
-        {
-            error =
-                $"final Move entry id is 0x{finalMoveId:X8}; expected 0x{moveId:X8}.";
-            return false;
-        }
-
-        if (!TryValidateMechanicGraph(
-                finalMap,
-                plan,
-                mechanicReport,
-                out error))
-        {
-            return false;
-        }
-
-        if (!cro.AsSpan().SequenceEqual(inputSnapshot))
-        {
-            error =
-                "Move mechanic installation mutated the caller's input CRO.";
             return false;
         }
 
         report =
             new CroMoveMechanicInstallReport(
                 MoveId: moveId,
-                PlaceholderHandlerTarget: placeholderHandler,
-                HandlerOffset: plan.HandlerOffset,
-                TimingTableOffset: plan.TimingTableOffset,
-                EffectCount: plan.Effects.Count,
-                MechanicGrant: plan.Grant,
-                Effects: plan.Effects.ToArray(),
-                Table: tableReport,
-                MechanicSession: mechanicReport,
-                Attachment: attachment,
-                FinalPatchCount: finalMap.PatchTableCount,
-                OriginalFileSize: cro.Length,
-                FinalFileSize: attached.Length);
-
-        updated =
-            attached;
-
-        return true;
-    }
-
-    private static bool TryGetPlaceholderHandler(
-        byte[] cro,
-        CroMasterTableLayout layout,
-        out uint target,
-        out string error)
-    {
-        target = 0;
-        error = string.Empty;
-
-        if (!CroRelocationMap.TryCreate(
-                cro,
-                out var map,
-                out error))
-        {
-            return false;
-        }
-
-        uint firstPointerSlot;
-
-        try
-        {
-            firstPointerSlot =
-                checked(
-                    layout.TableStart +
-                    (uint)layout.PointerFieldOffset);
-        }
-        catch (OverflowException)
-        {
-            error =
-                "Move master-table first pointer slot overflowed.";
-            return false;
-        }
-
-        var matches =
-            map.References
-                .Where(r =>
-                    r.WriteFileBacked &&
-                    r.WriteAddress == firstPointerSlot)
-                .ToArray();
-
-        if (matches.Length != 1)
-        {
-            error =
-                $"audited Move master-table first pointer slot 0x{firstPointerSlot:X6} " +
-                $"has {matches.Length} relocation writer(s); expected exactly 1.";
-            return false;
-        }
-
-        if (!matches[0].TargetFileBacked)
-        {
-            error =
-                $"audited Move master-table relocation #{matches[0].Index} " +
-                "does not target file-backed code.";
-            return false;
-        }
-
-        target =
-            matches[0].TargetAddress;
-
-        return true;
-    }
-
-    private static bool TryValidateMechanicGraph(
-        CroRelocationMap map,
-        CroMechanicPlan plan,
-        CroPatchSessionReport mechanicReport,
-        out string error)
-    {
-        error = string.Empty;
-
-        if (mechanicReport.Relocations.Count == 0)
-        {
-            error =
-                "generated Move mechanic has no relocation records.";
-            return false;
-        }
-
-        var handlerPointer =
-            mechanicReport.Relocations[0];
-
-        if (handlerPointer.RelocationIndex < 0 ||
-            (uint)handlerPointer.RelocationIndex >= map.PatchTableCount)
-        {
-            error =
-                $"generated handler relocation #{handlerPointer.RelocationIndex} is outside the final patch table.";
-            return false;
-        }
-
-        var finalHandlerPointer =
-            map.References[
-                handlerPointer.RelocationIndex];
-
-        uint expectedHandlerWrite =
-            checked(
-                plan.HandlerOffset +
-                16u);
-
-        if (!finalHandlerPointer.WriteFileBacked ||
-            !finalHandlerPointer.TargetFileBacked ||
-            finalHandlerPointer.WriteAddress != expectedHandlerWrite ||
-            finalHandlerPointer.TargetAddress != plan.TimingTableOffset)
-        {
-            error =
-                "generated handler does not relocate to its timing table as expected.";
-            return false;
-        }
-
-        for (int i = 0; i < plan.Effects.Count; i++)
-        {
-            var relocation =
-                mechanicReport.Relocations[i + 1];
-
-            if (relocation.RelocationIndex < 0 ||
-                (uint)relocation.RelocationIndex >= map.PatchTableCount)
-            {
-                error =
-                    $"generated effect relocation #{relocation.RelocationIndex} is outside the final patch table.";
-                return false;
-            }
-
-            var finalReference =
-                map.References[
-                    relocation.RelocationIndex];
-
-            uint expectedWrite =
-                checked(
-                    plan.TimingTableOffset +
-                    (uint)(i * 8) +
-                    4u);
-
-            uint expectedTarget =
-                plan.Effects[i].FunctionOffset;
-
-            if (!finalReference.WriteFileBacked ||
-                !finalReference.TargetFileBacked ||
-                finalReference.WriteAddress != expectedWrite ||
-                finalReference.TargetAddress != expectedTarget)
-            {
-                error =
-                    $"generated timing row #{i} does not relocate to its expected effect function.";
-                return false;
-            }
-        }
+                PlaceholderHandlerTarget: generic.PlaceholderHandlerTarget,
+                HandlerOffset: generic.HandlerOffset,
+                TimingTableOffset: generic.TimingTableOffset,
+                EffectCount: generic.EffectCount,
+                MechanicGrant: generic.MechanicGrant,
+                Effects: generic.Effects,
+                Table: generic.Table,
+                MechanicSession: generic.MechanicSession,
+                Attachment: generic.Attachment,
+                FinalPatchCount: generic.FinalPatchCount,
+                OriginalFileSize: generic.OriginalFileSize,
+                FinalFileSize: generic.FinalFileSize);
 
         return true;
     }
