@@ -479,7 +479,7 @@ public static class CroSegmentExpander
             ? checked(value + (uint)delta)
             : value;
 
-    private static bool TryUpdateHashes(
+    internal static bool TryUpdateHashes(
         byte[] data,
         out string error)
     {
