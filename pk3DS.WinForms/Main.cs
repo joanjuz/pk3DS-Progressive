@@ -1002,6 +1002,7 @@ public sealed partial class Main : Form
         AddUSUMMoveRelearnerButtonIfNeeded();
         FLP_CRO.Controls.AddRange(cro);
         AddPlayerLevelCapsButtonIfNeeded();
+        AddCroRecipeButtonIfNeeded();
     }
 
     private Button B_USUMMoveRelearner;
