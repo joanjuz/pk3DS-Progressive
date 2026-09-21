@@ -27,9 +27,12 @@ public sealed class CroCodeSpaceManager
     private readonly List<CroFreeRange> expandedArenas = [];
     private readonly List<CroCodeExpansionReport> expansions = [];
 
+    private bool writesStarted;
+
     public int OriginalLength { get; }
     public int CurrentLength => image.Length;
     public bool WasExpanded => expansions.Count != 0;
+    public bool WritesStarted => writesStarted;
 
     public CroRelocationMap Map => allocator.Map;
     public IReadOnlyList<CroCodeGrant> Granted => grants;
@@ -81,11 +84,89 @@ public sealed class CroCodeSpaceManager
     }
 
     /// <summary>
-    /// Returns a detached copy of the currently planned CRO image.
-    /// Write injected code only to this returned copy after all desired grants have been obtained.
+    /// Writes one payload into a grant previously returned by this manager.
+    /// All allocations must be completed before the first write, because a later segment expansion
+    /// rebuilds the allocator from blank planned ranges.
     /// </summary>
-    public byte[] BuildImage() =>
-        (byte[])image.Clone();
+    public bool TryWrite(
+        CroCodeGrant grant,
+        ReadOnlySpan<byte> payload,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (!grant.Success || !grants.Contains(grant))
+        {
+            error = "the supplied grant was not issued by this manager";
+            return false;
+        }
+
+        if (payload.Length > grant.Size)
+        {
+            error =
+                $"payload has 0x{payload.Length:X} bytes but the grant holds only 0x{grant.Size:X}";
+            return false;
+        }
+
+        ulong end = (ulong)grant.Offset + (uint)grant.Size;
+        if (end > (ulong)image.Length)
+        {
+            error = "the grant lies outside the current CRO image";
+            return false;
+        }
+
+        // Deterministic fill for unused aligned bytes.
+        Array.Clear(
+            image,
+            checked((int)grant.Offset),
+            grant.Size);
+
+        payload.CopyTo(
+            image.AsSpan(
+                checked((int)grant.Offset),
+                payload.Length));
+
+        writesStarted = true;
+        return true;
+    }
+
+    /// <summary>
+    /// Builds a detached final CRO image and refreshes all four integrity hashes after any payload
+    /// writes. The manager keeps its private working image so the returned array may be modified
+    /// freely by the caller.
+    /// </summary>
+    public bool TryBuildImage(
+        out byte[] built,
+        out string error)
+    {
+        built = (byte[])image.Clone();
+
+        if (!CroSegmentExpander.TryUpdateHashes(
+                built,
+                out error))
+        {
+            built = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Convenience form for callers that prefer an exception if final integrity hashing fails.
+    /// </summary>
+    public byte[] BuildImage()
+    {
+        if (!TryBuildImage(
+                out byte[] built,
+                out string error))
+        {
+            throw new InvalidOperationException(
+                "Could not finalize CRO image: " + error);
+        }
+
+        return built;
+    }
 
     /// <summary>
     /// Allocates <paramref name="size"/> bytes. Existing known code space is consumed first.
@@ -101,6 +182,13 @@ public sealed class CroCodeSpaceManager
     {
         grant = default;
         error = string.Empty;
+
+        if (writesStarted)
+        {
+            error =
+                "cannot allocate more code space after payload writes have started; obtain every grant first";
+            return false;
+        }
 
         if (size <= 0)
         {
