@@ -1,4 +1,5 @@
 ﻿using pk3DS.Core;
+using pk3DS.Core.Modding.Research;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,9 +27,33 @@ public partial class MartEditor7UU : Form
         LayoutCustomMartButtons();
 
         data = File.ReadAllBytes(CROPath);
-        //len_BPTutor = data.Skip(0x52D2).Take(4).ToArray();
-        len_BPItem = data.Skip(0x52D2 + 4).Take(7).ToArray();
-        len_Items = data.Skip(0x52D2 + 4 + 7).TakeWhile(z => (sbyte)z > 0).ToArray();
+
+        if (!Gen7ShopCroLayout.TryRead(
+                data,
+                out Gen7ShopCroLayoutSnapshot shopLayout,
+                out string layoutError))
+        {
+            ofs_Item = 0;
+            ofs_BPItem = 0;
+            len_Items = [];
+            len_BPItem = [];
+
+            WinFormsUtil.Error(
+                "Could not resolve the active USUM Shop.cro layout. Closing.",
+                layoutError);
+
+            Close();
+            return;
+        }
+
+        ofs_Item = checked((int)shopLayout.RegularMarts.DataStart);
+        ofs_BPItem = checked((int)shopLayout.BPItems.DataStart);
+
+        len_Items = shopLayout.RegularMarts.Inventories
+            .Select(z => checked((byte)z.Length))
+            .ToArray();
+
+        len_BPItem = shopLayout.BPItems.Counts.ToArray();
 
         itemlist[0] = "";
         SetupDGV();
@@ -474,12 +499,10 @@ public partial class MartEditor7UU : Form
         g.Files = files;
         g.Save();
     }
-    private const int ofs_Item = 0x50BC;
-    private const int ofs_BPItem = 0x52FA;
-    //private const int ofs_BPTutor = 0x54DE;
+    private readonly int ofs_Item;
+    private readonly int ofs_BPItem;
     private readonly byte[] len_Items;
     private readonly byte[] len_BPItem;
-    //private readonly byte[] len_BPTutor;
 
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);
     //private readonly string[] movelist = Main.Config.GetText(TextName.MoveNames);
