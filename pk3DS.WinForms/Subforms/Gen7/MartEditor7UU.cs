@@ -193,6 +193,59 @@ public partial class MartEditor7UU : Form
             regularMarts[entryItem].Count > 1;
     }
 
+    private bool TryAppendRegularMartItem(
+        int martIndex,
+        ushort itemId,
+        out int token,
+        out string error)
+    {
+        token = 0;
+        error = string.Empty;
+
+        if (martIndex < 0 ||
+            martIndex >= regularMarts.Length)
+        {
+            error =
+                $"Regular mart index {martIndex} is outside the loaded mart table.";
+            return false;
+        }
+
+        List<ushort> mart =
+            regularMarts[martIndex];
+
+        if (mart.Count >=
+            Gen7ExpandedMartTable.MaximumSlotsPerMart)
+        {
+            error =
+                $"'{locations[martIndex]}' already has {mart.Count} slots. " +
+                $"USUM supports at most {Gen7ExpandedMartTable.MaximumSlotsPerMart} slots per regular mart.";
+            return false;
+        }
+
+        int insertIndex =
+            mart.Count;
+
+        token =
+            nextExpandedMartToken++;
+
+        mart.Add(
+            itemId);
+
+        regularMartSlotTokens[martIndex].Add(
+            token);
+
+        expandedMartOperations.Add(
+            new PendingExpandedMartOperation(
+                new ExpandedMartOperation(
+                    ExpandedMartOperationKind.Add,
+                    martIndex,
+                    insertIndex,
+                    itemId),
+                token));
+
+        return true;
+    }
+
     private void B_AddItem_Click(object sender, EventArgs e)
     {
         if (tabControl1.SelectedIndex != 0 ||
@@ -206,15 +259,6 @@ public partial class MartEditor7UU : Form
 
         List<ushort> mart =
             regularMarts[entryItem];
-
-        if (mart.Count >=
-            Gen7ExpandedMartTable.MaximumSlotsPerMart)
-        {
-            WinFormsUtil.Error(
-                "This mart cannot be expanded any further.",
-                $"USUM supports at most {Gen7ExpandedMartTable.MaximumSlotsPerMart} slots per regular mart.");
-            return;
-        }
 
         int sourceRow =
             dgv.CurrentCell?.RowIndex ??
@@ -231,26 +275,17 @@ public partial class MartEditor7UU : Form
         ushort insertedItem =
             mart[sourceRow];
 
-        int insertIndex =
-            mart.Count;
-
-        int token =
-            nextExpandedMartToken++;
-
-        mart.Add(
-            insertedItem);
-
-        regularMartSlotTokens[entryItem].Add(
-            token);
-
-        expandedMartOperations.Add(
-            new PendingExpandedMartOperation(
-                new ExpandedMartOperation(
-                    ExpandedMartOperationKind.Add,
-                    entryItem,
-                    insertIndex,
-                    insertedItem),
-                token));
+        if (!TryAppendRegularMartItem(
+                entryItem,
+                insertedItem,
+                out _,
+                out string appendError))
+        {
+            WinFormsUtil.Error(
+                "This mart cannot be expanded any further.",
+                appendError);
+            return;
+        }
 
         GetListItem();
 
@@ -412,12 +447,65 @@ public partial class MartEditor7UU : Form
         B_Save.BringToFront();
     }
 
+    private bool HasTrackedRareCandySlot(int martIndex)
+    {
+        if (!rareCandySlotTokens.TryGetValue(
+                martIndex,
+                out int token))
+        {
+            return false;
+        }
+
+        return martIndex >= 0 &&
+               martIndex < regularMartSlotTokens.Length &&
+               regularMartSlotTokens[martIndex].Contains(
+                   token);
+    }
+
+    private string GetRareCandyTemplateSlots()
+    {
+        var slots =
+            new List<string>();
+
+        foreach (var pair in
+                 rareCandySlotTokens.OrderBy(z => z.Key))
+        {
+            int martIndex =
+                pair.Key;
+
+            if (martIndex < 0 ||
+                martIndex >= regularMartSlotTokens.Length)
+            {
+                continue;
+            }
+
+            int slotIndex =
+                regularMartSlotTokens[martIndex]
+                    .IndexOf(
+                        pair.Value);
+
+            if (slotIndex < 0 ||
+                slotIndex >= regularMarts[martIndex].Count)
+            {
+                continue;
+            }
+
+            slots.Add(
+                $"{martIndex}:{slotIndex}");
+        }
+
+        return string.Join(
+            "|",
+            slots);
+    }
+
     private void B_AddRareCandies_Click(object sender, EventArgs e)
     {
         if (DialogResult.Yes != WinFormsUtil.Prompt(
             MessageBoxButtons.YesNo,
-            "Add Rare Candies to all regular marts?",
-            "This will replace the last slot of each regular mart with Rare Candy. Special marts and BP shops will not be changed. Rare Candy price will be set to 10 when you click Save."))
+            "Add Rare Candies to all progression marts?",
+            "This will ADD one new Rare Candy slot to each progression mart that does not already sell Rare Candy, from No Trials through 7 Trials. " +
+            "Rare Candy price will be set to 10 when you click Save."))
         {
             return;
         }
@@ -425,8 +513,194 @@ public partial class MartEditor7UU : Form
         if (entryItem > -1)
             SetListItem();
 
-        int rareCandy =
-            GetRareCandyItemID();
+        int martCount =
+            Math.Min(
+                RegularMartCount,
+                regularMarts.Length);
+
+        ushort rareCandy =
+            checked(
+                (ushort)GetRareCandyItemID());
+
+        int[] targets =
+            Enumerable.Range(
+                    0,
+                    martCount)
+                .Where(z =>
+                    !HasTrackedRareCandySlot(
+                        z) &&
+                    !regularMarts[z].Contains(
+                        rareCandy))
+                .ToArray();
+
+        if (targets.Length == 0)
+        {
+            WinFormsUtil.Alert(
+                "Rare Candy is already available in all progression marts.",
+                "No additional slots were added.");
+            return;
+        }
+
+        foreach (int martIndex in targets)
+        {
+            if (regularMarts[martIndex].Count <
+                Gen7ExpandedMartTable.MaximumSlotsPerMart)
+            {
+                continue;
+            }
+
+            WinFormsUtil.Error(
+                "Rare Candies could not be added.",
+                $"'{locations[martIndex]}' already has the maximum of " +
+                $"{Gen7ExpandedMartTable.MaximumSlotsPerMart} slots.");
+            return;
+        }
+
+        int added =
+            0;
+
+        foreach (int martIndex in targets)
+        {
+            if (!TryAppendRegularMartItem(
+                    martIndex,
+                    rareCandy,
+                    out int token,
+                    out string appendError))
+            {
+                WinFormsUtil.Error(
+                    "Rare Candies could not be added.",
+                    appendError);
+                return;
+            }
+
+            rareCandySlotTokens[martIndex] =
+                token;
+
+            added++;
+        }
+
+        setRareCandyPriceOnSave = true;
+        recordRareCandyExpandedActionOnSave = true;
+
+        if (entryItem > -1)
+            GetListItem();
+
+        UpdateExpandedMartButtons();
+
+        WinFormsUtil.Alert(
+            "Rare Candies added!",
+            $"{added} new mart slot(s) were added. Existing shop items were preserved. " +
+            "Click Save to rebuild Shop.cro and set Rare Candy price to 10.");
+    }
+
+    private void ApplyRareCandiesFromTemplate(
+        GlobalRandomizationAction action)
+    {
+        string mode =
+            null;
+
+        if (action?.Parameters is not null)
+        {
+            action.Parameters.TryGetValue(
+                "mode",
+                out mode);
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                mode))
+        {
+            ApplyLegacyRareCandyReplacement();
+            return;
+        }
+
+        if (!string.Equals(
+                mode,
+                "expanded",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                $"Unsupported marts.add-rare-candies mode '{mode}'.");
+        }
+
+        string serializedSlots =
+            string.Empty;
+
+        action.Parameters.TryGetValue(
+            "slots",
+            out serializedSlots);
+
+        ushort rareCandy =
+            checked(
+                (ushort)GetRareCandyItemID());
+
+        if (!string.IsNullOrWhiteSpace(
+                serializedSlots))
+        {
+            var seen =
+                new HashSet<string>(
+                    StringComparer.Ordinal);
+
+            foreach (string raw in
+                     serializedSlots.Split(
+                         '|',
+                         StringSplitOptions.RemoveEmptyEntries))
+            {
+                string part =
+                    raw.Trim();
+
+                if (!seen.Add(
+                        part))
+                {
+                    continue;
+                }
+
+                string[] fields =
+                    part.Split(
+                        ':');
+
+                if (fields.Length != 2 ||
+                    !int.TryParse(
+                        fields[0],
+                        out int martIndex) ||
+                    !int.TryParse(
+                        fields[1],
+                        out int slotIndex))
+                {
+                    throw new InvalidDataException(
+                        $"Invalid Rare Candy mart slot '{part}'. Expected mart:slot.");
+                }
+
+                if (martIndex < 0 ||
+                    martIndex >= RegularMartCount ||
+                    martIndex >= regularMarts.Length)
+                {
+                    throw new InvalidDataException(
+                        $"Rare Candy mart index {martIndex} is outside the progression marts.");
+                }
+
+                if (slotIndex < 0 ||
+                    slotIndex >= regularMarts[martIndex].Count)
+                {
+                    throw new InvalidDataException(
+                        $"Rare Candy slot {martIndex}:{slotIndex} does not exist after Expanded Marts replay.");
+                }
+
+                regularMarts[martIndex][slotIndex] =
+                    rareCandy;
+            }
+        }
+
+        setRareCandyPriceOnSave = true;
+
+        if (entryItem > -1)
+            GetListItem();
+    }
+
+    private void ApplyLegacyRareCandyReplacement()
+    {
+        ushort rareCandy =
+            checked(
+                (ushort)GetRareCandyItemID());
 
         for (int i = 0;
              i < RegularMartCount &&
@@ -440,17 +714,13 @@ public partial class MartEditor7UU : Form
                 continue;
 
             mart[^1] =
-                (ushort)rareCandy;
+                rareCandy;
         }
 
         setRareCandyPriceOnSave = true;
 
         if (entryItem > -1)
             GetListItem();
-
-        WinFormsUtil.Alert(
-            "Rare Candies added!",
-            "Click Save to write Shop.cro and set Rare Candy price to 10.");
     }
 
     private void B_AddEVItems_Click(object sender, EventArgs e)
@@ -747,6 +1017,7 @@ public partial class MartEditor7UU : Form
     private readonly List<ushort>[] regularMarts;
     private readonly List<int>[] regularMartSlotTokens;
     private readonly List<PendingExpandedMartOperation> expandedMartOperations = [];
+    private readonly Dictionary<int, int> rareCandySlotTokens = [];
     private int nextExpandedMartToken = 1;
 
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);
@@ -764,6 +1035,7 @@ public partial class MartEditor7UU : Form
     private const int MegaStoneBPShopIndex = 5;
 
     private bool setRareCandyPriceOnSave;
+    private bool recordRareCandyExpandedActionOnSave;
     private bool setEVItemsOnSave;
     private bool randomizeMartsOnSave;
     private bool randomizeBPMartsOnSave;
@@ -843,8 +1115,14 @@ public partial class MartEditor7UU : Form
 
         RememberExpandedMartTemplateAction();
 
-        if (setRareCandyPriceOnSave)
-            RandomizationSessionState.MarkAction("marts.add-rare-candies", ("price", RareCandyPrice.ToString()));
+        if (recordRareCandyExpandedActionOnSave)
+        {
+            RandomizationSessionState.MarkAction(
+                "marts.add-rare-candies",
+                ("mode", "expanded"),
+                ("slots", GetRareCandyTemplateSlots()),
+                ("price", RareCandyPrice.ToString()));
+        }
         if (setEVItemsOnSave)
         {
             RandomizationSessionState.MarkAction(

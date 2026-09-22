@@ -809,7 +809,22 @@ internal static class BatchGen7ActionExecutor
         }
 
         // Deterministic progression items are applied after inventory randomization.
-        if (Has(actions, "marts.add-rare-candies")) InvokeEvent(form, "B_AddRareCandies_Click");
+        if (Has(actions, "marts.add-rare-candies"))
+        {
+            if (usum)
+            {
+                Invoke(
+                    form,
+                    "ApplyRareCandiesFromTemplate",
+                    Get(actions, "marts.add-rare-candies"));
+            }
+            else
+            {
+                InvokeEvent(
+                    form,
+                    "B_AddRareCandies_Click");
+            }
+        }
         if (Has(actions, "marts.add-ev-items")) InvokeEvent(form, "B_AddEVItems_Click");
         if (Has(actions, "marts.free-mega-stones")) InvokeEvent(form, "B_FreeMegaStones_Click");
         if (Has(actions, "marts.ban-ability-capsule"))
