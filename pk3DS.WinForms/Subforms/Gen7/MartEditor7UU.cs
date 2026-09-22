@@ -723,14 +723,189 @@ public partial class MartEditor7UU : Form
             GetListItem();
     }
 
+    private sealed record TrackedEVItemSlot(
+        int MartIndex,
+        ushort ItemId,
+        int SlotIndex,
+        int Token);
+
+    private bool TryResolveEVShopItems(
+        out ushort[] wings,
+        out ushort heartScale,
+        out ushort rareCandy,
+        out ushort megaRing,
+        out string error)
+    {
+        wings = [];
+        heartScale = 0;
+        rareCandy = 0;
+        megaRing = 0;
+        error = string.Empty;
+
+        string[][] wingAliases =
+        [
+            ["Health Wing", "Pluma Vigor"],
+            ["Muscle Wing", "Pluma MÃºsculo", "Pluma Musculo"],
+            ["Resist Wing", "Pluma Aguante"],
+            ["Genius Wing", "Pluma Intelecto"],
+            ["Clever Wing", "Pluma Mente"],
+            ["Swift Wing", "Pluma Ãmpetu", "Pluma Impetu"],
+        ];
+
+        var resolvedWings =
+            new List<ushort>();
+
+        foreach (string[] aliases in wingAliases)
+        {
+            int item =
+                FindItemID(
+                    aliases);
+
+            if (item <= 0)
+            {
+                error =
+                    $"Could not resolve '{aliases[0]}' from this ROM's item table.";
+                return false;
+            }
+
+            resolvedWings.Add(
+                checked(
+                    (ushort)item));
+        }
+
+        int heartScaleId =
+            FindItemID(
+                "Heart Scale",
+                "Escama CorazÃ³n",
+                "Escama Corazon");
+
+        int rareCandyId =
+            GetRareCandyItemID();
+
+        int megaRingId =
+            GetMegaRingItemID();
+
+        if (heartScaleId <= 0)
+        {
+            error =
+                "Could not resolve 'Heart Scale' from this ROM's item table.";
+            return false;
+        }
+
+        if (rareCandyId <= 0)
+        {
+            error =
+                "Could not resolve 'Rare Candy' from this ROM's item table.";
+            return false;
+        }
+
+        if (megaRingId <= 0)
+        {
+            error =
+                "Could not resolve 'Mega Ring' from this ROM's item table.";
+            return false;
+        }
+
+        wings =
+            resolvedWings.ToArray();
+
+        heartScale =
+            checked(
+                (ushort)heartScaleId);
+
+        rareCandy =
+            checked(
+                (ushort)rareCandyId);
+
+        megaRing =
+            checked(
+                (ushort)megaRingId);
+
+        return true;
+    }
+
+    private static ushort[] GetRequiredEVItemsForMart(
+        int martIndex,
+        IReadOnlyList<ushort> wings,
+        ushort heartScale,
+        ushort rareCandy,
+        ushort megaRing)
+    {
+        var required =
+            new List<ushort>(
+                wings);
+
+        required.Add(
+            rareCandy);
+
+        if (martIndex >=
+            HeartScaleTrial)
+        {
+            required.Add(
+                heartScale);
+        }
+
+        if (martIndex >=
+            MegaRingTrial)
+        {
+            required.Add(
+                megaRing);
+        }
+
+        return required
+            .Distinct()
+            .ToArray();
+    }
+
+    private string GetEVTemplateSlots()
+    {
+        var slots =
+            new List<string>();
+
+        foreach (TrackedEVItemSlot tracked in
+                 evItemSlots
+                     .OrderBy(z => z.MartIndex)
+                     .ThenBy(z => z.SlotIndex)
+                     .ThenBy(z => z.ItemId))
+        {
+            if (tracked.MartIndex < 0 ||
+                tracked.MartIndex >= regularMarts.Length)
+            {
+                continue;
+            }
+
+            int slotIndex =
+                tracked.Token > 0
+                    ? regularMartSlotTokens[
+                            tracked.MartIndex]
+                        .IndexOf(
+                            tracked.Token)
+                    : tracked.SlotIndex;
+
+            if (slotIndex < 0 ||
+                slotIndex >=
+                regularMarts[tracked.MartIndex].Count)
+            {
+                continue;
+            }
+
+            slots.Add(
+                $"{tracked.MartIndex}:{slotIndex}:{tracked.ItemId}");
+        }
+
+        return string.Join(
+            "|",
+            slots);
+    }
+
     private void B_AddEVItems_Click(object sender, EventArgs e)
     {
         if (DialogResult.Yes != WinFormsUtil.Prompt(
             MessageBoxButtons.YesNo,
-            "Add EV/training items to regular marts?",
-            "This keeps each shop at its original size and replaces ONLY healing items. " +
-            "The six EV Wings are available immediately, Heart Scale replaces Super Potion, " +
-            "Rare Candy replaces Revive, and Mega Ring is guaranteed from the 5 Trials mart onward."))
+            "Add EV/training items to progression marts?",
+            "This will ADD the six EV Wings and Rare Candy without replacing existing shop items. " +
+            "Heart Scale is added from 3 Trials onward, and Mega Ring from 5 Trials onward. " +
+            "Items already sold by a mart will not be duplicated."))
         {
             return;
         }
@@ -738,33 +913,292 @@ public partial class MartEditor7UU : Form
         if (entryItem > -1)
             SetListItem();
 
+        if (!TryResolveEVShopItems(
+                out ushort[] wings,
+                out ushort heartScale,
+                out ushort rareCandy,
+                out ushort megaRing,
+                out string resolveError))
+        {
+            WinFormsUtil.Error(
+                "Could not resolve the EV shop items from this ROM's item table.",
+                resolveError);
+            return;
+        }
+
+        int martCount =
+            Math.Min(
+                RegularMartCount,
+                regularMarts.Length);
+
+        for (int mart = 0;
+             mart < martCount;
+             mart++)
+        {
+            ushort[] required =
+                GetRequiredEVItemsForMart(
+                    mart,
+                    wings,
+                    heartScale,
+                    rareCandy,
+                    megaRing);
+
+            int missing =
+                required.Count(item =>
+                    !regularMarts[mart].Contains(
+                        item));
+
+            if (regularMarts[mart].Count + missing <=
+                Gen7ExpandedMartTable.MaximumSlotsPerMart)
+            {
+                continue;
+            }
+
+            WinFormsUtil.Error(
+                "EV/training items could not be added.",
+                $"'{locations[mart]}' needs {missing} new slot(s), but that would exceed the maximum of " +
+                $"{Gen7ExpandedMartTable.MaximumSlotsPerMart} slots.");
+            return;
+        }
+
+        evItemSlots.Clear();
+
+        int added =
+            0;
+
+        int alreadyAvailable =
+            0;
+
+        for (int mart = 0;
+             mart < martCount;
+             mart++)
+        {
+            ushort[] required =
+                GetRequiredEVItemsForMart(
+                    mart,
+                    wings,
+                    heartScale,
+                    rareCandy,
+                    megaRing);
+
+            foreach (ushort itemId in required)
+            {
+                int existingSlot =
+                    regularMarts[mart]
+                        .IndexOf(
+                            itemId);
+
+                if (existingSlot >= 0)
+                {
+                    evItemSlots.Add(
+                        new TrackedEVItemSlot(
+                            mart,
+                            itemId,
+                            existingSlot,
+                            Token: 0));
+
+                    alreadyAvailable++;
+                    continue;
+                }
+
+                if (!TryAppendRegularMartItem(
+                        mart,
+                        itemId,
+                        out int token,
+                        out string appendError))
+                {
+                    WinFormsUtil.Error(
+                        "EV/training items could not be added.",
+                        appendError);
+                    return;
+                }
+
+                evItemSlots.Add(
+                    new TrackedEVItemSlot(
+                        mart,
+                        itemId,
+                        regularMarts[mart].Count - 1,
+                        token));
+
+                added++;
+            }
+        }
+
+        setEVItemsOnSave = true;
+        recordEVExpandedActionOnSave = true;
+
+        if (entryItem > -1)
+            GetListItem();
+
+        UpdateExpandedMartButtons();
+
+        if (added == 0)
+        {
+            WinFormsUtil.Alert(
+                "All EV/training items are already available.",
+                $"{alreadyAvailable} required mart entries were found. No additional slots were added. " +
+                "Click Save to preserve the configuration in the Global Template.");
+            return;
+        }
+
+        WinFormsUtil.Alert(
+            "EV/training items added!",
+            $"{added} new mart slot(s) were added and {alreadyAvailable} required item(s) were already present. " +
+            "Existing shop items were preserved. Click Save to rebuild Shop.cro.");
+    }
+
+    private void ApplyEVItemsFromTemplate(
+        GlobalRandomizationAction action)
+    {
+        string mode =
+            null;
+
+        if (action?.Parameters is not null)
+        {
+            action.Parameters.TryGetValue(
+                "mode",
+                out mode);
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                mode) ||
+            string.Equals(
+                mode,
+                "replace-healing-only",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyLegacyEVItems();
+            return;
+        }
+
+        if (!string.Equals(
+                mode,
+                "expanded",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException(
+                $"Unsupported marts.add-ev-items mode '{mode}'.");
+        }
+
+        if (!action.Parameters.TryGetValue(
+                "slots",
+                out string serializedSlots) ||
+            string.IsNullOrWhiteSpace(
+                serializedSlots))
+        {
+            throw new InvalidDataException(
+                "Expanded marts.add-ev-items action is missing its slot map.");
+        }
+
+        var seen =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        foreach (string raw in
+                 serializedSlots.Split(
+                     '|',
+                     StringSplitOptions.RemoveEmptyEntries))
+        {
+            string part =
+                raw.Trim();
+
+            if (!seen.Add(
+                    part))
+            {
+                continue;
+            }
+
+            string[] fields =
+                part.Split(
+                    ':');
+
+            if (fields.Length != 3 ||
+                !int.TryParse(
+                    fields[0],
+                    out int martIndex) ||
+                !int.TryParse(
+                    fields[1],
+                    out int slotIndex) ||
+                !int.TryParse(
+                    fields[2],
+                    out int itemId))
+            {
+                throw new InvalidDataException(
+                    $"Invalid EV mart slot '{part}'. Expected mart:slot:itemId.");
+            }
+
+            if (martIndex < 0 ||
+                martIndex >= RegularMartCount ||
+                martIndex >= regularMarts.Length)
+            {
+                throw new InvalidDataException(
+                    $"EV mart index {martIndex} is outside the progression marts.");
+            }
+
+            if (slotIndex < 0 ||
+                slotIndex >= regularMarts[martIndex].Count)
+            {
+                throw new InvalidDataException(
+                    $"EV item slot {martIndex}:{slotIndex} does not exist after Expanded Marts replay.");
+            }
+
+            if (itemId <= 0 ||
+                itemId >= itemlist.Length)
+            {
+                throw new InvalidDataException(
+                    $"EV item ID {itemId} is outside this ROM's item table.");
+            }
+
+            regularMarts[martIndex][slotIndex] =
+                checked(
+                    (ushort)itemId);
+        }
+
+        setEVItemsOnSave = true;
+
+        if (entryItem > -1)
+            GetListItem();
+    }
+
+    private void ApplyLegacyEVItems()
+    {
         string[] requiredItems =
         [
             "Health Wing|Pluma Vigor",
-            "Muscle Wing|Pluma Músculo|Pluma Musculo",
+            "Muscle Wing|Pluma MÃºsculo|Pluma Musculo",
             "Resist Wing|Pluma Aguante",
             "Genius Wing|Pluma Intelecto",
             "Clever Wing|Pluma Mente",
-            "Swift Wing|Pluma Ímpetu|Pluma Impetu",
-            "Heart Scale|Escama Corazón|Escama Corazon",
+            "Swift Wing|Pluma Ãmpetu|Pluma Impetu",
+            "Heart Scale|Escama CorazÃ³n|Escama Corazon",
             "Rare Candy|Caramelo Raro",
             "Mega Ring|Megaaro|Mega Aro|Mega-Aro",
         ];
 
-        var missing = new List<string>();
+        var missing =
+            new List<string>();
+
         foreach (string group in requiredItems)
         {
-            string[] aliases = group.Split('|');
-            if (FindItemID(aliases) <= 0)
-                missing.Add(aliases[0]);
+            string[] aliases =
+                group.Split(
+                    '|');
+
+            if (FindItemID(
+                    aliases) <= 0)
+            {
+                missing.Add(
+                    aliases[0]);
+            }
         }
 
         if (missing.Count != 0)
         {
-            WinFormsUtil.Error(
-                "Could not resolve the EV shop items from this ROM's item table.",
-                "Missing: " + string.Join(", ", missing));
-            return;
+            throw new InvalidDataException(
+                "Could not resolve the legacy EV shop items from this ROM's item table. Missing: " +
+                string.Join(
+                    ", ",
+                    missing));
         }
 
         int martCount =
@@ -796,13 +1230,13 @@ public partial class MartEditor7UU : Form
             if (megaRingSlots[mart] >= 0)
                 continue;
 
-            WinFormsUtil.Error(
-                $"Could not reserve a healing-item slot for Mega Ring in '{locations[mart]}'.",
-                "Mega Ring must be available starting at 5 Trials. No compatible healing slot was found.");
-            return;
+            throw new InvalidDataException(
+                $"Could not reserve a healing-item slot for Mega Ring in '{locations[mart]}'. " +
+                "Legacy EV Items requires a compatible healing slot.");
         }
 
-        int changed = 0;
+        int changed =
+            0;
 
         for (int mart = 0;
              mart < martCount;
@@ -832,21 +1266,19 @@ public partial class MartEditor7UU : Form
                 }
 
                 inventory[slot] =
-                    (ushort)replacement;
+                    checked(
+                        (ushort)replacement);
 
                 changed++;
             }
         }
 
-        setEVItemsOnSave = changed > 0;
+        setEVItemsOnSave =
+            changed > 0;
+
         if (entryItem > -1)
             GetListItem();
-
-        WinFormsUtil.Alert(
-            "EV/training items added!",
-            $"{changed} healing-item slots were replaced. Click Save to write Shop.cro.");
     }
-
     private void B_FreeMegaStones_Click(object sender, EventArgs e)
     {
         if (DialogResult.Yes != WinFormsUtil.Prompt(
@@ -1018,6 +1450,7 @@ public partial class MartEditor7UU : Form
     private readonly List<int>[] regularMartSlotTokens;
     private readonly List<PendingExpandedMartOperation> expandedMartOperations = [];
     private readonly Dictionary<int, int> rareCandySlotTokens = [];
+    private readonly List<TrackedEVItemSlot> evItemSlots = [];
     private int nextExpandedMartToken = 1;
 
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);
@@ -1031,12 +1464,14 @@ public partial class MartEditor7UU : Form
     // Resolve item IDs from the ROM's own item-name table. Hardcoded IDs from
     // other generations/versions can point to unrelated entries (for example Data Cards).
     private const int MegaRingPrice = 10;
+    private const int HeartScaleTrial = 3;
     private const int MegaRingTrial = 5;
     private const int MegaStoneBPShopIndex = 5;
 
     private bool setRareCandyPriceOnSave;
     private bool recordRareCandyExpandedActionOnSave;
     private bool setEVItemsOnSave;
+    private bool recordEVExpandedActionOnSave;
     private bool randomizeMartsOnSave;
     private bool randomizeBPMartsOnSave;
     private bool randomizeMartsSpecialOnly;
@@ -1123,11 +1558,13 @@ public partial class MartEditor7UU : Form
                 ("slots", GetRareCandyTemplateSlots()),
                 ("price", RareCandyPrice.ToString()));
         }
-        if (setEVItemsOnSave)
+        if (recordEVExpandedActionOnSave)
         {
             RandomizationSessionState.MarkAction(
                 "marts.add-ev-items",
-                ("mode", "replace-healing-only"),
+                ("mode", "expanded"),
+                ("slots", GetEVTemplateSlots()),
+                ("heartScaleFromTrial", HeartScaleTrial.ToString()),
                 ("megaRingFromTrial", MegaRingTrial.ToString()),
                 ("megaRingPrice", MegaRingPrice.ToString()),
                 ("rareCandyPrice", RareCandyPrice.ToString()));
