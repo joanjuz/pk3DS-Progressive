@@ -278,38 +278,72 @@ internal static class ModernUI
         form.AutoScroll = true;
         MakeTextControlsReadable(form);
 
-        if (FindControl<TabPage>(form, "Tab_Trades") is { } trades)
-            trades.AutoScroll = true;
+        if (FindControl<TabPage>(form, "Tab_Trades") is not { } trades)
+            return;
 
-        // These two trade helper buttons live inside the Trades tab. Put them
-        // above the form-level Cancel/Save buttons and keep them styled like the
-        // other modern buttons.
-        foreach (var button in FindControls<Button>(form))
+        trades.AutoScroll = true;
+
+        // Legacy trade helper buttons used to live inside Tab_Trades.
+        // Scope this compatibility layout strictly to that tab. pk3DS Progressive
+        // now exposes its trade tools in Randomizer Options, so a form-wide scan
+        // would incorrectly move those new buttons to the old Trades coordinates.
+        foreach (var button in FindControls<Button>(trades))
         {
-            bool isAcceptAny = button.Name.Contains("TradeAny", StringComparison.OrdinalIgnoreCase) ||
-                               button.Text.Contains("accept any", StringComparison.OrdinalIgnoreCase);
-            bool isRandomOffer = button.Name.Contains("RandomOffer", StringComparison.OrdinalIgnoreCase) ||
-                                 button.Text.Contains("random offer", StringComparison.OrdinalIgnoreCase);
+            bool isAcceptAny =
+                button.Name.Contains(
+                    "TradeAny",
+                    StringComparison.OrdinalIgnoreCase) ||
+                button.Text.Contains(
+                    "accept any",
+                    StringComparison.OrdinalIgnoreCase);
 
-            if (!isAcceptAny && !isRandomOffer)
+            bool isRandomOffer =
+                button.Name.Contains(
+                    "RandomOffer",
+                    StringComparison.OrdinalIgnoreCase) ||
+                button.Text.Contains(
+                    "random offer",
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (!isAcceptAny &&
+                !isRandomOffer)
+            {
                 continue;
+            }
 
             if (isAcceptAny)
             {
-                button.Text = "Trades accept any Pokemon";
-                MoveAndSize(button, 315, 270, 285, 30);
+                button.Text =
+                    "Trades accept any Pokemon";
+
+                MoveAndSize(
+                    button,
+                    315,
+                    270,
+                    285,
+                    30);
             }
             else
             {
-                button.Text = "Any request + random offer";
-                MoveAndSize(button, 315, 308, 285, 30);
+                button.Text =
+                    "Any request + random offer";
+
+                MoveAndSize(
+                    button,
+                    315,
+                    308,
+                    285,
+                    30);
             }
 
-            button.Anchor = AnchorStyles.Left | AnchorStyles.Top;
-            StyleButton(button);
+            button.Anchor =
+                AnchorStyles.Left |
+                AnchorStyles.Top;
+
+            StyleButton(
+                button);
         }
     }
-
     private static void FixTrainerLevelCapDialog(Form form)
     {
         EnsureClientSize(form, 1100, 630);

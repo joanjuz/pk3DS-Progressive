@@ -21,6 +21,9 @@ public partial class StaticEncounterEditor7
         InitializeTotemBST();
         AddTotemBSTButton();
         B_RandAll.Click += B_RandAll_TotemBSTPost;
+
+        InitializeProgressiveTradeButtons();
+        LayoutProgressiveUtilityControls();
     }
 
     private void AddArcanineGiftBaselineButton()
@@ -30,18 +33,17 @@ public partial class StaticEncounterEditor7
 
         B_ArcanineGiftBaseline = new Button
         {
-            Location = new Point(B_RandAll.Left, B_RandAll.Bottom + 8),
+            Location = new Point(12, 24),
             Name = "B_ArcanineGiftBaseline",
-            Size = B_RandAll.Size,
+            Size = new Size(155, 28),
             Text = "Set Gift BST Baseline",
             UseVisualStyleBackColor = true,
         };
         B_ArcanineGiftBaseline.Click += B_ArcanineGiftBaseline_Click;
 
-        Tab_Randomizer.Controls.Add(B_ArcanineGiftBaseline);
+        GB_Progressive.Controls.Add(B_ArcanineGiftBaseline);
         B_ArcanineGiftBaseline.BringToFront();
     }
-
     private void B_ArcanineGiftBaseline_Click(object sender, EventArgs e)
     {
         if (WinFormsUtil.Prompt(

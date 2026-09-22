@@ -149,18 +149,17 @@ public partial class StaticEncounterEditor7
 
         B_TotemBST = new Button
         {
-            Location = new Point(B_RandAll.Left, B_RandAll.Bottom + 80),
+            Location = new Point(12, 58),
             Name = "B_TotemBST",
-            Size = B_RandAll.Size,
+            Size = new Size(155, 28),
             Text = "Totem BST...",
             UseVisualStyleBackColor = true,
         };
         B_TotemBST.Click += B_TotemBST_Click;
 
-        Tab_Randomizer.Controls.Add(B_TotemBST);
+        GB_Progressive.Controls.Add(B_TotemBST);
         B_TotemBST.BringToFront();
     }
-
     private void B_RandAll_TotemBSTPost(object sender, EventArgs e)
     {
         if (!TotemBSTEnabled)

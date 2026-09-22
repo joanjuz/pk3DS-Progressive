@@ -166,7 +166,7 @@ public partial class StaticEncounterEditor7 : Form
         TC_Tabs.SelectedIndex = TC_Tabs.TabCount - 1;
 
         RandSettings.GetFormSettings(this, Tab_Randomizer.Controls);
-        AddTradeUtilityButtons();
+        AddProgressiveUtilityGroup();
         // ExportEncounters();
     }
 
@@ -189,77 +189,346 @@ public partial class StaticEncounterEditor7 : Form
     private int gEntry = -1;
     private int eEntry = -1;
     private int tEntry = -1;
-    private Button B_TradeAnyRequest;
-    private Button B_TradeAcceptAnyRandomOffer;
+    private GroupBox GB_Progressive;
+    private Button B_ProgressiveAcceptAnyPokemon;
     private Button B_TradeHideSpeciesNames;
 
-    private void AddTradeUtilityButtons()
+    private void AddProgressiveUtilityGroup()
     {
-        const int gap = 6;
-        int width = 250;
-        int height = Math.Max(CB_TRequest.Height, 24);
-
-        B_TradeHideSpeciesNames = new Button
-        {
-            Name = "B_TradeHideSpeciesNames",
-            Size = new System.Drawing.Size(width, height),
-            Text = "Hide Pokemon names in trade dialogue",
-            UseVisualStyleBackColor = true,
-        };
-        B_TradeHideSpeciesNames.Click += B_TradeHideSpeciesNames_Click;
-        Tab_Trades.Controls.Add(B_TradeHideSpeciesNames);
-
-        if (Main.Config.USUM)
-        {
-            B_TradeAnyRequest = new Button
-            {
-                Name = "B_TradeAnyRequest",
-                Size = new System.Drawing.Size(width, height),
-                Text = "Trades accept any Pokemon",
-                UseVisualStyleBackColor = true,
-            };
-            B_TradeAnyRequest.Click += B_TradeAnyRequest_Click;
-
-            B_TradeAcceptAnyRandomOffer = new Button
-            {
-                Name = "B_TradeAcceptAnyRandomOffer",
-                Size = new System.Drawing.Size(width, height),
-                Text = "Any request + random offer",
-                UseVisualStyleBackColor = true,
-            };
-            B_TradeAcceptAnyRandomOffer.Click += B_TradeAcceptAnyRandomOffer_Click;
-
-            Tab_Trades.Controls.Add(B_TradeAnyRequest);
-            Tab_Trades.Controls.Add(B_TradeAcceptAnyRandomOffer);
-        }
-
-        Tab_Trades.Resize += (_, _) => LayoutTradeUtilityButtons();
-        LayoutTradeUtilityButtons();
-        B_TradeHideSpeciesNames.BringToFront();
-        B_TradeAnyRequest?.BringToFront();
-        B_TradeAcceptAnyRandomOffer?.BringToFront();
-    }
-
-    private void LayoutTradeUtilityButtons()
-    {
-        if (B_TradeHideSpeciesNames == null)
+        if (GB_Progressive != null)
             return;
 
-        const int gap = 6;
-        int width = 250;
-        int height = Math.Max(CB_TRequest.Height, 24);
-        int left = Math.Max(CB_TRequest.Left, Tab_Trades.ClientSize.Width - width - 16);
-        int rows = Main.Config.USUM ? 3 : 1;
-        int totalHeight = (height * rows) + (gap * (rows - 1));
-        int top = Math.Max(CB_TRequest.Bottom + gap, Tab_Trades.ClientSize.Height - totalHeight - 16);
+        GB_Progressive = new GroupBox
+        {
+            Name = "GB_Progressive",
+            TabStop = false,
+            Text = "pk3DS Progressive",
+        };
 
-        B_TradeHideSpeciesNames.SetBounds(left, top, width, height);
-        if (B_TradeAnyRequest != null)
-            B_TradeAnyRequest.SetBounds(left, top + height + gap, width, height);
-        if (B_TradeAcceptAnyRandomOffer != null)
-            B_TradeAcceptAnyRandomOffer.SetBounds(left, top + ((height + gap) * 2), width, height);
+        Tab_Randomizer.Controls.Add(GB_Progressive);
+
+
+        Resize += (_, _) => LayoutProgressiveUtilityControls();
+        Tab_Randomizer.Resize += (_, _) => LayoutProgressiveUtilityControls();
     }
 
+    private void InitializeProgressiveTradeButtons()
+    {
+        if (!Main.Config.USUM ||
+            GB_Progressive == null)
+        {
+            return;
+        }
+
+        // Create these after the rest of the Progressive controls during OnLoad.
+        // This avoids the constructor-time layout/z-order issue that could leave
+        // Accept Any Pokemon present in Controls but not rendered.
+        if (B_ProgressiveAcceptAnyPokemon == null ||
+            B_ProgressiveAcceptAnyPokemon.IsDisposed)
+        {
+            B_ProgressiveAcceptAnyPokemon = new Button
+            {
+                Name = "B_ProgressiveAcceptAnyPokemon",
+                Text = "Trades Accept Any Pokemon",
+                UseVisualStyleBackColor = true,
+            };
+
+            // Keep the original handler name intact because old Global
+            // Template / Batch compatibility may still invoke it by name.
+            B_ProgressiveAcceptAnyPokemon.Click +=
+                B_TradeAnyRequest_Click;
+
+            Tab_Randomizer.Controls.Add(
+                B_ProgressiveAcceptAnyPokemon);
+        }
+
+        if (B_TradeHideSpeciesNames == null ||
+            B_TradeHideSpeciesNames.IsDisposed)
+        {
+            B_TradeHideSpeciesNames = new Button
+            {
+                Name = "B_TradeHideSpeciesNames",
+                Text = "Hide Trade Pokemon Names",
+                UseVisualStyleBackColor = true,
+            };
+
+            B_TradeHideSpeciesNames.Click +=
+                B_TradeHideSpeciesNames_Click;
+
+            Tab_Randomizer.Controls.Add(
+                B_TradeHideSpeciesNames);
+        }
+
+        B_ProgressiveAcceptAnyPokemon.Visible = true;
+        B_ProgressiveAcceptAnyPokemon.Enabled = true;
+        B_TradeHideSpeciesNames.Visible = true;
+    }
+    private void LayoutProgressiveUtilityControls()
+    {
+        if (GB_Progressive == null)
+            return;
+
+        EnsureProgressiveLayoutSpace();
+
+        // Keep Save/Cancel in a dedicated footer instead of covering tab content.
+        const int formMargin = 16;
+        const int footerGap = 8;
+
+        int footerTop =
+            ClientSize.Height -
+            B_Save.Height -
+            formMargin;
+
+        B_Save.SetBounds(
+            ClientSize.Width - B_Save.Width - formMargin,
+            footerTop,
+            B_Save.Width,
+            B_Save.Height);
+
+        B_Cancel.SetBounds(
+            B_Save.Left - B_Cancel.Width - footerGap,
+            footerTop,
+            B_Cancel.Width,
+            B_Cancel.Height);
+
+        TC_Tabs.SetBounds(
+            formMargin,
+            14,
+            ClientSize.Width - (formMargin * 2),
+            footerTop - 14 - 10);
+
+        // Use the full Randomizer tab width instead of stacking everything in
+        // one narrow column. The stock Randomizer and Extra Tweaks groups sit
+        // side by side; pk3DS Progressive spans both columns below them.
+        const int contentWidth = 652;
+        const int columnWidth = 320;
+        const int columnGap = 12;
+
+        int pageWidth =
+            Tab_Randomizer.ClientSize.Width;
+
+        int contentLeft =
+            Math.Max(
+                4,
+                (pageWidth - contentWidth) / 2);
+
+        int leftColumn =
+            contentLeft;
+
+        int rightColumn =
+            contentLeft + columnWidth + columnGap;
+
+        // Level multiplier row.
+        CHK_Level.SetBounds(
+            leftColumn + 8,
+            24,
+            CHK_Level.Width,
+            CHK_Level.Height);
+
+        NUD_LevelBoost.SetBounds(
+            leftColumn + 174,
+            22,
+            NUD_LevelBoost.Width,
+            NUD_LevelBoost.Height);
+
+        B_ModifyLevel.SetBounds(
+            leftColumn + 238,
+            20,
+            B_ModifyLevel.Width,
+            B_ModifyLevel.Height);
+
+        // Main stock option groups.
+        GB_Rand.SetBounds(
+            leftColumn,
+            58,
+            columnWidth,
+            191);
+
+        GB_Tweak.SetBounds(
+            rightColumn,
+            58,
+            columnWidth,
+            162);
+
+        // Re-space Extra Tweaks explicitly. The original designer positions
+        // place the last rows only 17-20 px apart, which can visually overlap
+        // at some DPI/font settings.
+        CHK_ReplaceLegend.Location =
+            new System.Drawing.Point(
+                8,
+                22);
+
+        CHK_BasicStarter.Location =
+            new System.Drawing.Point(
+                8,
+                44);
+
+        CHK_ForceTotem.Location =
+            new System.Drawing.Point(
+                8,
+                66);
+
+        CHK_ForceFullyEvolved.Location =
+            new System.Drawing.Point(
+                8,
+                88);
+
+        NUD_ForceFullyEvolved.Location =
+            new System.Drawing.Point(
+                220,
+                86);
+
+        CHK_RemoveShinyLock.Location =
+            new System.Drawing.Point(
+                8,
+                110);
+
+        CHK_Metronome.Location =
+            new System.Drawing.Point(
+                8,
+                132);
+
+        // pk3DS Progressive uses the entire content width.
+        GB_Progressive.SetBounds(
+            contentLeft,
+            270,
+            contentWidth,
+            118);
+
+        const int innerLeft = 12;
+        const int innerTop = 22;
+        const int innerGap = 10;
+        const int rowGap = 8;
+        const int smallButtonWidth = 202;
+        const int bigButtonWidth = 309;
+        const int buttonHeight = 28;
+
+        B_ArcanineGiftBaseline?.SetBounds(
+            innerLeft,
+            innerTop,
+            smallButtonWidth,
+            buttonHeight);
+
+        B_TotemLevelCaps?.SetBounds(
+            innerLeft + smallButtonWidth + innerGap,
+            innerTop,
+            smallButtonWidth,
+            buttonHeight);
+
+        B_TotemBST?.SetBounds(
+            innerLeft + ((smallButtonWidth + innerGap) * 2),
+            innerTop,
+            smallButtonWidth,
+            buttonHeight);
+
+        int tradeRowTop =
+            GB_Progressive.Top +
+            innerTop +
+            buttonHeight +
+            rowGap;
+
+        if (B_ProgressiveAcceptAnyPokemon != null)
+        {
+            if (B_ProgressiveAcceptAnyPokemon.Parent != Tab_Randomizer)
+            {
+                B_ProgressiveAcceptAnyPokemon.Parent?.Controls.Remove(
+                    B_ProgressiveAcceptAnyPokemon);
+
+                Tab_Randomizer.Controls.Add(
+                    B_ProgressiveAcceptAnyPokemon);
+            }
+
+            B_ProgressiveAcceptAnyPokemon.SetBounds(
+                GB_Progressive.Left + innerLeft,
+                tradeRowTop,
+                bigButtonWidth,
+                buttonHeight);
+
+            B_ProgressiveAcceptAnyPokemon.Visible = true;
+            B_ProgressiveAcceptAnyPokemon.Enabled = true;
+            B_ProgressiveAcceptAnyPokemon.BringToFront();
+        }
+
+        if (B_TradeHideSpeciesNames != null)
+        {
+            if (B_TradeHideSpeciesNames.Parent != Tab_Randomizer)
+            {
+                B_TradeHideSpeciesNames.Parent?.Controls.Remove(
+                    B_TradeHideSpeciesNames);
+
+                Tab_Randomizer.Controls.Add(
+                    B_TradeHideSpeciesNames);
+            }
+
+            B_TradeHideSpeciesNames.SetBounds(
+                GB_Progressive.Left +
+                    innerLeft +
+                    bigButtonWidth +
+                    innerGap,
+                tradeRowTop,
+                bigButtonWidth,
+                buttonHeight);
+
+            B_TradeHideSpeciesNames.Visible = true;
+            B_TradeHideSpeciesNames.Enabled = true;
+            B_TradeHideSpeciesNames.BringToFront();
+        }
+        // Stock randomization actions belong below the Progressive section.
+        int randomButtonsWidth =
+            B_RandAll.Width +
+            innerGap +
+            B_Starters.Width;
+
+        int randomButtonsLeft =
+            contentLeft +
+            ((contentWidth - randomButtonsWidth) / 2);
+
+        int randomButtonsTop =
+            GB_Progressive.Bottom + 12;
+
+        B_RandAll.SetBounds(
+            randomButtonsLeft,
+            randomButtonsTop,
+            B_RandAll.Width,
+            B_RandAll.Height);
+
+        B_Starters.SetBounds(
+            B_RandAll.Right + innerGap,
+            randomButtonsTop,
+            B_Starters.Width,
+            B_Starters.Height);
+
+        GB_Progressive.SendToBack();
+        B_ProgressiveAcceptAnyPokemon?.BringToFront();
+        B_TradeHideSpeciesNames?.BringToFront();
+        B_RandAll.BringToFront();
+        B_Starters.BringToFront();
+        B_Cancel.BringToFront();
+        B_Save.BringToFront();
+    }
+
+    private void EnsureProgressiveLayoutSpace()
+    {
+        // Return close to the original pk3DS window size. The previous temporary
+        // layout made the form unnecessarily tall.
+        MinimumSize =
+            new System.Drawing.Size(
+                720,
+                690);
+
+        if (ClientSize.Width < 707 ||
+            ClientSize.Height < 660)
+        {
+            ClientSize =
+                new System.Drawing.Size(
+                    Math.Max(
+                        ClientSize.Width,
+                        707),
+                    Math.Max(
+                        ClientSize.Height,
+                        660));
+        }
+    }
     private void B_TradeAnyRequest_Click(object sender, EventArgs e)
     {
         if (WinFormsUtil.Prompt(

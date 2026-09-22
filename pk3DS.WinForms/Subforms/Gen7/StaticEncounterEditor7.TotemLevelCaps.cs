@@ -122,18 +122,17 @@ public partial class StaticEncounterEditor7
 
         B_TotemLevelCaps = new Button
         {
-            Location = new Point(B_RandAll.Left, B_RandAll.Bottom + 44),
+            Location = new Point(177, 24),
             Name = "B_TotemLevelCaps",
-            Size = B_RandAll.Size,
+            Size = new Size(155, 28),
             Text = "Totem Level Caps...",
             UseVisualStyleBackColor = true,
         };
         B_TotemLevelCaps.Click += B_TotemLevelCaps_Click;
 
-        Tab_Randomizer.Controls.Add(B_TotemLevelCaps);
+        GB_Progressive.Controls.Add(B_TotemLevelCaps);
         B_TotemLevelCaps.BringToFront();
     }
-
     private void B_RandAll_TotemLevelCapsPost(object sender, EventArgs e)
     {
         if (!TotemLevelCapsEnabled)
