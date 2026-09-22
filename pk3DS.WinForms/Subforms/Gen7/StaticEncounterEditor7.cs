@@ -352,132 +352,259 @@ public partial class StaticEncounterEditor7 : Form
     }
 }
 
-private void ApplyHideTradeSpeciesNames()
-{
-    const string offeredSpecies = "[VAR PKNAME(0001)]";
-    const string requestedSpecies = "[VAR PKNAME(0002)]";
-
-    // Unicode escape avoids source-file encoding problems.
-    const string genericPokemon = "Pok\u00E9mon";
-
-    int originalLanguage = Main.Config.Language;
-    int storyFile = Main.Config.USUM ? 14 : 12;
-    int speciesNameFile = Main.Config.USUM ? 60 : 55;
-    int updatedLanguages = 0;
-    int updatedLines = 0;
-
-    try
-    {
-        for (int language = 0; language < 10; language++)
+    private static Dictionary<int, string> GetSpanishTradeDialogueOverrides() =>
+        new()
         {
-            Main.Config.Language = language;
+            [14] =
+                "Hola. \u00BFTe apetece hacer un intercambio?\n" +
+                "Si tienes un Pok\u00E9mon para cambiar,\\c\n" +
+                "yo te doy uno de los m\u00EDos.",
 
-            var storyGarc = Main.Config.GetGARCData("storytext");
-            var gameTextGarc = Main.Config.GetGARCData("gametext");
+            [15] =
+                "\u00A1Gracias! Cuidar\u00E9 muy bien del Pok\u00E9mon\n" +
+                "que me has dado.\\c\n" +
+                "\u00A1T\u00FA tambi\u00E9n cuida mucho del m\u00EDo!",
 
-            byte[][] storyData = storyGarc.Files;
+            [16] =
+                "\u00A1Un momento! Ese no es el Pok\u00E9mon\n" +
+                "que estoy buscando.\\c\n" +
+                "Si no tienes el que busco, no pasa nada.",
 
-            if ((uint)storyFile >= (uint)storyData.Length)
+            [20] =
+                "\u00A1Eh, t\u00FA! \u00BFEres Entrenador Pok\u00E9mon?\\c\n" +
+                "\u00BFTe apetece hacer un intercambio?\n" +
+                "Yo te doy uno de mis Pok\u00E9mon.\\c\n" +
+                "\u00BFQu\u00E9 me dices?",
+
+            [21] =
+                "\u00A1Muchas gracias!\\c\n" +
+                "\u00A1Cuida bien del Pok\u00E9mon que te he dado,\n" +
+                "que yo har\u00E9 lo mismo con el tuyo!",
+
+            [22] =
+                "Bueno, no s\u00E9 t\u00FA... Pero ese no es el Pok\u00E9mon\n" +
+                "que estoy buscando.\\c\n" +
+                "Si no tienes el que necesito, d\u00EDmelo y ya est\u00E1.",
+
+            [26] =
+                "Llevo un Pok\u00E9mon que me viene de maravilla\n" +
+                "cuando paso alg\u00FAn apuro en la Colina Saltagua...\\c\n" +
+                "Pero me apetece cambiarlo por otro Pok\u00E9mon.\n" +
+                "\u00BFQu\u00E9 dices?",
+
+            [28] =
+                "Oye, ese no es el Pok\u00E9mon que te hab\u00EDa pedido...\n" +
+                "Si no quieres hacer el intercambio, d\u00EDmelo.",
+
+            [30] =
+                "\u00A1Viva! \u00A1Qu\u00E9 Pok\u00E9mon tan mono!\\c\n" +
+                "El que te he dado tambi\u00E9n me encanta.\n" +
+                "Cu\u00EDdalo muy bien, \u00BFvale?",
+
+            [32] =
+                "\u00BFNo te gustar\u00EDa hacerte con mi Pok\u00E9mon?\n" +
+                "Se ha portado genial conmigo.\\c\n" +
+                "Si quieres, podemos hacer un intercambio.",
+
+            [33] =
+                "\u00A1Guay! No te preocupes, que tu Pok\u00E9mon\n" +
+                "estar\u00E1 en buenas manos conmigo.\\c\n" +
+                "T\u00FA cuida bien del m\u00EDo, \u00BFeh?",
+
+            [34] =
+                "\u00A1No, ese no! Ese no es el Pok\u00E9mon que busco.\n" +
+                "\u00BFQu\u00E9 parte no has entendido?",
+
+            [36] =
+                "Cada Pok\u00E9mon tiene sus puntos fuertes y d\u00E9biles.\n" +
+                "\u00A1Conocerlos bien viene genial en combate!",
+
+            [38] =
+                "Oye, \u00BFte apetece intercambiar Pok\u00E9mon?\n" +
+                "Yo te doy uno de los m\u00EDos a cambio del tuyo.",
+
+            [39] =
+                "Adi\u00F3s, compa\u00F1ero.\n" +
+                "\u00A1Y bienvenido, nuevo amigo!",
+
+            [40] =
+                "\u00A1Venga ya!\n" +
+                "\u00A1Ese no es el Pok\u00E9mon que te he pedido!",
+
+            [42] =
+                "Cu\u00EDdame bien al Pok\u00E9mon que te he dado, \u00BFeh?\\c\n" +
+                "\u00A1Espero que el tuyo tambi\u00E9n sea feliz conmigo!",
+
+            [44] =
+                "Oye, \u00BFte apetece intercambiar un Pok\u00E9mon conmigo?\\c\n" +
+                "Quiero comprobar una cosa que dicen sobre\n" +
+                "los intercambios. \u00BFMe echas una mano?",
+
+            [45] =
+                "Los Pok\u00E9mon esconden un mont\u00F3n de misterios...\n" +
+                "\u00A1Por eso me encanta investigar sobre ellos!",
+
+            [46] =
+                "\u00A1No, no! Necesito hacer un intercambio concreto\n" +
+                "para comprobar mi teor\u00EDa.",
+
+            [48] =
+                "\u00A1Toma ya! \u00A1El intercambio ha funcionado!\\c\n" +
+                "\u00A1Ya puedo comprobar si era verdad lo que dec\u00EDan!",
+
+            [50] =
+                "\u00BFQu\u00E9, te gusta mi Pok\u00E9mon?\n" +
+                "Pues te lo cambio por uno de los tuyos.",
+
+            [51] =
+                "Gracias. Cuida de mi Pok\u00E9mon,\n" +
+                "que yo har\u00E9 lo mismo con el tuyo.",
+
+            [52] =
+                "Vaya, hombre.\n" +
+                "Ese no es el Pok\u00E9mon que hab\u00EDa pedido...",
+
+            [54] =
+                "Hay Pok\u00E9mon cuyo aspecto cambia seg\u00FAn d\u00F3nde vivan.\\c\n" +
+                "\u00A1La naturaleza nunca deja de sorprenderme!",
+
+            [56] =
+                "\u00A1Mi Pok\u00E9mon es incre\u00EDble y no lo cambio\n" +
+                "por nada del mundo!\\c\n" +
+                "Bueno... quiz\u00E1 s\u00ED por otro que me guste.\n" +
+                "\u00BFQu\u00E9 me dices?",
+
+            [57] =
+                "\u00A1Comienza una nueva etapa para nuestros Pok\u00E9mon!",
+
+            [58] =
+                "\u00A1Eh! \u00A1Ese no es el Pok\u00E9mon que quer\u00EDa!",
+
+            [60] =
+                "\u00A1Con este Pok\u00E9mon llegar\u00E9 a lo m\u00E1s alto del\n" +
+                "\u00C1rbol de Combate, ya ver\u00E1s!\\c\n" +
+                "\u00A1Espero que t\u00FA tambi\u00E9n tengas grandes combates\n" +
+                "con el que te he dado!",
+        };
+    private void ApplyHideTradeSpeciesNames()
+    {
+        if (!Main.Config.USUM)
+        {
+            throw new NotSupportedException(
+                "Curated trade dialogue cleanup is currently implemented for USUM.");
+        }
+
+        const int SpanishLanguageBank = 6;
+        const int StoryFile = 14;
+
+        Dictionary<int, string> overrides =
+            GetSpanishTradeDialogueOverrides();
+
+        int originalLanguage =
+            Main.Config.Language;
+
+        int changed =
+            0;
+
+
+        try
+        {
+            Main.Config.Language =
+                SpanishLanguageBank;
+
+            var storyGarc =
+                Main.Config.GetGARCData(
+                    "storytext");
+
+            byte[][] storyData =
+                storyGarc.Files;
+
+            if ((uint)StoryFile >=
+                (uint)storyData.Length)
             {
                 throw new InvalidOperationException(
-                    $"Story text file {storyFile} is missing for language bank {language}.");
+                    $"Story text file {StoryFile} is missing for Spanish language bank.");
             }
 
             string[] storyText =
-                TextFile.GetStrings(Main.Config, storyData[storyFile]);
-
-            string[] localizedSpecies =
                 TextFile.GetStrings(
                     Main.Config,
-                    gameTextGarc.Files[speciesNameFile]);
+                    storyData[StoryFile]);
 
-            // Some Gen 7 trades use PKNAME variables, while others
-            // contain the requested/offered species as literal text.
-            string[] literalSpeciesNames = localizedSpecies
-                .Skip(1)
-                .Where(name => !string.IsNullOrWhiteSpace(name))
-                .Distinct(StringComparer.Ordinal)
-                .OrderByDescending(name => name.Length)
-                .ToArray();
-
-            int changed = 0;
-
-            for (int i = 0; i < storyText.Length; i++)
+            foreach (var pair in
+                     overrides.OrderBy(z => z.Key))
             {
-                string line = storyText[i];
+                int lineIndex =
+                    pair.Key;
 
-                if (string.IsNullOrEmpty(line))
-                    continue;
-
-                string updated = line
-                    .Replace(
-                        offeredSpecies,
-                        genericPokemon,
-                        StringComparison.Ordinal)
-                    .Replace(
-                        requestedSpecies,
-                        genericPokemon,
-                        StringComparison.Ordinal);
-
-                foreach (string speciesName in literalSpeciesNames)
+                if ((uint)lineIndex >=
+                    (uint)storyText.Length)
                 {
-                    string pattern =
-                        $@"(?<![\p{{L}}\p{{N}}])" +
-                        $"{System.Text.RegularExpressions.Regex.Escape(speciesName)}" +
-                        $@"(?![\p{{L}}\p{{N}}])";
-
-                    updated =
-                        System.Text.RegularExpressions.Regex.Replace(
-                            updated,
-                            pattern,
-                            genericPokemon,
-                            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+                    throw new InvalidOperationException(
+                        $"Trade dialogue line {lineIndex} is missing from Spanish story file {StoryFile}.");
                 }
+
+                string before =
+                    storyText[lineIndex];
+
+                string after =
+                    pair.Value;
 
                 if (string.Equals(
-                    updated,
-                    line,
-                    StringComparison.Ordinal))
+                        before,
+                        after,
+                        StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                storyText[i] = updated;
+
+                storyText[lineIndex] =
+                    after;
+
                 changed++;
             }
 
-            if (changed == 0)
-                continue;
+            if (changed > 0)
+            {
+                storyData[StoryFile] =
+                    TextFile.GetBytes(
+                        Main.Config,
+                        storyText);
 
-            storyData[storyFile] =
-                TextFile.GetBytes(Main.Config, storyText);
+                storyGarc.Files =
+                    storyData;
 
-            storyGarc.Files = storyData;
-            storyGarc.Save();
+                storyGarc.Save();
+            }
+        }
+        finally
+        {
+            Main.Config.Language =
+                originalLanguage;
+        }
 
-            updatedLanguages++;
-            updatedLines += changed;
+
+        RandomizationSessionState.MarkAction(
+            "trades.hide-species-names");
+
+        string detail =
+            changed == 0
+                ? "Spanish trade dialogue is already using the curated generic text."
+                : $"Updated {changed} Spanish trade dialogue line(s) with curated generic text.";
+
+        if (BatchRuntime.IsActive)
+        {
+            BatchRuntime.Log(
+                detail);
+        }
+        else
+        {
+            WinFormsUtil.Alert(
+                "Trade dialogue updated!",
+                detail);
         }
     }
-    finally
-    {
-        Main.Config.Language = originalLanguage;
-    }
-
-    RandomizationSessionState.MarkAction(
-        "trades.hide-species-names");
-
-    string detail = updatedLines == 0
-        ? "Trade dialogue already hides the requested/offered species names."
-        : $"Hidden requested/offered species names in {updatedLines} dialogue line(s) across {updatedLanguages} language bank(s).";
-
-    if (BatchRuntime.IsActive)
-        BatchRuntime.Log(detail);
-    else
-        WinFormsUtil.Alert(
-            "Trade dialogue updated!",
-            detail);
-}
     private void B_Save_Click(object sender, EventArgs e)
     {
         SetGift();
