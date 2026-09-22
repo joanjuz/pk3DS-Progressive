@@ -1,4 +1,5 @@
 ﻿using pk3DS.Core;
+using pk3DS.Core.Modding.Research;
 using System;
 using System.IO;
 using System.Linq;
@@ -24,7 +25,34 @@ public partial class TutorEditor7 : Form
         AddTutorFollowEvolutionsCheckBox();
 
         data = File.ReadAllBytes(CROPath);
-        len_BPTutor = data.Skip(0x52D2).Take(4).ToArray();
+
+        if (Main.Config.USUM)
+        {
+            if (!Gen7ShopCroLayout.TryRead(
+                    data,
+                    out Gen7ShopCroLayoutSnapshot shopLayout,
+                    out string layoutError))
+            {
+                ofs_BPTutor = 0;
+                len_BPTutor = [];
+
+                WinFormsUtil.Error(
+                    "Could not resolve the active USUM Shop.cro layout. Closing.",
+                    layoutError);
+
+                Close();
+                return;
+            }
+
+            ofs_BPTutor = checked((int)shopLayout.BPTutors.DataStart);
+            len_BPTutor = shopLayout.BPTutors.Counts.ToArray();
+        }
+        else
+        {
+            // Preserve the legacy Sun/Moon path. Expanded Marts is USUM-only.
+            ofs_BPTutor = 0x54DE;
+            len_BPTutor = data.Skip(0x52D2).Take(4).ToArray();
+        }
 
         SetupDGV();
         CB_LocationBPMove.Items.AddRange(locationsTutor);
@@ -49,7 +77,7 @@ public partial class TutorEditor7 : Form
         B_FreeTutors.BringToFront();
     }
 
-    private const int ofs_BPTutor = 0x54DE;
+    private readonly int ofs_BPTutor;
     private readonly byte[] len_BPTutor;
 
     private readonly string[] movelist = Main.Config.GetText(TextName.MoveNames);
@@ -553,13 +581,18 @@ public partial class TutorEditor7 : Form
             return [];
 
         byte[] tutorData = File.ReadAllBytes(croPath);
-        const int countOffset = 0x52D2;
-        const int tutorOffset = 0x54DE;
 
-        if (tutorData.Length < countOffset + 4)
+        if (!Gen7ShopCroLayout.TryRead(
+                tutorData,
+                out Gen7ShopCroLayoutSnapshot shopLayout,
+                out _))
+        {
             return [];
+        }
 
-        byte[] counts = tutorData.Skip(countOffset).Take(4).ToArray();
+        byte[] counts = shopLayout.BPTutors.Counts.ToArray();
+        int tutorOffset = checked((int)shopLayout.BPTutors.DataStart);
+
         var result = new System.Collections.Generic.List<ushort>(counts.Sum(z => z));
 
         for (int location = 0; location < counts.Length; location++)

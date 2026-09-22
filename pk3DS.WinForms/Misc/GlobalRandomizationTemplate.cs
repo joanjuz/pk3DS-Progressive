@@ -12,7 +12,7 @@ namespace pk3DS.WinForms;
 public sealed class GlobalRandomizationTemplate
 {
     public int Version { get; set; } = 1;
-    public int ActionCoverageVersion { get; set; } = 2;
+    public int ActionCoverageVersion { get; set; } = 3;
     public string Name { get; set; } = "Global ROM template";
     public string Game { get; set; } = "ANY";
     public int Generation { get; set; }
@@ -268,6 +268,18 @@ public static class GlobalRandomizationTemplateFile
 
         if (template.LevelCaps is not null)
             LevelCapTemplateFile.Validate(template.LevelCaps, actualGame);
+
+        GlobalRandomizationAction expandedMarts =
+            (template.Actions ?? [])
+                .FirstOrDefault(z =>
+                    z is not null &&
+                    string.Equals(
+                        z.Id,
+                        ExpandedMartTemplateAction.ActionId,
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (expandedMarts is not null)
+            ExpandedMartTemplateAction.Validate(expandedMarts, actualGame);
     }
 
     public static void ResetSession()
