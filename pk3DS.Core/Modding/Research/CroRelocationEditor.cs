@@ -281,6 +281,9 @@ public static class CroRelocationEditor
                 return false;
             }
 
+            bool keepsExistingWrite =
+                edit.WriteAddress == oldReference.WriteAddress;
+
             // A new loader-owned slot must be blank on disk. Keeping the same write slot is also
             // validated; type-0x02 pointer slots are expected to be zero/CC until the loader runs.
             if (!WordIsBlank(
@@ -292,28 +295,35 @@ public static class CroRelocationEditor
                 return false;
             }
 
-            foreach (var reference in oldMap.References)
+            // If the write slot is unchanged, preserve the CRO's existing relocation topology.
+            // Some valid CROs intentionally have another relocation target that points at this
+            // loader-owned word (Shop.cro does this for its mart pointer table). That relationship
+            // is not a collision when this edit only retargets the existing pointer relocation.
+            if (!keepsExistingWrite)
             {
-                if (reference.Index == edit.RelocationIndex)
-                    continue;
-
-                bool writeOverlaps =
-                    reference.WriteFileBacked &&
-                    reference.WriteAddress < edit.WriteAddress + 4u &&
-                    reference.WriteAddress + 4u > edit.WriteAddress;
-
-                bool targetInside =
-                    reference.TargetFileBacked &&
-                    reference.TargetAddress >= edit.WriteAddress &&
-                    reference.TargetAddress < edit.WriteAddress + 4u;
-
-                if (writeOverlaps ||
-                    targetInside)
+                foreach (var reference in oldMap.References)
                 {
-                    error =
-                        $"new write slot 0x{edit.WriteAddress:X} for relocation #{edit.RelocationIndex} " +
-                        $"overlaps relocation reference #{reference.Index}.";
-                    return false;
+                    if (reference.Index == edit.RelocationIndex)
+                        continue;
+
+                    bool writeOverlaps =
+                        reference.WriteFileBacked &&
+                        reference.WriteAddress < edit.WriteAddress + 4u &&
+                        reference.WriteAddress + 4u > edit.WriteAddress;
+
+                    bool targetInside =
+                        reference.TargetFileBacked &&
+                        reference.TargetAddress >= edit.WriteAddress &&
+                        reference.TargetAddress < edit.WriteAddress + 4u;
+
+                    if (writeOverlaps ||
+                        targetInside)
+                    {
+                        error =
+                            $"new write slot 0x{edit.WriteAddress:X} for relocation #{edit.RelocationIndex} " +
+                            $"overlaps relocation reference #{reference.Index}.";
+                        return false;
+                    }
                 }
             }
 
@@ -373,11 +383,15 @@ public static class CroRelocationEditor
                 edit.NewAddend,
                 at + 8);
 
-            // The loader owns the final pointer word.
-            Array.Clear(
-                working,
-                checked((int)edit.NewWriteAddress),
-                4);
+            // A moved relocation needs a fresh blank loader-owned word. A retarget-only edit
+            // deliberately preserves its existing write slot and any relocation topology around it.
+            if (edit.NewWriteAddress != edit.OldWriteAddress)
+            {
+                Array.Clear(
+                    working,
+                    checked((int)edit.NewWriteAddress),
+                    4);
+            }
         }
 
         if (!CroSegmentExpander.TryUpdateHashes(
