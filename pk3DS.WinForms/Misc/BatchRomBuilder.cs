@@ -825,7 +825,22 @@ internal static class BatchGen7ActionExecutor
                     "B_AddRareCandies_Click");
             }
         }
-        if (Has(actions, "marts.add-ev-items")) InvokeEvent(form, "B_AddEVItems_Click");
+        if (Has(actions, "marts.add-ev-items"))
+        {
+            if (usum)
+            {
+                Invoke(
+                    form,
+                    "ApplyEVItemsFromTemplate",
+                    Get(actions, "marts.add-ev-items"));
+            }
+            else
+            {
+                InvokeEvent(
+                    form,
+                    "B_AddEVItems_Click");
+            }
+        }
         if (Has(actions, "marts.free-mega-stones")) InvokeEvent(form, "B_FreeMegaStones_Click");
         if (Has(actions, "marts.ban-ability-capsule"))
         {
