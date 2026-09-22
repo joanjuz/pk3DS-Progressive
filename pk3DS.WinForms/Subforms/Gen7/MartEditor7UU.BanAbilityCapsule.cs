@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using pk3DS.Core;
@@ -115,18 +116,28 @@ public partial class MartEditor7UU
 
         int removed = 0;
 
-        for (int mart = 0; mart < len_Items.Length; mart++)
+        for (int mart = 0;
+             mart < regularMarts.Length;
+             mart++)
         {
-            int ofs = ofs_Item + (len_Items.Take(mart).Sum(z => z) * 2);
-            for (int slot = 0; slot < len_Items[mart]; slot++)
+            List<ushort> inventory =
+                regularMarts[mart];
+
+            for (int slot = 0;
+                 slot < inventory.Count;
+                 slot++)
             {
-                int writeOffset = ofs + (slot * 2);
-                int current = BitConverter.ToUInt16(data, writeOffset);
-                if (current != abilityCapsule)
+                if (inventory[slot] != abilityCapsule)
                     continue;
 
-                int replacement = replacements[Util.Rand.Next(replacements.Length)];
-                Array.Copy(BitConverter.GetBytes((ushort)replacement), 0, data, writeOffset, 2);
+                int replacement =
+                    replacements[
+                        Util.Rand.Next(
+                            replacements.Length)];
+
+                inventory[slot] =
+                    (ushort)replacement;
+
                 removed++;
             }
         }

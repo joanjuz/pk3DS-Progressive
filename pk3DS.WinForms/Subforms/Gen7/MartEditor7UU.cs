@@ -24,6 +24,7 @@ public partial class MartEditor7UU : Form
         AddRareCandyButton();
         AddEVItemsButton();
         AddFreeMegaStonesButton();
+        AddExpandedMartButtons();
         LayoutCustomMartButtons();
 
         data = File.ReadAllBytes(CROPath);
@@ -37,6 +38,7 @@ public partial class MartEditor7UU : Form
             ofs_BPItem = 0;
             len_Items = [];
             len_BPItem = [];
+            regularMarts = [];
 
             WinFormsUtil.Error(
                 "Could not resolve the active USUM Shop.cro layout. Closing.",
@@ -51,6 +53,10 @@ public partial class MartEditor7UU : Form
 
         len_Items = shopLayout.RegularMarts.Inventories
             .Select(z => checked((byte)z.Length))
+            .ToArray();
+
+        regularMarts = shopLayout.RegularMarts.Inventories
+            .Select(z => z.ToList())
             .ToArray();
 
         len_BPItem = shopLayout.BPItems.Counts.ToArray();
@@ -140,6 +146,146 @@ public partial class MartEditor7UU : Form
             ClientSize = new System.Drawing.Size(ClientSize.Width, requiredHeight);
     }
 
+    private void AddExpandedMartButtons()
+    {
+        B_AddItem = new Button
+        {
+            Name = "B_AddItem",
+            Text = "Add Item",
+            UseVisualStyleBackColor = true,
+        };
+
+        B_DeleteItem = new Button
+        {
+            Name = "B_DeleteItem",
+            Text = "Delete Item",
+            UseVisualStyleBackColor = true,
+        };
+
+        B_AddItem.Click += B_AddItem_Click;
+        B_DeleteItem.Click += B_DeleteItem_Click;
+        tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
+
+        Controls.Add(B_AddItem);
+        Controls.Add(B_DeleteItem);
+    }
+
+    private void TabControl1_SelectedIndexChanged(object sender, EventArgs e) =>
+        UpdateExpandedMartButtons();
+
+    private void UpdateExpandedMartButtons()
+    {
+        bool regularMartTab =
+            tabControl1.SelectedIndex == 0;
+
+        B_AddItem.Enabled =
+            regularMartTab;
+
+        B_DeleteItem.Enabled =
+            regularMartTab &&
+            entryItem >= 0 &&
+            entryItem < regularMarts.Length &&
+            regularMarts[entryItem].Count > 1;
+    }
+
+    private void B_AddItem_Click(object sender, EventArgs e)
+    {
+        if (tabControl1.SelectedIndex != 0 ||
+            entryItem < 0 ||
+            entryItem >= regularMarts.Length)
+        {
+            return;
+        }
+
+        SetListItem();
+
+        List<ushort> mart =
+            regularMarts[entryItem];
+
+        if (mart.Count >=
+            Gen7ExpandedMartTable.MaximumSlotsPerMart)
+        {
+            WinFormsUtil.Error(
+                "This mart cannot be expanded any further.",
+                $"USUM supports at most {Gen7ExpandedMartTable.MaximumSlotsPerMart} slots per regular mart.");
+            return;
+        }
+
+        int sourceRow =
+            dgv.CurrentCell?.RowIndex ??
+            (mart.Count - 1);
+
+        sourceRow =
+            Math.Clamp(
+                sourceRow,
+                0,
+                mart.Count - 1);
+
+        // Append a duplicate of the selected item, then let the user choose a different
+        // item from the normal combo box if desired.
+        mart.Add(
+            mart[sourceRow]);
+
+        GetListItem();
+
+        int newRow =
+            dgv.Rows.Count - 1;
+
+        if (newRow >= 0)
+            dgv.CurrentCell = dgv.Rows[newRow].Cells[1];
+
+        UpdateExpandedMartButtons();
+    }
+
+    private void B_DeleteItem_Click(object sender, EventArgs e)
+    {
+        if (tabControl1.SelectedIndex != 0 ||
+            entryItem < 0 ||
+            entryItem >= regularMarts.Length)
+        {
+            return;
+        }
+
+        SetListItem();
+
+        List<ushort> mart =
+            regularMarts[entryItem];
+
+        if (mart.Count <= 1)
+        {
+            WinFormsUtil.Error(
+                "A regular mart cannot be empty.",
+                "At least one item slot must remain.");
+            return;
+        }
+
+        int row =
+            dgv.CurrentCell?.RowIndex ??
+            -1;
+
+        if (row < 0 ||
+            row >= mart.Count)
+        {
+            WinFormsUtil.Alert(
+                "Select an item row to delete.");
+            return;
+        }
+
+        mart.RemoveAt(
+            row);
+
+        GetListItem();
+
+        int nextRow =
+            Math.Min(
+                row,
+                dgv.Rows.Count - 1);
+
+        if (nextRow >= 0)
+            dgv.CurrentCell = dgv.Rows[nextRow].Cells[1];
+
+        UpdateExpandedMartButtons();
+    }
     private void LayoutCustomMartButtons()
     {
         const int gap = 8;
@@ -157,17 +303,35 @@ public partial class MartEditor7UU : Form
         B_AddEVItems.Location = new System.Drawing.Point(B_AddRareCandies.Right + gap, actionTop);
         B_FreeMegaStones.Location = new System.Drawing.Point(B_AddEVItems.Right + gap, actionTop);
 
-        // Row 2: option on the left, Cancel/Save on the right.
+        // Row 2: structural regular-mart actions, option, then Cancel/Save.
+        B_AddItem.Size = new System.Drawing.Size(82, B_Randomize.Height);
+        B_DeleteItem.Size = new System.Drawing.Size(90, B_Randomize.Height);
+
         int secondRowTop = B_Randomize.Bottom + gap;
         CHK_XItems.AutoSize = true;
 
+        int leftControlsWidth =
+            B_AddItem.Width +
+            gap +
+            B_DeleteItem.Width +
+            gap +
+            CHK_XItems.Width;
+
         int requiredWidth = Math.Max(
             B_FreeMegaStones.Right + margin,
-            margin + CHK_XItems.Width + gap + B_Cancel.Width + gap + B_Save.Width + margin);
-        int requiredHeight = secondRowTop + Math.Max(B_Save.Height, CHK_XItems.Height) + margin;
+            margin +
+            leftControlsWidth +
+            gap +
+            B_Cancel.Width +
+            gap +
+            B_Save.Width +
+            margin);
 
-        // Resizing first lets the anchored designer controls react; afterwards
-        // place every bottom-row control explicitly so none can overlap.
+        int requiredHeight =
+            secondRowTop +
+            Math.Max(B_Save.Height, CHK_XItems.Height) +
+            margin;
+
         ClientSize = new System.Drawing.Size(
             Math.Max(ClientSize.Width, requiredWidth),
             Math.Max(ClientSize.Height, requiredHeight));
@@ -183,21 +347,29 @@ public partial class MartEditor7UU : Form
         B_AddEVItems.Location = new System.Drawing.Point(B_AddRareCandies.Right + gap, actionTop);
         B_FreeMegaStones.Location = new System.Drawing.Point(B_AddEVItems.Right + gap, actionTop);
 
+        B_AddItem.Location = new System.Drawing.Point(margin, secondRowTop);
+        B_DeleteItem.Location = new System.Drawing.Point(B_AddItem.Right + gap, secondRowTop);
+
         CHK_XItems.Location = new System.Drawing.Point(
-            margin,
+            B_DeleteItem.Right + gap,
             secondRowTop + ((B_Save.Height - CHK_XItems.Height) / 2));
 
         B_Save.Location = new System.Drawing.Point(
             ClientSize.Width - margin - B_Save.Width,
             secondRowTop);
+
         B_Cancel.Location = new System.Drawing.Point(
             B_Save.Left - gap - B_Cancel.Width,
             secondRowTop);
+
+        UpdateExpandedMartButtons();
 
         B_Randomize.BringToFront();
         B_AddRareCandies.BringToFront();
         B_AddEVItems.BringToFront();
         B_FreeMegaStones.BringToFront();
+        B_AddItem.BringToFront();
+        B_DeleteItem.BringToFront();
         CHK_XItems.BringToFront();
         B_Cancel.BringToFront();
         B_Save.BringToFront();
@@ -216,20 +388,22 @@ public partial class MartEditor7UU : Form
         if (entryItem > -1)
             SetListItem();
 
-        int rareCandy = GetRareCandyItemID();
+        int rareCandy =
+            GetRareCandyItemID();
 
-        for (int i = 0; i < RegularMartCount && i < len_Items.Length; i++)
+        for (int i = 0;
+             i < RegularMartCount &&
+             i < regularMarts.Length;
+             i++)
         {
-            int count = len_Items[i];
+            List<ushort> mart =
+                regularMarts[i];
 
-            if (count <= 0)
+            if (mart.Count == 0)
                 continue;
 
-            int ofs = ofs_Item + (len_Items.Take(i).Sum(z => z) * 2);
-            int lastSlot = count - 1;
-            int writeOffset = ofs + (2 * lastSlot);
-
-            Array.Copy(BitConverter.GetBytes((ushort)rareCandy), 0, data, writeOffset, 2);
+            mart[^1] =
+                (ushort)rareCandy;
         }
 
         setRareCandyPriceOnSave = true;
@@ -241,6 +415,7 @@ public partial class MartEditor7UU : Form
             "Rare Candies added!",
             "Click Save to write Shop.cro and set Rare Candy price to 10.");
     }
+
     private void B_AddEVItems_Click(object sender, EventArgs e)
     {
         if (DialogResult.Yes != WinFormsUtil.Prompt(
@@ -285,17 +460,32 @@ public partial class MartEditor7UU : Form
             return;
         }
 
-        int martCount = Math.Min(RegularMartCount, len_Items.Length);
-        int[] megaRingSlots = new int[martCount];
-        Array.Fill(megaRingSlots, -1);
-        for (int mart = MegaRingTrial; mart < martCount; mart++)
+        int martCount =
+            Math.Min(
+                RegularMartCount,
+                regularMarts.Length);
+
+        int[] megaRingSlots =
+            new int[martCount];
+
+        Array.Fill(
+            megaRingSlots,
+            -1);
+
+        for (int mart = MegaRingTrial;
+             mart < martCount;
+             mart++)
         {
-            int count = len_Items[mart];
-            if (count <= 0)
+            List<ushort> inventory =
+                regularMarts[mart];
+
+            if (inventory.Count == 0)
                 continue;
 
-            int ofs = ofs_Item + (len_Items.Take(mart).Sum(z => z) * 2);
-            megaRingSlots[mart] = FindMegaRingTargetSlot(ofs, count);
+            megaRingSlots[mart] =
+                FindMegaRingTargetSlot(
+                    inventory);
+
             if (megaRingSlots[mart] >= 0)
                 continue;
 
@@ -306,24 +496,37 @@ public partial class MartEditor7UU : Form
         }
 
         int changed = 0;
-        for (int mart = 0; mart < martCount; mart++)
+
+        for (int mart = 0;
+             mart < martCount;
+             mart++)
         {
-            int count = len_Items[mart];
-            if (count <= 0)
-                continue;
+            List<ushort> inventory =
+                regularMarts[mart];
 
-            int ofs = ofs_Item + (len_Items.Take(mart).Sum(z => z) * 2);
-            for (int slot = 0; slot < count; slot++)
+            for (int slot = 0;
+                 slot < inventory.Count;
+                 slot++)
             {
-                int writeOffset = ofs + (2 * slot);
-                int current = BitConverter.ToUInt16(data, writeOffset);
-                int replacement = slot == megaRingSlots[mart]
-                    ? GetMegaRingItemID()
-                    : GetEVItemReplacement(current, mart);
-                if (replacement <= 0 || replacement == current)
-                    continue;
+                int current =
+                    inventory[slot];
 
-                Array.Copy(BitConverter.GetBytes((ushort)replacement), 0, data, writeOffset, 2);
+                int replacement =
+                    slot == megaRingSlots[mart]
+                        ? GetMegaRingItemID()
+                        : GetEVItemReplacement(
+                            current,
+                            mart);
+
+                if (replacement <= 0 ||
+                    replacement == current)
+                {
+                    continue;
+                }
+
+                inventory[slot] =
+                    (ushort)replacement;
+
                 changed++;
             }
         }
@@ -427,16 +630,16 @@ public partial class MartEditor7UU : Form
         return 0;
     }
 
-    private int FindMegaRingTargetSlot(int offset, int count)
+    private int FindMegaRingTargetSlot(IReadOnlyList<ushort> inventory)
     {
         int megaRing = GetMegaRingItemID();
         int[] preferredHealingItems =
         [
             megaRing,
             696, // Legacy value written by the first EV-items patch; repair it in-place.
-            FindItemID("Hyper Potion", "Hiperpoción", "Hiperpocion"),
+            FindItemID("Hyper Potion", "HiperpociÃ³n", "Hiperpocion"),
             FindItemID("Full Heal", "Cura Total"),
-            FindItemID("Max Potion", "Poción Máxima", "Pocion Maxima"),
+            FindItemID("Max Potion", "PociÃ³n MÃ¡xima", "Pocion Maxima"),
             FindItemID("Full Restore", "Restaurar Todo", "Restaurar todo"),
         ];
 
@@ -445,10 +648,11 @@ public partial class MartEditor7UU : Form
             if (candidate <= 0)
                 continue;
 
-            for (int slot = 0; slot < count; slot++)
+            for (int slot = 0;
+                 slot < inventory.Count;
+                 slot++)
             {
-                int current = BitConverter.ToUInt16(data, offset + (2 * slot));
-                if (current == candidate)
+                if (inventory[slot] == candidate)
                     return slot;
             }
         }
@@ -503,6 +707,7 @@ public partial class MartEditor7UU : Form
     private readonly int ofs_BPItem;
     private readonly byte[] len_Items;
     private readonly byte[] len_BPItem;
+    private readonly List<ushort>[] regularMarts;
 
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);
     //private readonly string[] movelist = Main.Config.GetText(TextName.MoveNames);
@@ -528,6 +733,8 @@ public partial class MartEditor7UU : Form
     private Button B_AddRareCandies;
     private Button B_AddEVItems;
     private Button B_FreeMegaStones;
+    private Button B_AddItem;
+    private Button B_DeleteItem;
 
     #region Tables
     private readonly string[] locations =
@@ -573,6 +780,16 @@ public partial class MartEditor7UU : Form
 
         if (entryBPItem > -1) SetListBPItem();
 
+        if (!TryBuildShopForSave(
+                out byte[] shopToWrite,
+                out string shopBuildError))
+        {
+            WinFormsUtil.Error(
+                "Could not rebuild Shop.cro.",
+                shopBuildError);
+            return;
+        }
+
         if (setRareCandyPriceOnSave || setEVItemsOnSave)
             SetItemPrice(GetRareCandyItemID(), RareCandyPrice);
         if (setEVItemsOnSave)
@@ -582,7 +799,7 @@ public partial class MartEditor7UU : Form
                 SetItemPrice(megaRing, MegaRingPrice);
         }
 
-        File.WriteAllBytes(CROPath, data);
+        File.WriteAllBytes(CROPath, shopToWrite);
 
         if (setRareCandyPriceOnSave)
             RandomizationSessionState.MarkAction("marts.add-rare-candies", ("price", RareCandyPrice.ToString()));
@@ -608,6 +825,71 @@ public partial class MartEditor7UU : Form
         Close();
     }
 
+    private bool TryBuildShopForSave(
+        out byte[] updatedShop,
+        out string error)
+    {
+        updatedShop = null;
+        error = string.Empty;
+
+        ushort[][] inventories =
+            regularMarts
+                .Select(z => z.ToArray())
+                .ToArray();
+
+        bool countsChanged =
+            inventories.Length != len_Items.Length ||
+            inventories
+                .Select(z => z.Length)
+                .Where((count, index) =>
+                    index >= len_Items.Length ||
+                    count != len_Items[index])
+                .Any();
+
+        if (countsChanged)
+        {
+            return Gen7ExpandedMartTable.TryRebuild(
+                data,
+                inventories,
+                out updatedShop,
+                out _,
+                out error);
+        }
+
+        // Preserve the traditional fixed-size path when only item IDs changed.
+        // This avoids expanding Shop.cro for ordinary randomization/QoL edits.
+        updatedShop =
+            (byte[])data.Clone();
+
+        int offset =
+            ofs_Item;
+
+        for (int mart = 0;
+             mart < inventories.Length;
+             mart++)
+        {
+            ushort[] inventory =
+                inventories[mart];
+
+            for (int slot = 0;
+                 slot < inventory.Length;
+                 slot++)
+            {
+                Array.Copy(
+                    BitConverter.GetBytes(
+                        inventory[slot]),
+                    0,
+                    updatedShop,
+                    offset,
+                    2);
+
+                offset +=
+                    2;
+            }
+        }
+
+        return true;
+    }
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         RandSettings.SetFormSettings(this, Controls);
@@ -642,14 +924,37 @@ public partial class MartEditor7UU : Form
     private void GetListItem()
     {
         dgv.Rows.Clear();
-        int count = len_Items[entryItem];
-        dgv.Rows.Add(count);
-        var ofs = ofs_Item + (len_Items.Take(entryItem).Sum(z => z) * 2);
-        for (int i = 0; i < count; i++)
+
+        if (entryItem < 0 ||
+            entryItem >= regularMarts.Length)
         {
-            dgv.Rows[i].Cells[0].Value = i.ToString();
-            dgv.Rows[i].Cells[1].Value = itemlist[BitConverter.ToUInt16(data, ofs + (2 * i))];
+            UpdateExpandedMartButtons();
+            return;
         }
+
+        List<ushort> mart =
+            regularMarts[entryItem];
+
+        dgv.Rows.Add(
+            mart.Count);
+
+        for (int i = 0;
+             i < mart.Count;
+             i++)
+        {
+            dgv.Rows[i].Cells[0].Value =
+                i.ToString();
+
+            ushort item =
+                mart[i];
+
+            dgv.Rows[i].Cells[1].Value =
+                item < itemlist.Length
+                    ? itemlist[item]
+                    : string.Empty;
+        }
+
+        UpdateExpandedMartButtons();
     }
 
     private void GetListBPItem()
@@ -668,10 +973,40 @@ public partial class MartEditor7UU : Form
 
     private void SetListItem()
     {
-        int count = dgv.Rows.Count;
-        var ofs = ofs_Item + (len_Items.Take(entryItem).Sum(z => z) * 2);
-        for (int i = 0; i < count; i++)
-            Array.Copy(BitConverter.GetBytes((ushort)Array.IndexOf(itemlist, dgv.Rows[i].Cells[1].Value)), 0, data, ofs + (2 * i), 2);
+        if (entryItem < 0 ||
+            entryItem >= regularMarts.Length)
+        {
+            return;
+        }
+
+        List<ushort> mart =
+            regularMarts[entryItem];
+
+        if (dgv.Rows.Count !=
+            mart.Count)
+        {
+            throw new InvalidOperationException(
+                $"Regular mart #{entryItem} has {mart.Count} slots but the editor shows {dgv.Rows.Count} rows.");
+        }
+
+        for (int i = 0;
+             i < mart.Count;
+             i++)
+        {
+            int item =
+                Array.IndexOf(
+                    itemlist,
+                    dgv.Rows[i].Cells[1].Value);
+
+            if (item < 0)
+            {
+                throw new InvalidOperationException(
+                    $"Regular mart #{entryItem}, slot #{i} does not contain a valid item selection.");
+            }
+
+            mart[i] =
+                (ushort)item;
+        }
     }
 
     private void SetListBPItem()
