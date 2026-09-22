@@ -39,6 +39,7 @@ public partial class MartEditor7UU : Form
             len_Items = [];
             len_BPItem = [];
             regularMarts = [];
+            regularMartSlotTokens = [];
 
             WinFormsUtil.Error(
                 "Could not resolve the active USUM Shop.cro layout. Closing.",
@@ -57,6 +58,10 @@ public partial class MartEditor7UU : Form
 
         regularMarts = shopLayout.RegularMarts.Inventories
             .Select(z => z.ToList())
+            .ToArray();
+
+        regularMartSlotTokens = regularMarts
+            .Select(z => Enumerable.Repeat(0, z.Count).ToList())
             .ToArray();
 
         len_BPItem = shopLayout.BPItems.Counts.ToArray();
@@ -223,8 +228,29 @@ public partial class MartEditor7UU : Form
 
         // Append a duplicate of the selected item, then let the user choose a different
         // item from the normal combo box if desired.
+        ushort insertedItem =
+            mart[sourceRow];
+
+        int insertIndex =
+            mart.Count;
+
+        int token =
+            nextExpandedMartToken++;
+
         mart.Add(
-            mart[sourceRow]);
+            insertedItem);
+
+        regularMartSlotTokens[entryItem].Add(
+            token);
+
+        expandedMartOperations.Add(
+            new PendingExpandedMartOperation(
+                new ExpandedMartOperation(
+                    ExpandedMartOperationKind.Add,
+                    entryItem,
+                    insertIndex,
+                    insertedItem),
+                token));
 
         GetListItem();
 
@@ -271,7 +297,18 @@ public partial class MartEditor7UU : Form
             return;
         }
 
+        expandedMartOperations.Add(
+            new PendingExpandedMartOperation(
+                new ExpandedMartOperation(
+                    ExpandedMartOperationKind.Delete,
+                    entryItem,
+                    row),
+                token: 0));
+
         mart.RemoveAt(
+            row);
+
+        regularMartSlotTokens[entryItem].RemoveAt(
             row);
 
         GetListItem();
@@ -708,6 +745,9 @@ public partial class MartEditor7UU : Form
     private readonly byte[] len_Items;
     private readonly byte[] len_BPItem;
     private readonly List<ushort>[] regularMarts;
+    private readonly List<int>[] regularMartSlotTokens;
+    private readonly List<PendingExpandedMartOperation> expandedMartOperations = [];
+    private int nextExpandedMartToken = 1;
 
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);
     //private readonly string[] movelist = Main.Config.GetText(TextName.MoveNames);
@@ -801,6 +841,8 @@ public partial class MartEditor7UU : Form
 
         File.WriteAllBytes(CROPath, shopToWrite);
 
+        RememberExpandedMartTemplateAction();
+
         if (setRareCandyPriceOnSave)
             RandomizationSessionState.MarkAction("marts.add-rare-candies", ("price", RareCandyPrice.ToString()));
         if (setEVItemsOnSave)
@@ -825,6 +867,157 @@ public partial class MartEditor7UU : Form
         Close();
     }
 
+    private sealed class PendingExpandedMartOperation
+    {
+        internal ExpandedMartOperation Operation { get; set; }
+        internal int Token { get; }
+
+        internal PendingExpandedMartOperation(
+            ExpandedMartOperation operation,
+            int token)
+        {
+            Operation = operation;
+            Token = token;
+        }
+    }
+
+    private void ApplyExpandedMartsFromTemplate(
+        GlobalRandomizationAction action)
+    {
+        ExpandedMartTemplateAction.Validate(
+            action,
+            Main.Config.USUM
+                ? "USUM"
+                : "SM");
+
+        if (!ExpandedMartTemplateAction.TryParse(
+                action,
+                out List<ExpandedMartOperation> operations,
+                out string parseError))
+        {
+            throw new InvalidOperationException(
+                parseError);
+        }
+
+        if (!ExpandedMartTemplateAction.TryApply(
+                regularMarts,
+                operations,
+                out string applyError))
+        {
+            throw new InvalidOperationException(
+                applyError);
+        }
+
+        for (int mart = 0;
+             mart < regularMartSlotTokens.Length;
+             mart++)
+        {
+            regularMartSlotTokens[mart].Clear();
+            regularMartSlotTokens[mart].AddRange(
+                Enumerable.Repeat(
+                    0,
+                    regularMarts[mart].Count));
+        }
+
+        if (entryItem >= 0)
+            GetListItem();
+    }
+
+    private void RememberExpandedMartTemplateAction()
+    {
+        if (expandedMartOperations.Count == 0)
+            return;
+
+        RefreshPendingExpandedMartItems();
+
+        var combined =
+            new List<ExpandedMartOperation>();
+
+        GlobalRandomizationAction previous =
+            RandomizationSessionState
+                .ExportActions()
+                .FirstOrDefault(z =>
+                    string.Equals(
+                        z.Id,
+                        ExpandedMartTemplateAction.ActionId,
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (previous is not null)
+        {
+            if (!ExpandedMartTemplateAction.TryParse(
+                    previous,
+                    out List<ExpandedMartOperation> previousOperations,
+                    out string previousError))
+            {
+                throw new InvalidOperationException(
+                    "Existing Expanded Marts template action is invalid: " +
+                    previousError);
+            }
+
+            combined.AddRange(
+                previousOperations);
+        }
+
+        combined.AddRange(
+            expandedMartOperations.Select(z => z.Operation));
+
+        GlobalRandomizationAction action =
+            ExpandedMartTemplateAction.Create(
+                combined);
+
+        RandomizationSessionState.MarkAction(
+            action.Id,
+            action.Parameters
+                .Select(z =>
+                    (
+                        Key: z.Key,
+                        Value: z.Value))
+                .ToArray());
+    }
+
+    private void RefreshPendingExpandedMartItems()
+    {
+        foreach (PendingExpandedMartOperation pending in
+                 expandedMartOperations)
+        {
+            ExpandedMartOperation operation =
+                pending.Operation;
+
+            if (operation.Kind !=
+                    ExpandedMartOperationKind.Add ||
+                pending.Token <= 0 ||
+                operation.MartIndex < 0 ||
+                operation.MartIndex >= regularMarts.Length)
+            {
+                continue;
+            }
+
+            int currentSlot =
+                regularMartSlotTokens[
+                        operation.MartIndex]
+                    .IndexOf(
+                        pending.Token);
+
+            // The inserted slot may have been deleted later in the same session.
+            // In that case its original item value is irrelevant because the delete
+            // operation will remove it during replay.
+            if (currentSlot < 0 ||
+                currentSlot >=
+                regularMarts[operation.MartIndex].Count)
+            {
+                continue;
+            }
+
+            pending.Operation =
+                operation with
+                {
+                    ItemId =
+                        regularMarts[
+                            operation.MartIndex][
+                            currentSlot],
+                };
+        }
+    }
     private bool TryBuildShopForSave(
         out byte[] updatedShop,
         out string error)

@@ -448,6 +448,7 @@ internal static class BatchGen7ActionExecutor
         "pickup.randomize",
         "marts.randomize",
         "marts.randomize-bp",
+        "marts.expanded-layout",
         "marts.add-rare-candies",
         "marts.add-ev-items",
         "marts.free-mega-stones",
@@ -754,7 +755,7 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunMarts(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        string[] ids = { "marts.randomize", "marts.randomize-bp", "marts.add-rare-candies", "marts.add-ev-items", "marts.free-mega-stones", "marts.ban-ability-capsule" };
+        string[] ids = { "marts.randomize", "marts.randomize-bp", "marts.expanded-layout", "marts.add-rare-candies", "marts.add-ev-items", "marts.free-mega-stones", "marts.ban-ability-capsule" };
         if (!ids.Any(id => Has(actions, id)))
             return;
 
@@ -775,6 +776,17 @@ internal static class BatchGen7ActionExecutor
 
     private static void ApplyMartActions(Form form, Dictionary<string, GlobalRandomizationAction> actions, bool usum)
     {
+        if (Has(actions, "marts.expanded-layout"))
+        {
+            if (!usum)
+                throw new NotSupportedException("Expanded Marts batch action is currently supported only for USUM.");
+
+            Invoke(
+                form,
+                "ApplyExpandedMartsFromTemplate",
+                Get(actions, "marts.expanded-layout"));
+        }
+
         if (Has(actions, "marts.randomize"))
         {
             var action = Get(actions, "marts.randomize");
