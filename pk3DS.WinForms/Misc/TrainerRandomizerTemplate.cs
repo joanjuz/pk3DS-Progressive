@@ -108,7 +108,13 @@ public sealed class TrainerLevelCapTemplateEntry
 {
     public int TrainerID { get; set; }
     public bool Use { get; set; } = true;
+
+    // 0 means: use CurrentAceLevel. CurrentAceLevel is persisted so Player
+    // Level Caps can import the Trainer Caps configuration without reopening
+    // or re-reading trainer GARC data.
     public int LevelCap { get; set; }
+    public int CurrentAceLevel { get; set; }
+
     public bool Mega { get; set; }
     public bool ZMove { get; set; }
 }
@@ -337,6 +343,8 @@ public static class TrainerRandomizerTemplateFile
                 throw new InvalidDataException("Level Cap trainer IDs must be greater than 0.");
             if (entries.Any(e => e.LevelCap < 0 || e.LevelCap > 100))
                 throw new InvalidDataException("Level caps must be 0 (use current ace) or between 1 and 100.");
+            if (entries.Any(e => e.CurrentAceLevel < 0 || e.CurrentAceLevel > 100))
+                throw new InvalidDataException("CurrentAceLevel must be between 0 and 100.");
             if (entries.GroupBy(e => e.TrainerID).Any(g => g.Count() > 1))
                 throw new InvalidDataException("Duplicate trainer IDs found in Level Caps.");
         }

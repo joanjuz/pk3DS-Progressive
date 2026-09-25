@@ -1306,6 +1306,7 @@ public partial class SMTE : Form
                     TrainerID = r.TrainerID,
                     Use = true,
                     LevelCap = r.LevelCap,
+                    CurrentAceLevel = r.CurrentAceLevel,
                     Mega = r.GuaranteeMega,
                     ZMove = r.GuaranteeZMove,
                 }).ToList(),
