@@ -18,12 +18,83 @@ public partial class SMTE : Form
     private CheckBox CHK_SmartHeldItems;
     private CheckBox CHK_ItemClause;
     private ComboBox CB_SmartHeldItemMode;
+    private ComboBox CB_SmartHeldItemModeImportant;
+    private ComboBox CB_SmartHeldItemModeBoss;
     private CheckBox CHK_BetterMovesets;
+    private CheckBox CHK_BetterMovesetsNormalTrainers;
+    private CheckBox CHK_BetterMovesetsImportantTrainers;
+    private CheckBox CHK_BetterMovesetsBosses;
+
+    private CheckBox CHK_SmartItemsNormalTrainers;
+    private CheckBox CHK_SmartItemsImportantTrainers;
+    private CheckBox CHK_SmartItemsBosses;
     private readonly LearnsetRandomizer learn = new(Main.Config, Main.Config.Learnsets);
     private readonly TrainerData7[] Trainers;
     private string[][] AltForms;
     private static int[] SpecialClasses;
-    private static readonly int[] ImportantTrainers = Main.Config.USUM ? Legal.ImportantTrainers_USUM : Legal.ImportantTrainers_SM;
+    // Universal Pokemon Randomizer ZX trainer classification.
+    // Important = RIVAL*, FRIEND*, *STRONG.
+    // Boss = ELITE*, CHAMPION*, UBER*, *LEADER.
+    //
+    // Keep these lists local to the trainer-template feature so the older
+    // pk3DS Legal.ImportantTrainers_* arrays remain untouched elsewhere.
+    private static readonly int[] UPRZXImportantTrainers_SM =
+    [
+        006, 007, 008, 009, 010, 011, 012, 013, 014,
+        052, 074, 075, 076, 077, 078, 079, 082, 083, 084, 089,
+        129, 132, 144, 146, 167, 185,
+        215, 216, 217, 218, 219, 220, 221, 222,
+        238, 239, 240, 241,
+        356, 357, 358, 360,
+        396, 398, 401, 405, 410, 412, 413, 414,
+        415, 416, 417, 418, 419,
+        435, 438, 439, 440, 441,
+        447, 448, 449, 450, 451, 452,
+        467, 477, 478, 479, 481, 482, 483, 484,
+    ];
+
+    private static readonly int[] UPRZXBossTrainers_SM =
+    [
+        023, 090, 131, 138, 149, 152, 153, 154, 155, 156, 158,
+        235, 236,
+        349, 350, 351, 352, 359, 400, 403,
+    ];
+
+    private static readonly int[] UPRZXImportantTrainers_USUM =
+    [
+        009, 010, 011, 012, 013, 014,
+        052, 074, 075, 076, 077, 078, 079, 082, 083, 084, 089,
+        132, 144, 146, 185,
+        215, 216, 217, 218, 219, 220, 221, 222,
+        238, 239, 240, 241,
+        356, 357, 358,
+        396, 398, 401, 405, 410, 412,
+        415, 416, 417, 418, 419,
+        438, 439, 440, 441,
+        447, 448, 449, 450, 451, 452,
+        477, 478, 479,
+        491, 492, 493, 494, 495, 496,
+        498, 499, 500, 501, 502, 503, 504, 505, 506, 507,
+        561, 623, 648, 649, 651, 652,
+    ];
+
+    private static readonly int[] UPRZXBossTrainers_USUM =
+    [
+        023, 090, 131, 138, 149, 153, 154, 156,
+        235, 236,
+        350, 351, 352, 359,
+        489, 490, 497, 508,
+        541, 542, 543, 558, 559, 560, 562, 572, 573, 580,
+        644, 645, 647, 650,
+    ];
+
+    private static readonly int[] ImportantTrainers = Main.Config.USUM
+        ? UPRZXImportantTrainers_USUM
+        : UPRZXImportantTrainers_SM;
+
+    private static readonly int[] BossTrainers = Main.Config.USUM
+        ? UPRZXBossTrainers_USUM
+        : UPRZXBossTrainers_SM;
     private static int[] FinalEvo = Legal.FinalEvolutions_7;
     private static readonly int[] Legendary = Main.Config.USUM ? Legal.Legendary_USUM : Legal.Legendary_SM;
     private static readonly int[] Mythical = Main.Config.USUM ? Legal.Mythical_USUM : Legal.Mythical_SM;
@@ -40,8 +111,6 @@ public partial class SMTE : Form
     private CheckBox CHK_RandomDoubleBattles;
     private NumericUpDown NUD_DoubleBattleChance;
     private CheckBox CHK_BanBadItems;
-    private TrainerHeldItemTemplate HeldItemTemplate;
-    private TrainerBetterMovesetTemplate BetterMovesetTemplate;
 
     private List<ProgressiveBSTRule> ProgressiveBSTRules = GetDefaultProgressiveBSTRules();
     private List<TrainerLevelCapRule> LevelCapRules = [];
@@ -50,6 +119,14 @@ public partial class SMTE : Form
     private int PreviousTrainerGap = 2;
     private decimal RegularTrainerCurvePower = 1.6m;
     private bool GuaranteeMegaInImportantBattles = false;
+    // The Rules tab temporarily expands the randomizer workspace.
+    // Other randomizer tabs keep their original dimensions.
+    private bool Gen7RulesWorkspaceHooked;
+    private TabPage Gen7RulesTab;
+    private int Gen7BaseRandomizerHeight = -1;
+    private int Gen7BaseTrainerDataHeight = -1;
+    private int Gen7BaseTeamLabelTop = -1;
+    private int[] Gen7BaseTeamTops;
 
 
     //private readonly byte[][] trclass;
@@ -83,8 +160,6 @@ public partial class SMTE : Form
         NUD_Shiny.Maximum = 100m;
         NUD_Shiny.Left = 264;
         NUD_Shiny.Width = 64;
-        TrainerHeldItemTemplate.EnsureDefaultFile();
-        TrainerBetterMovesetTemplate.EnsureDefaultFile();
         AddSmartHeldItemControls();
         AddBetterMovesetControls();
         AddProgressiveBSTControls();
@@ -120,6 +195,10 @@ public partial class SMTE : Form
 
         if (TrainerRandomizerTemplateFile.TryGetCurrent(CurrentTrainerTemplateGame, out var currentTemplate))
             ApplyTrainerTemplate(currentTemplate, showMessage: false);
+        // RandSettings can restore the original CHK_RandomItems coordinates
+        // after our custom Rules layout has already run. Re-apply the layout
+        // last so Random Held Items and Smart Items cannot overlap.
+        PlaceGen7ImplementedOptionsInRulesTab();
     }
     private sealed class ProgressiveBSTRule
     {
@@ -357,7 +436,10 @@ public partial class SMTE : Form
     {
         var candidates = new List<TrainerLevelCapRule>();
 
-        foreach (int id in ImportantTrainers.Where(id => id > 0 && id < Trainers.Length))
+        foreach (int id in ImportantTrainers
+            .Concat(BossTrainers)
+            .Distinct()
+            .Where(id => id > 0 && id < Trainers.Length))
         {
             var trainer = Trainers[id];
             if (trainer.Pokemon.Count == 0)
@@ -367,7 +449,7 @@ public partial class SMTE : Form
             {
                 Enabled = true,
                 TrainerID = id,
-                Group = "Important",
+                Group = BossTrainers.Contains(id) ? "Boss" : "Important",
                 Trainer = GetTrainerDisplayName(trainer),
                 CurrentAceLevel = GetAceLevel(trainer),
                 LevelCap = 0,
@@ -474,7 +556,27 @@ public partial class SMTE : Form
             MoveSettings = new TrainerMoveSettingsTemplate
             {
                 Source = (TrainerMoveSource)Math.Clamp(CB_Moves.SelectedIndex, 0, 3),
+
+                RandomDoubleBattles = CHK_RandomDoubleBattles?.Checked ?? false,
+                DoubleBattleChance = NUD_DoubleBattleChance is null ? 0 : (int)NUD_DoubleBattleChance.Value,
+                MaxTrainerAI = CHK_MaxAI.Checked,
+
+                RandomHeldItems = CHK_RandomItems.Checked,
+                BanBadItems = CHK_BanBadItems?.Checked ?? false,
+                ItemClause = CHK_ItemClause?.Checked ?? false,
                 BetterMovesets = CHK_BetterMovesets.Checked,
+                BetterMovesetsNormalTrainers = CHK_BetterMovesetsNormalTrainers?.Checked ?? true,
+                BetterMovesetsImportantTrainers = CHK_BetterMovesetsImportantTrainers?.Checked ?? true,
+                BetterMovesetsBosses = CHK_BetterMovesetsBosses?.Checked ?? true,
+                SmartItems = CHK_SmartHeldItems?.Checked ?? false,
+                SmartItemsNormalTrainers = CHK_SmartItemsNormalTrainers?.Checked ?? true,
+                SmartItemsImportantTrainers = CHK_SmartItemsImportantTrainers?.Checked ?? true,
+                SmartItemsBosses = CHK_SmartItemsBosses?.Checked ?? true,
+                // Keep the legacy value synchronized with Normal Trainers.
+                SmartItemMode = GetSmartTrainerItemMode("Normal"),
+                SmartItemModeNormalTrainers = GetSmartTrainerItemMode("Normal"),
+                SmartItemModeImportantTrainers = GetSmartTrainerItemMode("Important"),
+                SmartItemModeBosses = GetSmartTrainerItemMode("Boss"),
                 ForceHighPower = CHK_ForceHighPower.Checked,
                 HighPowerLevel = (int)NUD_ForceHighPower.Value,
                 NoFixedDamage = CHK_NoFixedDamage.Checked,
@@ -542,7 +644,51 @@ public partial class SMTE : Form
         {
             var moves = template.MoveSettings;
             CB_Moves.SelectedIndex = Math.Clamp((int)moves.Source, 0, Math.Max(0, CB_Moves.Items.Count - 1));
+            if (moves.RandomDoubleBattles.HasValue)
+                CHK_RandomDoubleBattles.Checked = moves.RandomDoubleBattles.Value;
+
+            if (moves.DoubleBattleChance.HasValue)
+                SetTemplateNumericValue(NUD_DoubleBattleChance, moves.DoubleBattleChance.Value);
+
+            if (moves.MaxTrainerAI.HasValue)
+                CHK_MaxAI.Checked = moves.MaxTrainerAI.Value;
+
+            if (moves.RandomHeldItems.HasValue)
+                CHK_RandomItems.Checked = moves.RandomHeldItems.Value;
+
+            if (moves.BanBadItems.HasValue && CHK_BanBadItems is not null)
+                CHK_BanBadItems.Checked = moves.BanBadItems.Value;
+
+            if (moves.ItemClause.HasValue && CHK_ItemClause is not null)
+                CHK_ItemClause.Checked = moves.ItemClause.Value;
             CHK_BetterMovesets.Checked = moves.BetterMovesets;
+            CHK_BetterMovesetsNormalTrainers.Checked = moves.BetterMovesetsNormalTrainers;
+            CHK_BetterMovesetsImportantTrainers.Checked = moves.BetterMovesetsImportantTrainers;
+            CHK_BetterMovesetsBosses.Checked = moves.BetterMovesetsBosses;
+
+            CHK_SmartHeldItems.Checked = moves.SmartItems;
+            CHK_SmartItemsNormalTrainers.Checked = moves.SmartItemsNormalTrainers;
+            CHK_SmartItemsImportantTrainers.Checked = moves.SmartItemsImportantTrainers;
+            CHK_SmartItemsBosses.Checked = moves.SmartItemsBosses;
+            int legacySmartItemMode = Math.Clamp(moves.SmartItemMode, 0, 2);
+
+            CB_SmartHeldItemMode.SelectedIndex =
+                moves.SmartItemModeNormalTrainers >= 0
+                    ? Math.Clamp(moves.SmartItemModeNormalTrainers, 0, 2)
+                    : legacySmartItemMode;
+
+            CB_SmartHeldItemModeImportant.SelectedIndex =
+                moves.SmartItemModeImportantTrainers >= 0
+                    ? Math.Clamp(moves.SmartItemModeImportantTrainers, 0, 2)
+                    : legacySmartItemMode;
+
+            CB_SmartHeldItemModeBoss.SelectedIndex =
+                moves.SmartItemModeBosses >= 0
+                    ? Math.Clamp(moves.SmartItemModeBosses, 0, 2)
+                    : legacySmartItemMode;
+
+            UpdateBetterMovesetsSubmenuState();
+            UpdateSmartItemsSubmenuState();
             CHK_ForceHighPower.Checked = moves.ForceHighPower;
             SetTemplateNumericValue(NUD_ForceHighPower, moves.HighPowerLevel);
             CHK_NoFixedDamage.Checked = moves.NoFixedDamage;
@@ -610,7 +756,7 @@ public partial class SMTE : Form
             return;
         }
 
-        TrainerMoveRulesDialog.Edit(this, ref MoveRules);
+        TrainerMoveRulesDialog.Edit(this, ref MoveRules, showPerTrainerBetterSmart: false);
     }
 
     private int GetSlot(object sender)
@@ -759,18 +905,63 @@ public partial class SMTE : Form
                 Checked = false,
             };
 
-            CB_SmartHeldItemMode ??= new ComboBox
+            CHK_SmartItemsNormalTrainers ??= new CheckBox
             {
-                Name = "CB_SmartHeldItemMode",
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Width = 95,
+                Name = "CHK_SmartItemsNormalTrainers",
+                Text = "Normal Trainers",
+                AutoSize = true,
+                Checked = true,
             };
 
-            if (CB_SmartHeldItemMode.Items.Count == 0)
+            CHK_SmartItemsImportantTrainers ??= new CheckBox
             {
-                CB_SmartHeldItemMode.Items.AddRange(new object[] { "Normal", "Strong", "Competitive" });
-                CB_SmartHeldItemMode.SelectedIndex = 1;
+                Name = "CHK_SmartItemsImportantTrainers",
+                Text = "Important Trainers",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CHK_SmartItemsBosses ??= new CheckBox
+            {
+                Name = "CHK_SmartItemsBosses",
+                Text = "Bosses",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CB_SmartHeldItemMode ??= new ComboBox
+            {
+                Name = "CB_SmartHeldItemModeNormal",
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 105,
+            };
+
+            CB_SmartHeldItemModeImportant ??= new ComboBox
+            {
+                Name = "CB_SmartHeldItemModeImportant",
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 105,
+            };
+
+            CB_SmartHeldItemModeBoss ??= new ComboBox
+            {
+                Name = "CB_SmartHeldItemModeBoss",
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 105,
+            };
+
+            void SetupModeCombo(ComboBox combo)
+            {
+                if (combo.Items.Count != 0)
+                    return;
+
+                combo.Items.AddRange(new object[] { "Normal", "Strong", "Competitive" });
+                combo.SelectedIndex = 1;
             }
+
+            SetupModeCombo(CB_SmartHeldItemMode);
+            SetupModeCombo(CB_SmartHeldItemModeImportant);
+            SetupModeCombo(CB_SmartHeldItemModeBoss);
 
             CHK_ItemClause ??= new CheckBox
             {
@@ -785,38 +976,46 @@ public partial class SMTE : Form
             parent ??= Tab_PKM2;
             parent ??= this;
 
-            if (!parent.Controls.Contains(CHK_SmartHeldItems))
-                parent.Controls.Add(CHK_SmartHeldItems);
-
-            if (!parent.Controls.Contains(CB_SmartHeldItemMode))
-                parent.Controls.Add(CB_SmartHeldItemMode);
-
-            if (!parent.Controls.Contains(CHK_ItemClause))
-                parent.Controls.Add(CHK_ItemClause);
+            foreach (Control control in new Control[]
+            {
+                CHK_SmartHeldItems,
+                CHK_SmartItemsNormalTrainers,
+                CHK_SmartItemsImportantTrainers,
+                CHK_SmartItemsBosses,
+                CB_SmartHeldItemMode,
+                CB_SmartHeldItemModeImportant,
+                CB_SmartHeldItemModeBoss,
+                CHK_ItemClause,
+            })
+            {
+                if (!parent.Controls.Contains(control))
+                    parent.Controls.Add(control);
+            }
 
             int x = randomItems is not null ? randomItems.Left : 6;
             int y = randomItems is not null ? randomItems.Bottom + 5 : 122;
 
             CHK_SmartHeldItems.Location = new Point(x, y);
-            CB_SmartHeldItemMode.Location = new Point(x + 105, y - 2);
-            CHK_ItemClause.Location = new Point(x, CHK_SmartHeldItems.Bottom + 5);
-            CHK_SmartHeldItems.Enabled = randomItems?.Checked ?? true;
-            CB_SmartHeldItemMode.Enabled = randomItems?.Checked ?? true;
-            CHK_ItemClause.Enabled = randomItems?.Checked ?? true;
+            CHK_SmartItemsNormalTrainers.Location = new Point(x + 20, y + 24);
+            CHK_SmartItemsImportantTrainers.Location = new Point(x + 145, y + 24);
+            CHK_SmartItemsBosses.Location = new Point(x + 285, y + 24);
+
+            CB_SmartHeldItemMode.Location = new Point(x + 20, y + 47);
+            CB_SmartHeldItemModeImportant.Location = new Point(x + 145, y + 47);
+            CB_SmartHeldItemModeBoss.Location = new Point(x + 285, y + 47);
+
+            CHK_ItemClause.Location = new Point(x, y + 78);
+
+            CHK_SmartHeldItems.CheckedChanged += (_, _) => UpdateSmartItemsSubmenuState();
+
+            CHK_SmartItemsNormalTrainers.CheckedChanged += (_, _) => UpdateSmartItemsSubmenuState();
+            CHK_SmartItemsImportantTrainers.CheckedChanged += (_, _) => UpdateSmartItemsSubmenuState();
+            CHK_SmartItemsBosses.CheckedChanged += (_, _) => UpdateSmartItemsSubmenuState();
 
             if (randomItems is not null)
-            {
-                randomItems.CheckedChanged += (_, _) =>
-                {
-                    CHK_SmartHeldItems.Enabled = randomItems.Checked;
-                    CB_SmartHeldItemMode.Enabled = randomItems.Checked;
-                    CHK_ItemClause.Enabled = randomItems.Checked;
-                };
-            }
+                randomItems.CheckedChanged += (_, _) => UpdateSmartItemsSubmenuState();
 
-            CHK_SmartHeldItems.BringToFront();
-            CB_SmartHeldItemMode.BringToFront();
-            CHK_ItemClause.BringToFront();
+            UpdateSmartItemsSubmenuState();
         }
         catch
         {
@@ -824,15 +1023,78 @@ public partial class SMTE : Form
         }
     }
 
+    private void UpdateSmartItemsSubmenuState()
+    {
+        if (CHK_SmartHeldItems is null)
+            return;
+
+        var randomItems = Controls.Find("CHK_RandomItems", true).FirstOrDefault() as CheckBox;
+        bool randomItemsEnabled = randomItems?.Checked ?? true;
+        bool showSubmenu = CHK_SmartHeldItems.Checked;
+
+        CHK_SmartHeldItems.Enabled = randomItemsEnabled;
+
+        foreach (Control control in new Control[]
+        {
+            CHK_SmartItemsNormalTrainers,
+            CHK_SmartItemsImportantTrainers,
+            CHK_SmartItemsBosses,
+            CB_SmartHeldItemMode,
+            CB_SmartHeldItemModeImportant,
+            CB_SmartHeldItemModeBoss,
+        })
+        {
+            if (control is null)
+                continue;
+
+            control.Visible = showSubmenu;
+        }
+
+        if (CHK_SmartItemsNormalTrainers is not null)
+            CHK_SmartItemsNormalTrainers.Enabled = randomItemsEnabled && showSubmenu;
+        if (CHK_SmartItemsImportantTrainers is not null)
+            CHK_SmartItemsImportantTrainers.Enabled = randomItemsEnabled && showSubmenu;
+        if (CHK_SmartItemsBosses is not null)
+            CHK_SmartItemsBosses.Enabled = randomItemsEnabled && showSubmenu;
+
+        if (CB_SmartHeldItemMode is not null)
+            CB_SmartHeldItemMode.Enabled =
+                randomItemsEnabled && showSubmenu && (CHK_SmartItemsNormalTrainers?.Checked ?? false);
+
+        if (CB_SmartHeldItemModeImportant is not null)
+            CB_SmartHeldItemModeImportant.Enabled =
+                randomItemsEnabled && showSubmenu && (CHK_SmartItemsImportantTrainers?.Checked ?? false);
+
+        if (CB_SmartHeldItemModeBoss is not null)
+            CB_SmartHeldItemModeBoss.Enabled =
+                randomItemsEnabled && showSubmenu && (CHK_SmartItemsBosses?.Checked ?? false);
+
+        if (CHK_ItemClause is not null)
+            CHK_ItemClause.Enabled = randomItemsEnabled;
+
+        if (!randomItemsEnabled)
+            CHK_SmartHeldItems.Checked = false;
+    }
+
     private bool UseSmartTrainerItems()
         => CHK_SmartHeldItems is not null && CHK_SmartHeldItems.Checked;
 
-    private int GetSmartTrainerItemMode()
-        => CB_SmartHeldItemMode is null ? 1 : Math.Max(0, CB_SmartHeldItemMode.SelectedIndex);
+    private int GetSmartTrainerItemMode(string trainerGroup)
+    {
+        ComboBox combo = trainerGroup switch
+        {
+            "Boss" => CB_SmartHeldItemModeBoss,
+            "Important" => CB_SmartHeldItemModeImportant,
+            _ => CB_SmartHeldItemMode,
+        };
+
+        return combo is null
+            ? 1
+            : Math.Clamp(combo.SelectedIndex, 0, 2);
+    }
 
     private bool UseItemClause()
         => CHK_RandomItems.Checked && CHK_ItemClause is not null && CHK_ItemClause.Checked;
-
     private void AddBetterMovesetControls()
     {
         try
@@ -845,26 +1107,87 @@ public partial class SMTE : Form
                 Checked = false,
             };
 
+            CHK_BetterMovesetsNormalTrainers ??= new CheckBox
+            {
+                Name = "CHK_BetterMovesetsNormalTrainers",
+                Text = "Normal Trainers",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CHK_BetterMovesetsImportantTrainers ??= new CheckBox
+            {
+                Name = "CHK_BetterMovesetsImportantTrainers",
+                Text = "Important Trainers",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CHK_BetterMovesetsBosses ??= new CheckBox
+            {
+                Name = "CHK_BetterMovesetsBosses",
+                Text = "Bosses",
+                AutoSize = true,
+                Checked = true,
+            };
+
             Control parent = CB_Moves?.Parent;
-            if (parent is null)
-                parent = Tab_Rand;
-            if (parent is null)
-                parent = this;
-            if (!parent.Controls.Contains(CHK_BetterMovesets))
-                parent.Controls.Add(CHK_BetterMovesets);
+            parent ??= Tab_Rand;
+            parent ??= this;
+
+            foreach (Control control in new Control[]
+            {
+                CHK_BetterMovesets,
+                CHK_BetterMovesetsNormalTrainers,
+                CHK_BetterMovesetsImportantTrainers,
+                CHK_BetterMovesetsBosses,
+            })
+            {
+                if (!parent.Controls.Contains(control))
+                    parent.Controls.Add(control);
+            }
 
             int x = CB_Moves is not null ? CB_Moves.Right + 12 : 220;
             int y = CB_Moves is not null ? CB_Moves.Top + 2 : 270;
-            CHK_BetterMovesets.Location = new Point(x, y);
-            CHK_BetterMovesets.BringToFront();
 
-            int neededWidth = CHK_BetterMovesets.Right + 20;
-            if (parent.Width < neededWidth)
-                parent.Width = neededWidth;
+            CHK_BetterMovesets.Location = new Point(x, y);
+            CHK_BetterMovesetsNormalTrainers.Location = new Point(x + 20, y + 24);
+            CHK_BetterMovesetsImportantTrainers.Location = new Point(x + 135, y + 24);
+            CHK_BetterMovesetsBosses.Location = new Point(x + 270, y + 24);
+
+            CHK_BetterMovesets.CheckedChanged += (_, _) => UpdateBetterMovesetsSubmenuState();
+            UpdateBetterMovesetsSubmenuState();
+
+            CHK_BetterMovesets.BringToFront();
+            CHK_BetterMovesetsNormalTrainers.BringToFront();
+            CHK_BetterMovesetsImportantTrainers.BringToFront();
+            CHK_BetterMovesetsBosses.BringToFront();
         }
         catch
         {
             // UI-only helper.
+        }
+    }
+
+    private void UpdateBetterMovesetsSubmenuState()
+    {
+        if (CHK_BetterMovesets is null)
+            return;
+
+        bool showSubmenu = CHK_BetterMovesets.Checked;
+
+        foreach (Control control in new Control[]
+        {
+            CHK_BetterMovesetsNormalTrainers,
+            CHK_BetterMovesetsImportantTrainers,
+            CHK_BetterMovesetsBosses,
+        })
+        {
+            if (control is null)
+                continue;
+
+            control.Visible = showSubmenu;
+            control.Enabled = showSubmenu;
         }
     }
 
@@ -1430,7 +1753,8 @@ public partial class SMTE : Form
             return;
 
         EnsureAtLeastTwoPokemon(tr);
-        tr.Mode = (BattleMode)1;
+        tr.Mode = BattleMode.Doubles;
+        tr.AI |= (int)TrainerAI.Doubles;
     }
 
     private static void EnsureAtLeastTwoPokemon(TrainerData7 tr)
@@ -1509,32 +1833,10 @@ public partial class SMTE : Form
                 items = cleanItems;
         }
 
-        items = SmartTrainerItemPicker.AddSmartTrainerItemPoolExtras(items);
+        bool anySmartItems = UseSmartTrainerItems();
 
-        HeldItemTemplate = CHK_RandomItems.Checked
-            ? TrainerHeldItemTemplate.LoadOrCreateDefault(itemlist, items)
-            : null;
-
-        if (HeldItemTemplate is not null && HeldItemTemplate.Warnings.Count > 0)
-        {
-            WinFormsUtil.Alert(
-                string.Join(Environment.NewLine, HeldItemTemplate.Warnings.Take(8)),
-                $"Held item template loaded with {HeldItemTemplate.Warnings.Count} warning(s)."
-            );
-        }
-
-        BetterMovesetTemplate = UseBetterMovesets()
-            ? TrainerBetterMovesetTemplate.LoadOrCreateDefault()
-            : null;
-
-        if (BetterMovesetTemplate is not null && BetterMovesetTemplate.Warnings.Count > 0)
-        {
-            WinFormsUtil.Alert(
-                string.Join(Environment.NewLine, BetterMovesetTemplate.Warnings.Take(8)),
-                $"Better moveset template loaded with {BetterMovesetTemplate.Warnings.Count} warning(s)."
-            );
-        }
-
+        if (anySmartItems)
+            items = SmartTrainerItemPicker.AddSmartTrainerItemPoolExtras(items);
         var levelCapStages = BuildLevelCapStages();
 
         int progressTotal = Math.Max(1, Trainers.Length);
@@ -1548,8 +1850,9 @@ public partial class SMTE : Form
                 continue;
 
             int trainerAce = GetAceLevel(tr);
-            bool isImportantTrainer = ImportantTrainers.Contains(tr.ID);
-            string trainerGroup = isImportantTrainer ? "Important" : "Regular";
+            TrainerImportanceCategory trainerCategory = GetTrainerImportanceCategory(tr.ID);
+            bool isImportantTrainer = trainerCategory != TrainerImportanceCategory.Regular;
+            string trainerGroup = trainerCategory.ToString();
 
             // Trainer Properties
             if (CHK_RandomClass.Checked)
@@ -1711,7 +2014,12 @@ public partial class SMTE : Form
                 if (CHK_MaxDiffPKM.Checked)
                     pk.IVs = [31, 31, 31, 31, 31, 31];
                 if (CHK_MaxAI.Checked)
+                {
                     tr.AI |= (int)(TrainerAI.Basic | TrainerAI.Strong | TrainerAI.Expert | TrainerAI.PokeChange);
+
+                    if (tr.Mode == BattleMode.Doubles)
+                        tr.AI |= (int)TrainerAI.Doubles;
+                }
 
                 if (CHK_ForceFullyEvolved.Checked && pk.Level >= NUD_ForceFullyEvolved.Value && !FinalEvo.Contains(pk.Species))
                 {
@@ -1736,7 +2044,7 @@ public partial class SMTE : Form
                 if (CHK_ForceHighPower.Checked && pk.Level >= NUD_ForceHighPower.Value)
                     pk.Moves = learn.GetHighPoweredMoves(pk.Species, pk.Form, 4);
 
-                if (ShouldUseBetterMoveset(moveRule, tr.ID, isImportantTrainer, trainerGroup, pk.Level) && CB_Moves.SelectedIndex != 3)
+                if (ShouldUseBetterMoveset(trainerGroup) && CB_Moves.SelectedIndex != 3)
                 {
                     int teamWeatherMask = GetTeamWeatherSupportMask(tr);
                     pk.Moves = SmartTrainerMovePicker.PickBetterMoveset(
@@ -1774,10 +2082,16 @@ public partial class SMTE : Form
 
                 int[] slotItemPool = ApplyItemClauseToPool(randomItemPool, usedHeldItems);
 
-                if (canRandomizeItem && HeldItemTemplate is null)
+                if (canRandomizeItem)
                 {
-                    bool forceSmartFromRule = moveRule is not null && moveRule.Enabled && moveRule.SmartItems;
-                    if (forceSmartFromRule || UseSmartTrainerItems())
+                    // GetTrainerMoveRule() only returns Use-checked rules.
+                    // When present, its Smart Items checkbox completely overrides
+                    // the global Smart Items category setting for this trainer.
+                    bool useSmartItems =
+                        UseSmartTrainerItems() &&
+                        IsSmartItemsCategoryEnabled(trainerGroup);
+
+                    if (useSmartItems)
                     {
                         pk.Item = SmartTrainerItemPicker.Pick(
                             pk.Species,
@@ -1787,38 +2101,15 @@ public partial class SMTE : Form
                             slotItemPool,
                             pk.Ability,
                             FinalEvo.Contains(pk.Species),
-                            forceSmartFromRule ? 2 : GetSmartTrainerItemMode()
+                            GetSmartTrainerItemMode(trainerGroup)
                         );
                     }
                     else
                     {
                         pk.Item = slotItemPool[Util.Random32() % slotItemPool.Length];
                     }
-                }
-
-                if (canRandomizeItem && HeldItemTemplate is not null)
-                {
-                    int templateItem = HeldItemTemplate.PickItem(
-                        tr.ID,
-                        isImportantTrainer,
-                        trainerGroup,
-                        pk.Item,
-                        pk.Species,
-                        pk.Form,
-                        pk.Level,
-                        pk.Moves,
-                        slotItemPool,
-                        pk.Ability,
-                        FinalEvo.Contains(pk.Species),
-                        GetSmartTrainerItemMode(),
-                        usedHeldItems
-                    );
-
-                    pk.Item = Math.Max(0, templateItem);
-                }
-
-                if (canRandomizeItem)
                     TrackItemClause(pk.Item, usedHeldItems);
+                }
             }
             SaveData(tr, i);
         }
@@ -1852,17 +2143,45 @@ public partial class SMTE : Form
         usedItems.Add(item);
     }
 
-    private bool ShouldUseBetterMoveset(TrainerMoveRule rule, int trainerID, bool isImportantTrainer, string trainerGroup, int level)
+    private enum TrainerImportanceCategory
     {
-        if (rule != null && rule.Enabled && rule.BetterMovesets)
-            return true;
+        Regular,
+        Important,
+        Boss,
+    }
 
+    private static TrainerImportanceCategory GetTrainerImportanceCategory(int trainerID)
+    {
+        if (BossTrainers.Contains(trainerID))
+            return TrainerImportanceCategory.Boss;
+
+        if (ImportantTrainers.Contains(trainerID))
+            return TrainerImportanceCategory.Important;
+
+        return TrainerImportanceCategory.Regular;
+    }
+
+    private bool ShouldUseBetterMoveset(string trainerGroup)
+    {
         if (!UseBetterMovesets())
             return false;
 
-        return BetterMovesetTemplate?.ShouldApply(trainerID, isImportantTrainer, trainerGroup, level) ?? true;
+        return trainerGroup switch
+        {
+            "Boss" => CHK_BetterMovesetsBosses?.Checked ?? true,
+            "Important" => CHK_BetterMovesetsImportantTrainers?.Checked ?? true,
+            _ => CHK_BetterMovesetsNormalTrainers?.Checked ?? true,
+        };
     }
-
+    private bool IsSmartItemsCategoryEnabled(string trainerGroup)
+    {
+        return trainerGroup switch
+        {
+            "Boss" => CHK_SmartItemsBosses?.Checked ?? true,
+            "Important" => CHK_SmartItemsImportantTrainers?.Checked ?? true,
+            _ => CHK_SmartItemsNormalTrainers?.Checked ?? true,
+        };
+    }
     private static bool ShouldApplyMoveRule(TrainerMoveRule rule)
     {
         return rule is not null && (rule.MinMovePower > 0 || rule.UseStrongestAttackStat || !rule.AllowStatusMoves);
@@ -2390,6 +2709,49 @@ public partial class SMTE : Form
                 control.BringToFront();
             }
 
+            GroupBox GetOrCreateRulesGroup(string name, string text, int x, int y, int width, int height)
+            {
+                var group = rulesTab.Controls.Find(name, false)
+                    .OfType<GroupBox>()
+                    .FirstOrDefault();
+
+                if (group is null)
+                {
+                    group = new GroupBox
+                    {
+                        Name = name,
+                        Text = text,
+                        BackColor = Color.White,
+                        UseCompatibleTextRendering = true,
+                    };
+                    rulesTab.Controls.Add(group);
+                }
+
+                group.Location = new Point(x, y);
+                group.Size = new Size(width, height);
+                group.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                group.BringToFront();
+                return group;
+            }
+
+            void MoveToGroup(Control control, GroupBox group, int x, int y, int width = 0, int height = 0)
+            {
+                if (control is null || group is null)
+                    return;
+
+                if (control.Parent != group)
+                {
+                    control.Parent?.Controls.Remove(control);
+                    group.Controls.Add(control);
+                }
+
+                if (width > 0 || height > 0)
+                    control.Size = new Size(width > 0 ? width : control.Width, height > 0 ? height : control.Height);
+
+                control.Location = new Point(x, y);
+                control.BringToFront();
+            }
+
             var randomItems = Controls.Find("CHK_RandomItems", true).FirstOrDefault() as CheckBox;
             var maxIvs = Controls.Find("CHK_MaxDiffPKM", true).FirstOrDefault() as CheckBox;
             var maxAI = Controls.Find("CHK_MaxAI", true).FirstOrDefault() as CheckBox;
@@ -2410,33 +2772,134 @@ public partial class SMTE : Form
                 MoveToRules(percent, 200, 46);
             }
 
-            // Custom features implemented in this fork. Keep them in Rules instead of Stats/Moves.
-            MoveToRules(CHK_BetterMovesets, 12, 82);
-            MoveToRules(randomItems, 12, 112);
-            MoveToRules(CHK_SmartHeldItems, 32, 140);
-            MoveToRules(CB_SmartHeldItemMode, 145, 137, 110, 23);
-            MoveToRules(CHK_BanBadItems, 32, 168);
-            MoveToRules(CHK_ItemClause, 32, 196);
+            // Keep Max IV / Max AI in the compact top area.
+            MoveToRules(maxIvs, 238, 44);
+            MoveToRules(maxAI, 310, 44);
 
-            MoveToRules(maxIvs, 285, 112);
-            MoveToRules(maxAI, 285, 140);
+            int groupWidth = Math.Max(390, rulesTab.ClientSize.Width - 16);
 
-            // Keep dependencies active after moving controls.
+            var betterGroup = GetOrCreateRulesGroup(
+                "GB_GlobalBetterMovesets",
+                "Better Movesets",
+                8,
+                72,
+                groupWidth,
+                72
+            );
+
+            MoveToGroup(CHK_BetterMovesets, betterGroup, 10, 19);
+            MoveToGroup(CHK_BetterMovesetsNormalTrainers, betterGroup, 28, 43);
+            MoveToGroup(CHK_BetterMovesetsImportantTrainers, betterGroup, 145, 43);
+            MoveToGroup(CHK_BetterMovesetsBosses, betterGroup, 280, 43);
+
+            var itemsGroup = GetOrCreateRulesGroup(
+                "GB_GlobalHeldItems",
+                "Held Items",
+                8,
+                150,
+                groupWidth,
+                136
+            );
+
+            // Master row. Leave enough horizontal room for both labels.
+            MoveToGroup(randomItems, itemsGroup, 20, 20);
+            MoveToGroup(CHK_SmartHeldItems, itemsGroup, 275, 20);
+
+            // Category row.
+            MoveToGroup(CHK_SmartItemsNormalTrainers, itemsGroup, 28, 47);
+            MoveToGroup(CHK_SmartItemsImportantTrainers, itemsGroup, 145, 47);
+            MoveToGroup(CHK_SmartItemsBosses, itemsGroup, 280, 47);
+
+            // Independent quality selector directly below each category.
+            MoveToGroup(CB_SmartHeldItemMode, itemsGroup, 28, 70, 105, 23);
+            MoveToGroup(CB_SmartHeldItemModeImportant, itemsGroup, 145, 70, 105, 23);
+            MoveToGroup(CB_SmartHeldItemModeBoss, itemsGroup, 280, 70, 105, 23);
+
+            MoveToGroup(CHK_BanBadItems, itemsGroup, 28, 104);
+            MoveToGroup(CHK_ItemClause, itemsGroup, 165, 104);
+
+            rulesTab.AutoScroll = false;
+            rulesTab.MinimumSize = new Size(
+                Math.Max(rulesTab.MinimumSize.Width, 420),
+                Math.Max(rulesTab.MinimumSize.Height, 290)
+            );
+
+            ConfigureGen7RulesWorkspace(rulesTab);
+            // Refresh dependencies/visibility after the controls move.
+            UpdateBetterMovesetsSubmenuState();
+            UpdateSmartItemsSubmenuState();
+
             if (randomItems is not null)
-            {
-                CHK_SmartHeldItems.Enabled = randomItems.Checked;
-                CB_SmartHeldItemMode.Enabled = randomItems.Checked;
-                CHK_ItemClause.Enabled = randomItems.Checked;
                 CHK_BanBadItems.Enabled = randomItems.Checked;
-            }
 
             // Give the Rules tab enough room so nothing gets clipped.
             rulesTab.AutoScroll = true;
-            rulesTab.MinimumSize = new Size(Math.Max(rulesTab.MinimumSize.Width, 390), 240);
+            rulesTab.MinimumSize = new Size(Math.Max(rulesTab.MinimumSize.Width, 420), Math.Max(rulesTab.MinimumSize.Height, 270));
+            ConfigureGen7RulesWorkspace(rulesTab);
         }
         catch
         {
             // UI-only adjustment.
+        }
+    }
+    private void ConfigureGen7RulesWorkspace(TabPage rulesTab)
+    {
+        if (TC_rand is null || TC_trdata is null || rulesTab is null)
+            return;
+
+        Gen7RulesTab = rulesTab;
+
+        if (Gen7BaseRandomizerHeight < 0)
+        {
+            Gen7BaseRandomizerHeight = TC_rand.Height;
+            Gen7BaseTrainerDataHeight = TC_trdata.Height;
+            Gen7BaseTeamLabelTop = L_Team?.Top ?? -1;
+
+            if (pba is not null)
+                Gen7BaseTeamTops = pba.Select(pb => pb?.Top ?? -1).ToArray();
+        }
+
+        if (!Gen7RulesWorkspaceHooked)
+        {
+            TC_rand.SelectedIndexChanged += (_, _) => ApplyGen7RulesWorkspace();
+            Gen7RulesWorkspaceHooked = true;
+        }
+
+        ApplyGen7RulesWorkspace();
+    }
+
+    private void ApplyGen7RulesWorkspace()
+    {
+        if (TC_rand is null ||
+            TC_trdata is null ||
+            Gen7RulesTab is null ||
+            Gen7BaseRandomizerHeight < 0)
+        {
+            return;
+        }
+
+        bool rulesSelected = TC_rand.SelectedTab == Gen7RulesTab;
+
+        int targetRandomizerHeight = rulesSelected
+            ? 325
+            : Gen7BaseRandomizerHeight;
+
+        int delta = targetRandomizerHeight - Gen7BaseRandomizerHeight;
+
+        TC_rand.Height = targetRandomizerHeight;
+        TC_trdata.Height = Gen7BaseTrainerDataHeight + delta;
+
+        if (L_Team is not null && Gen7BaseTeamLabelTop >= 0)
+            L_Team.Top = Gen7BaseTeamLabelTop + delta;
+
+        if (pba is not null && Gen7BaseTeamTops is not null)
+        {
+            int count = Math.Min(pba.Length, Gen7BaseTeamTops.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (pba[i] is not null && Gen7BaseTeamTops[i] >= 0)
+                    pba[i].Top = Gen7BaseTeamTops[i] + delta;
+            }
         }
     }
     private void AddProgressiveBSTControls()

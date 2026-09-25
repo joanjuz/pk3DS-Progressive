@@ -533,6 +533,65 @@ public partial class RSTE : Form
     private static int[] rModelRestricted;
     public static int[] rFinalEvo;
     private string[] rImportant;
+    // Universal Pokemon Randomizer ZX trainer classification for Gen 6.
+    // Trainer.isImportant(): RIVAL*, FRIEND*, or tags ending in STRONG.
+    // Trainer.isBoss(): ELITE*, CHAMPION*, UBER*, or tags ending in LEADER.
+    //
+    // These lists are used only by Trainer Level Caps / Trainer Move Rules.
+    // Existing pk3DS trainer tags remain untouched for the rest of the randomizer.
+    private static readonly int[] UPRZXImportantTrainers_XY =
+    [
+        130, 131, 132, 137, 138, 139,
+        174, 175, 184, 185, 186, 188,
+        304,
+        321, 322, 323, 324, 325, 327, 328,
+        329, 330, 331, 332, 333, 334, 335, 336, 337,
+        338, 339, 340, 341, 342, 343,
+        344, 345, 346, 347, 348, 349, 350, 351,
+        435, 436, 437, 438, 439,
+        470, 471, 472, 473, 474, 475, 476, 477, 478, 479,
+        519, 520, 521,
+        573,
+        575, 576, 577, 578, 579, 580, 581, 582, 583,
+        584, 585, 586, 587, 588, 589, 590, 591, 592,
+        593, 594, 595, 596, 597, 598, 599, 600, 601,
+        604, 605, 606, 607, 608, 609,
+    ];
+
+    private static readonly int[] UPRZXBossTrainers_XY =
+    [
+        006, 021, 022, 023, 024, 025, 026, 076,
+        187, 269, 270, 271, 276,
+        303, 525, 526,
+    ];
+
+    private static readonly int[] UPRZXImportantTrainers_ORAS =
+    [
+        001, 002, 003, 004, 005, 006,
+        289, 290, 291, 292, 293, 294,
+        295, 296, 297, 298, 299, 300,
+        518,
+        527, 528, 529, 530, 531, 532,
+        583,
+        674, 675, 676, 677, 678, 679,
+        683, 684, 685, 686, 687,
+        688, 689, 690,
+        691, 692, 693,
+        694, 695, 696, 697, 698,
+        699, 700, 701,
+        906, 907, 908,
+        944, 946,
+    ];
+
+    private static readonly int[] UPRZXBossTrainers_ORAS =
+    [
+        178, 231, 235, 236, 266, 271,
+        552, 553, 554, 555, 556, 557,
+        561, 563, 567, 569, 570, 571, 572,
+        680,
+        909, 910, 911, 912, 913,
+        942, 943,
+    ];
     private readonly List<string> Tags = [];
     private readonly Dictionary<string, int> TagTypes = [];
     public static int[] sL; // Random Species List
@@ -540,38 +599,45 @@ public partial class RSTE : Form
 
     private List<TrainerLevelCapRule> GetLevelCapCandidates()
     {
-        rImportant = new string[CB_TrainerID.Items.Count];
-        Tags.Clear();
-        _ = Main.Config.ORAS ? GetTagsORAS() : GetTagsXY();
+        int[] importantIds = Main.Config.ORAS
+            ? UPRZXImportantTrainers_ORAS
+            : UPRZXImportantTrainers_XY;
 
+        int[] bossIds = Main.Config.ORAS
+            ? UPRZXBossTrainers_ORAS
+            : UPRZXBossTrainers_XY;
+
+        var bossSet = bossIds.ToHashSet();
         var candidates = new List<TrainerLevelCapRule>();
-        for (int i = 1; i < rImportant.Length && i < trdata.Length; i++)
+
+        foreach (int id in importantIds
+            .Concat(bossIds)
+            .Distinct()
+            .Where(id => id > 0 && id < trdata.Length && id < trpoke.Length))
         {
-            if (string.IsNullOrWhiteSpace(rImportant[i]) || trpoke[i].Length == 0)
+            if (trpoke[id].Length == 0)
                 continue;
 
-            var trainer = new TrainerData6(trdata[i], trpoke[i], Main.Config.ORAS);
+            var trainer = new TrainerData6(trdata[id], trpoke[id], Main.Config.ORAS);
             if (trainer.Team.Length == 0)
                 continue;
 
             candidates.Add(new TrainerLevelCapRule
             {
                 Enabled = true,
-                TrainerID = i,
-                Group = rImportant[i],
-                Trainer = GetTrainerDisplayName(i, trainer.Class),
+                TrainerID = id,
+                Group = bossSet.Contains(id) ? "Boss" : "Important",
+                Trainer = GetTrainerDisplayName(id, trainer.Class),
                 CurrentAceLevel = GetAceLevel(trainer),
                 LevelCap = 0,
             });
         }
 
-        Tags.Clear();
         return candidates
             .OrderBy(r => r.CurrentAceLevel)
             .ThenBy(r => r.TrainerID)
             .ToList();
     }
-
     private string GetTrainerDisplayName(int trainerID, int trainerClass)
     {
         string name = trainerID < trName.Length ? trName[trainerID] : string.Empty;

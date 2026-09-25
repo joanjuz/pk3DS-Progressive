@@ -141,6 +141,53 @@ public static class TrainerLevelCapDialog
         options.Controls.Add(chkPrevious);
         options.Controls.Add(nudGap);
         options.Controls.Add(gapLabel);
+        var filterLabel = new Label
+        {
+            AutoSize = true,
+            Text = "Show:",
+            Padding = new Padding(18, 4, 0, 0),
+        };
+        var chkImportant = new CheckBox
+        {
+            AutoSize = true,
+            Checked = true,
+            Text = "Important Trainers",
+        };
+        var chkBosses = new CheckBox
+        {
+            AutoSize = true,
+            Checked = true,
+            Text = "Bosses",
+        };
+
+        options.Controls.Add(filterLabel);
+        options.Controls.Add(chkImportant);
+        options.Controls.Add(chkBosses);
+
+        void ApplyTrainerVisibilityFilter()
+        {
+            grid.CurrentCell = null;
+
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                if (row.DataBoundItem is not TrainerLevelCapRule rule)
+                    continue;
+
+                bool isBoss = string.Equals(
+                    rule.Group,
+                    "Boss",
+                    StringComparison.OrdinalIgnoreCase);
+
+                row.Visible = isBoss
+                    ? chkBosses.Checked
+                    : chkImportant.Checked;
+            }
+        }
+
+        chkImportant.CheckedChanged += (_, _) => ApplyTrainerVisibilityFilter();
+        chkBosses.CheckedChanged += (_, _) => ApplyTrainerVisibilityFilter();
+        grid.DataBindingComplete += (_, _) => ApplyTrainerVisibilityFilter();
+        ApplyTrainerVisibilityFilter();
 
         var note = new Label
         {
