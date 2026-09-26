@@ -54,45 +54,172 @@ public sealed record LevelCapInstallResult(
 /// </summary>
 public static class LevelCapPatch
 {
-    public const uint SaveFlagBase = 0x330138D0;
-    public const int PrologueSize = 0x6C;
+    // Global byte-zero base of the USUM Event Flags bitfield in RAM.
+    //
+    // The original level-cap implementation used 0x330138D0 together with
+    // offsets relative to logical event flag 0x0FE0 (byte index 0x01FC).
+    // The v4.17 direct-flags table stores global byte indexes (flagId >> 3),
+    // therefore the correct base is 0x330138D0 - 0x01FC = 0x330136D4.
+    // Global byte-zero base of the USUM Event Flags bitfield in RAM.
+    public const uint SaveFlagBase = 0x330136D4;
+
+    // EventWork7USUM stores 1000 ushort work values immediately before
+    // the Event Flags array. Flags begin at +0x7D0, therefore:
+    // 0x330136D4 - 0x7D0 = 0x33012F04.
+    public const uint EventWorkBase = 0x33012F04;
+
+    // Direct-flags WIP builds used a 4-byte table and this corrected base.
+    // Some earlier WIP builds emitted the same routine with the old base.
+    private const uint PreviousDirectFlagBase = 0x330138D0;
+
+    // Original v1 3-byte tables used offsets relative to the old flag base.
+    private const uint LegacySaveFlagBase = 0x330138D0;
+    private const ushort LegacyFlagByteBaseOffset = 0x01FC;
+
+    public const int PrologueSize = 0xB0;
+    private const int DirectFlagPrologueSize = 0x6C;
+    private const int LegacyPrologueSize = 0x6C;
+
     public const uint BattleHook = 0x015AD4;
     public const uint CandyHook = 0x225ACC;
 
     private const int EntryBattle = 0x00;
     private const int EntryCandy = 0x0C;
 
+    private enum InstalledTableFormat
+    {
+        CurrentMixed,
+        DirectFlagsV2,
+        LegacyV1,
+    }
+
+    // v3 runtime table:
+    //   u8 kind, u8 cap, u16 arg0, u16 arg1
+    //
+    // kind 0: EventFlagSet
+    //   arg0 = global Event Flags byte offset
+    //   arg1 = bit mask
+    //
+    // kind 1: EventWorkAtLeast
+    //   arg0 = Event Work index
+    //   arg1 = minimum ushort value
+    //
+    // terminator:
+    //   kind=0xFF, cap=100, arg0=0, arg1=0
+    //
+    // Assembled ARM routine; EntryCandy remains at +0x0C so the existing
+    // Battle.cro/code.bin hook contracts remain unchanged.
     private static readonly uint[] Routine =
     [
-        0xE2800001, // entry_battle: add  r0, r0, #1
-        0xE92D407E, //               push {r1-r6, lr}
-        0xEA000003, //               b    body
-        0xE92D407E, // entry_candy:  push {r1-r6, lr}
-        0xE1550000, //               cmp  r5, r0
-        0x0A000010, //               beq  deny
-        0xE1A00005, //               mov  r0, r5
-        0xE3500064, // body:         cmp  r0, #100
-        0x8A00000D, //               bhi  deny
-        0xE59F403C, //               ldr  r4, [pc, #0x3C]
-        0xE28F503C, //               add  r5, pc, #0x3C
-        0xE5D51000, // loop:         ldrb r1, [r5, #0]
-        0xE7D41001, //               ldrb r1, [r4, r1]
-        0xE5D56001, //               ldrb r6, [r5, #1]
-        0xE0111006, //               ands r1, r1, r6
-        0x12855003, //               addne r5, r5, #3
-        0x1AFFFFF9, //               bne  loop
-        0xE5D56002, //               ldrb r6, [r5, #2]
-        0xE1500006, //               cmp  r0, r6
-        0x8A000002, //               bhi  deny
-        0xE3A00001, //               mov  r0, #1
-        0xE3500000, //               cmp  r0, #0
-        0xE8BD807E, //               pop  {r1-r6, pc}
-        0xE3A00000, // deny:         mov  r0, #0
-        0xE3500000, //               cmp  r0, #0
-        0xE8BD807E, //               pop  {r1-r6, pc}
+        0xE2800001, // 00 entry_battle: add  r0, r0, #1
+        0xE92D407E, // 04               push {r1-r6, lr}
+        0xEA000003, // 08               b    body
+        0xE92D407E, // 0C entry_candy:  push {r1-r6, lr}
+        0xE1550000, // 10               cmp  r5, r0
+        0x0A000020, // 14               beq  deny
+        0xE1A00005, // 18               mov  r0, r5
+        0xE3500064, // 1C body:         cmp  r0, #100
+        0x8A00001D, // 20               bhi  deny
+        0xE59F407C, // 24               ldr  r4, SaveFlagBase
+        0xE59F307C, // 28               ldr  r3, EventWorkBase
+        0xE28F507C, // 2C               adr  r5, table
+        0xE5D51000, // 30 loop:         ldrb r1, [r5, #0] ; kind
+        0xE35100FF, // 34               cmp  r1, #0xFF
+        0x0A00000F, // 38               beq  use_cap
+        0xE3510000, // 3C               cmp  r1, #0
+        0x0A000008, // 40               beq  flag_check
+        0xE3510001, // 44               cmp  r1, #1
+        0x1A000013, // 48               bne  deny
+        0xE1D510B2, // 4C work_check:   ldrh r1, [r5, #2]
+        0xE0831081, // 50               add  r1, r3, r1, lsl #1
+        0xE1D110B0, // 54               ldrh r1, [r1, #0]
+        0xE1D560B4, // 58               ldrh r6, [r5, #4]
+        0xE1510006, // 5C               cmp  r1, r6
+        0x2A00000B, // 60               bhs  advance
+        0xEA000004, // 64               b    use_cap
+        0xE1D510B2, // 68 flag_check:   ldrh r1, [r5, #2]
+        0xE7D41001, // 6C               ldrb r1, [r4, r1]
+        0xE5D56004, // 70               ldrb r6, [r5, #4]
+        0xE1110006, // 74               tst  r1, r6
+        0x1A000005, // 78               bne  advance
+        0xE5D56001, // 7C use_cap:      ldrb r6, [r5, #1]
+        0xE1500006, // 80               cmp  r0, r6
+        0x8A000004, // 84               bhi  deny
+        0xE3A00001, // 88               mov  r0, #1
+        0xE3500000, // 8C               cmp  r0, #0
+        0xE8BD807E, // 90               pop  {r1-r6, pc}
+        0xE2855006, // 94 advance:      add  r5, r5, #6
+        0xEAFFFFE4, // 98               b    loop
+        0xE3A00000, // 9C deny:         mov  r0, #0
+        0xE3500000, // A0               cmp  r0, #0
+        0xE8BD807E, // A4               pop  {r1-r6, pc}
+        SaveFlagBase, // A8
+        EventWorkBase, // AC
+    ];
+
+    // v2 direct-flags routine retained for migration/detection.
+    private static readonly uint[] DirectFlagRoutine =
+    [
+        0xE2800001,
+        0xE92D407E,
+        0xEA000003,
+        0xE92D407E,
+        0xE1550000,
+        0x0A000010,
+        0xE1A00005,
+        0xE3500064,
+        0x8A00000D,
+        0xE59F403C,
+        0xE28F503C,
+        0xE1D510B0,
+        0xE7D41001,
+        0xE5D56002,
+        0xE0111006,
+        0x12855004,
+        0x1AFFFFF9,
+        0xE5D56003,
+        0xE1500006,
+        0x8A000002,
+        0xE3A00001,
+        0xE3500000,
+        0xE8BD807E,
+        0xE3A00000,
+        0xE3500000,
+        0xE8BD807E,
         SaveFlagBase,
     ];
 
+    // v1 3-byte routine retained only for migration/detection.
+    private static readonly uint[] LegacyRoutine =
+    [
+        0xE2800001,
+        0xE92D407E,
+        0xEA000003,
+        0xE92D407E,
+        0xE1550000,
+        0x0A000010,
+        0xE1A00005,
+        0xE3500064,
+        0x8A00000D,
+        0xE59F403C,
+        0xE28F503C,
+        0xE5D51000,
+        0xE7D41001,
+        0xE5D56001,
+        0xE0111006,
+        0x12855003,
+        0x1AFFFFF9,
+        0xE5D56002,
+        0xE1500006,
+        0x8A000002,
+        0xE3A00001,
+        0xE3500000,
+        0xE8BD807E,
+        0xE3A00000,
+        0xE3500000,
+        0xE8BD807E,
+        LegacySaveFlagBase,
+    ];
     private static readonly uint[] BattleOriginal =
     [
         0xE3500064,
@@ -140,7 +267,7 @@ public static class LevelCapPatch
             return LevelCapHookState.Unsupported;
 
         if (!TryDecodeBranchTarget(BattleHook, first, out uint target) ||
-            !RoutineMatches(cro, target))
+            !InstalledRoutineMatches(cro, target))
         {
             return LevelCapHookState.Unsupported;
         }
@@ -149,55 +276,225 @@ public static class LevelCapPatch
         return LevelCapHookState.Applied;
     }
 
-    public static bool TryReadInstalledBattleTable(byte[] cro, out LevelCapTable table)
+    public static bool TryReadInstalledBattleTable(
+        byte[] cro,
+        out LevelCapTable table)
     {
         table = null;
-        if (GetBattleState(cro, out uint blockOffset) != LevelCapHookState.Applied)
-            return false;
 
-        long at = blockOffset + PrologueSize;
-        var entries = new List<LevelCapEntry>();
-        var defaults = LevelCapTable.Default().Entries
-            .GroupBy(z => (z.FlagOffset, z.FlagBit))
-            .ToDictionary(z => z.Key, z => z.First().Label);
-        var known = LevelCapTable.KnownFlags
-            .GroupBy(z => (z.Offset, z.Bit))
-            .ToDictionary(z => z.Key, z => z.First().Label);
-
-        for (int i = 0; i <= LevelCapTable.MaxEntries; i++, at += LevelCapTable.EntrySize)
+        if (GetBattleState(
+                cro,
+                out uint blockOffset) != LevelCapHookState.Applied)
         {
-            if (at < 0 || at + LevelCapTable.EntrySize > cro.Length)
-                return false;
+            return false;
+        }
 
-            int pos = (int)at;
-            byte offset = cro[pos];
-            byte bit = cro[pos + 1];
-            byte cap = cro[pos + 2];
+        if (!TryGetInstalledTableFormat(
+                cro,
+                blockOffset,
+                out InstalledTableFormat format,
+                out int prologueSize,
+                out int entrySize))
+        {
+            return false;
+        }
 
-            if (offset == 0 && bit == 0 && cap == LevelCapTable.HardCeiling)
+        long at =
+            blockOffset +
+            prologueSize;
+
+        var entries =
+            new List<LevelCapEntry>();
+
+        var defaults =
+            LevelCapTable.Default()
+                .Entries
+                .GroupBy(z =>
+                    (z.Kind, z.FlagOffset, z.FlagBit))
+                .ToDictionary(
+                    z => z.Key,
+                    z => z.First().Label);
+
+        var known =
+            LevelCapTable.KnownFlags
+                .GroupBy(z =>
+                    (z.Kind, z.Offset, z.Bit))
+                .ToDictionary(
+                    z => z.Key,
+                    z => z.First().Label);
+
+        for (int i = 0;
+             i <= LevelCapTable.MaxEntries;
+             i++, at += entrySize)
+        {
+            if (at < 0 ||
+                at + entrySize > cro.Length)
             {
-                if (entries.Count == 0)
-                    return false;
-
-                table = new LevelCapTable { Entries = entries };
-                return true;
+                return false;
             }
 
-            if (cap is 0 or > LevelCapTable.HardCeiling || bit == 0 || (bit & (bit - 1)) != 0)
+            int pos =
+                checked((int)at);
+
+            LevelCapConditionKind kind;
+            ushort argument0;
+            ushort argument1;
+            byte cap;
+
+            if (format == InstalledTableFormat.CurrentMixed)
+            {
+                byte rawKind =
+                    cro[pos];
+
+                cap =
+                    cro[pos + 1];
+
+                argument0 =
+                    BitConverter.ToUInt16(
+                        cro,
+                        pos + 2);
+
+                argument1 =
+                    BitConverter.ToUInt16(
+                        cro,
+                        pos + 4);
+
+                if (rawKind == 0xFF &&
+                    cap == LevelCapTable.HardCeiling &&
+                    argument0 == 0 &&
+                    argument1 == 0)
+                {
+                    if (entries.Count == 0)
+                        return false;
+
+                    var candidate =
+                        new LevelCapTable
+                        {
+                            Entries = entries,
+                        };
+
+                    if (candidate.Validate().Count != 0)
+                        return false;
+
+                    table = candidate;
+                    return true;
+                }
+
+                kind =
+                    (LevelCapConditionKind)rawKind;
+            }
+            else
+            {
+                ushort rawOffset;
+                byte mask;
+
+                if (format == InstalledTableFormat.LegacyV1)
+                {
+                    rawOffset =
+                        cro[pos];
+
+                    mask =
+                        cro[pos + 1];
+
+                    cap =
+                        cro[pos + 2];
+                }
+                else
+                {
+                    rawOffset =
+                        BitConverter.ToUInt16(
+                            cro,
+                            pos);
+
+                    mask =
+                        cro[pos + 2];
+
+                    cap =
+                        cro[pos + 3];
+                }
+
+                if (rawOffset == 0 &&
+                    mask == 0 &&
+                    cap == LevelCapTable.HardCeiling)
+                {
+                    if (entries.Count == 0)
+                        return false;
+
+                    var candidate =
+                        new LevelCapTable
+                        {
+                            Entries = entries,
+                        };
+
+                    if (candidate.Validate().Count != 0)
+                        return false;
+
+                    table = candidate;
+                    return true;
+                }
+
+                kind =
+                    LevelCapConditionKind.EventFlagSet;
+
+                argument0 =
+                    format == InstalledTableFormat.LegacyV1
+                        ? checked((ushort)(
+                            rawOffset +
+                            LegacyFlagByteBaseOffset))
+                        : rawOffset;
+
+                argument1 =
+                    mask;
+            }
+
+            if (cap is 0 or > LevelCapTable.HardCeiling)
                 return false;
 
-            string label = defaults.TryGetValue((offset, bit), out string stockLabel)
-                ? stockLabel
-                : known.TryGetValue((offset, bit), out string knownLabel)
-                    ? knownLabel
-                    : $"Flag 0x{offset:X2}/0x{bit:X2}";
+            if (kind == LevelCapConditionKind.EventFlagSet)
+            {
+                if (argument0 >= LevelCapTable.EventFlagByteCount ||
+                    argument1 is 0 or > 0x00FF)
+                {
+                    return false;
+                }
+            }
+            else if (kind == LevelCapConditionKind.EventWorkAtLeast)
+            {
+                if (argument0 >= LevelCapTable.EventWorkCount ||
+                    argument1 == 0)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
 
-            entries.Add(new LevelCapEntry(label, offset, bit, cap));
+            string label =
+                defaults.TryGetValue(
+                    (kind, argument0, argument1),
+                    out string stockLabel)
+                    ? stockLabel
+                    : known.TryGetValue(
+                        (kind, argument0, argument1),
+                        out string knownLabel)
+                        ? knownLabel
+                        : kind == LevelCapConditionKind.EventWorkAtLeast
+                            ? $"Event Work 0x{argument0:X4} >= {argument1}"
+                            : $"Flag offset 0x{argument0:X4}/mask 0x{argument1:X2}";
+
+            entries.Add(
+                new LevelCapEntry(
+                    label,
+                    kind,
+                    argument0,
+                    argument1,
+                    cap));
         }
 
         return false;
     }
-
     public static LevelCapHookState GetCandyState(byte[] code, out uint blockOffset)
     {
         blockOffset = 0;
@@ -226,7 +523,7 @@ public static class LevelCapPatch
         }
 
         uint start = entry - EntryCandy;
-        if (!RoutineMatches(code, start))
+        if (!InstalledRoutineMatches(code, start))
             return LevelCapHookState.Unsupported;
 
         blockOffset = start;
@@ -837,40 +1134,159 @@ public static class LevelCapPatch
         return runs.OrderByDescending(r => r.End - r.Start).First().Start;
     }
 
-    private static bool TryGetInstalledBlockLength(byte[] bin, uint at, out int length)
+    private static bool TryGetInstalledBlockLength(
+        byte[] bin,
+        uint at,
+        out int length)
     {
         length = 0;
-        long tableStart = (long)at + PrologueSize;
-        if (tableStart < 0 || tableStart + LevelCapTable.EntrySize > bin.Length)
-            return false;
 
-        for (int i = 0; i <= LevelCapTable.MaxEntries; i++)
+        if (!TryGetInstalledTableFormat(
+                bin,
+                at,
+                out InstalledTableFormat format,
+                out int prologueSize,
+                out int entrySize))
         {
-            long pos = tableStart + (i * LevelCapTable.EntrySize);
-            if (pos + LevelCapTable.EntrySize > bin.Length)
+            return false;
+        }
+
+        long tableStart =
+            (long)at +
+            prologueSize;
+
+        if (tableStart < 0 ||
+            tableStart + entrySize > bin.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0;
+             i <= LevelCapTable.MaxEntries;
+             i++)
+        {
+            long pos =
+                tableStart +
+                (i * entrySize);
+
+            if (pos + entrySize > bin.Length)
                 return false;
 
-            int p = (int)pos;
-            byte offset = bin[p];
-            byte bit = bin[p + 1];
-            byte cap = bin[p + 2];
+            int p =
+                checked((int)pos);
 
-            if (offset == 0 && bit == 0 && cap == LevelCapTable.HardCeiling)
+            bool sentinel;
+
+            if (format == InstalledTableFormat.CurrentMixed)
             {
-                length = PrologueSize + ((i + 1) * LevelCapTable.EntrySize);
-                return i != 0;
+                byte rawKind =
+                    bin[p];
+
+                byte cap =
+                    bin[p + 1];
+
+                ushort argument0 =
+                    BitConverter.ToUInt16(
+                        bin,
+                        p + 2);
+
+                ushort argument1 =
+                    BitConverter.ToUInt16(
+                        bin,
+                        p + 4);
+
+                sentinel =
+                    rawKind == 0xFF &&
+                    cap == LevelCapTable.HardCeiling &&
+                    argument0 == 0 &&
+                    argument1 == 0;
+
+                if (!sentinel)
+                {
+                    var kind =
+                        (LevelCapConditionKind)rawKind;
+
+                    if (cap is 0 or > LevelCapTable.HardCeiling)
+                        return false;
+
+                    if (kind == LevelCapConditionKind.EventFlagSet)
+                    {
+                        if (argument0 >= LevelCapTable.EventFlagByteCount ||
+                            argument1 is 0 or > 0x00FF)
+                        {
+                            return false;
+                        }
+                    }
+                    else if (kind == LevelCapConditionKind.EventWorkAtLeast)
+                    {
+                        if (argument0 >= LevelCapTable.EventWorkCount ||
+                            argument1 == 0)
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                ushort offset;
+                byte mask;
+                byte cap;
+
+                if (format == InstalledTableFormat.LegacyV1)
+                {
+                    offset =
+                        bin[p];
+
+                    mask =
+                        bin[p + 1];
+
+                    cap =
+                        bin[p + 2];
+                }
+                else
+                {
+                    offset =
+                        BitConverter.ToUInt16(
+                            bin,
+                            p);
+
+                    mask =
+                        bin[p + 2];
+
+                    cap =
+                        bin[p + 3];
+                }
+
+                sentinel =
+                    offset == 0 &&
+                    mask == 0 &&
+                    cap == LevelCapTable.HardCeiling;
+
+                if (!sentinel &&
+                    (cap is 0 or > LevelCapTable.HardCeiling ||
+                     mask == 0))
+                {
+                    return false;
+                }
             }
 
-            if (cap is 0 or > LevelCapTable.HardCeiling ||
-                bit == 0 || (bit & (bit - 1)) != 0)
+            if (sentinel)
             {
-                return false;
+                length =
+                    prologueSize +
+                    ((i + 1) * entrySize);
+
+                return i != 0;
             }
         }
 
         return false;
     }
-
     private static bool BlockEquals(byte[] bin, uint at, byte[] block)
     {
         if ((long)at + block.Length > bin.Length)
@@ -931,20 +1347,172 @@ public static class LevelCapPatch
         return (w & 0x0FFF8000) == 0x08BD8000;
     }
 
-    private static bool RoutineMatches(byte[] bin, uint at)
-    {
-        if ((long)at > bin.Length - (Routine.Length * 4L))
-            return false;
+    private static bool InstalledRoutineMatches(
+        byte[] bin,
+        uint at) =>
+        RoutineMatches(
+            bin,
+            at) ||
+        DirectFlagRoutineMatches(
+            bin,
+            at) ||
+        LegacyRoutineMatches(
+            bin,
+            at);
 
-        for (int i = 0; i < Routine.Length; i++)
+    private static bool TryGetInstalledTableFormat(
+        byte[] bin,
+        uint at,
+        out InstalledTableFormat format,
+        out int prologueSize,
+        out int entrySize)
+    {
+        if (RoutineMatches(
+                bin,
+                at))
         {
-            if (BitConverter.ToUInt32(bin, (int)at + (i * 4)) != Routine[i])
+            format =
+                InstalledTableFormat.CurrentMixed;
+
+            prologueSize =
+                PrologueSize;
+
+            entrySize =
+                LevelCapTable.EntrySize;
+
+            return true;
+        }
+
+        if (DirectFlagRoutineMatches(
+                bin,
+                at))
+        {
+            format =
+                InstalledTableFormat.DirectFlagsV2;
+
+            prologueSize =
+                DirectFlagPrologueSize;
+
+            entrySize =
+                4;
+
+            return true;
+        }
+
+        if (LegacyRoutineMatches(
+                bin,
+                at))
+        {
+            format =
+                InstalledTableFormat.LegacyV1;
+
+            prologueSize =
+                LegacyPrologueSize;
+
+            entrySize =
+                3;
+
+            return true;
+        }
+
+        format =
+            default;
+
+        prologueSize = 0;
+        entrySize = 0;
+
+        return false;
+    }
+
+    private static bool RoutineMatches(
+        byte[] bin,
+        uint at)
+    {
+        if ((long)at >
+            bin.Length -
+            (Routine.Length * 4L))
+        {
+            return false;
+        }
+
+        for (int i = 0;
+             i < Routine.Length;
+             i++)
+        {
+            if (BitConverter.ToUInt32(
+                    bin,
+                    checked((int)at) +
+                    (i * 4)) != Routine[i])
+            {
                 return false;
+            }
         }
 
         return true;
     }
 
+    private static bool DirectFlagRoutineMatches(
+        byte[] bin,
+        uint at)
+    {
+        if ((long)at >
+            bin.Length -
+            (DirectFlagRoutine.Length * 4L))
+        {
+            return false;
+        }
+
+        for (int i = 0;
+             i < DirectFlagRoutine.Length;
+             i++)
+        {
+            uint got =
+                BitConverter.ToUInt32(
+                    bin,
+                    checked((int)at) +
+                    (i * 4));
+
+            if (got == DirectFlagRoutine[i])
+                continue;
+
+            if (i == DirectFlagRoutine.Length - 1 &&
+                got == PreviousDirectFlagBase)
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool LegacyRoutineMatches(
+        byte[] bin,
+        uint at)
+    {
+        if ((long)at >
+            bin.Length -
+            (LegacyRoutine.Length * 4L))
+        {
+            return false;
+        }
+
+        for (int i = 0;
+             i < LegacyRoutine.Length;
+             i++)
+        {
+            if (BitConverter.ToUInt32(
+                    bin,
+                    checked((int)at) +
+                    (i * 4)) != LegacyRoutine[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
     private static bool WordsMatch(byte[] bin, uint at, uint[] expected, out string why)
     {
         why = string.Empty;

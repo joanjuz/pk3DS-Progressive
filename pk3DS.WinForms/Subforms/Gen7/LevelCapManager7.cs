@@ -76,13 +76,15 @@ public sealed class LevelCapManager7 : Form
         Controls.Add(Sequence);
 
         y += 64;
-        var edit = new Button { Text = "Edit checkpoints...", Left = 18, Top = y, Width = 135, Height = 28 };
-        var load = new Button { Text = "Load template...", Left = 163, Top = y, Width = 120, Height = 28 };
-        var save = new Button { Text = "Save template...", Left = 293, Top = y, Width = 120, Height = 28 };
-        var reset = new Button { Text = "Research defaults", Left = 423, Top = y, Width = 120, Height = 28 };
-        Controls.AddRange([edit, load, save, reset]);
+        var edit = new Button { Text = "Edit checkpoints...", Left = 18, Top = y, Width = 118, Height = 28 };
+        var sync = new Button { Text = "Sync Trainer Caps", Left = 144, Top = y, Width = 138, Height = 28 };
+        var load = new Button { Text = "Load template...", Left = 290, Top = y, Width = 112, Height = 28 };
+        var save = new Button { Text = "Save template...", Left = 410, Top = y, Width = 112, Height = 28 };
+        var reset = new Button { Text = "Research defaults", Left = 530, Top = y, Width = 138, Height = 28 };
+        Controls.AddRange([edit, sync, load, save, reset]);
 
         edit.Click += (_, _) => EditCheckpoints();
+        sync.Click += (_, _) => SyncFromTrainerCaps();
         load.Click += (_, _) => LoadTemplate();
         save.Click += (_, _) => SaveTemplate();
         reset.Click += (_, _) =>
@@ -186,6 +188,61 @@ public sealed class LevelCapManager7 : Form
         RefreshSummary();
     }
 
+    private void SyncFromTrainerCaps()
+    {
+        if (!TrainerRandomizerTemplateFile.TryGetCurrent(
+                Game,
+                out TrainerRandomizerTemplate trainerTemplate) ||
+            trainerTemplate?.LevelCaps?.Enabled != true ||
+            (trainerTemplate.LevelCaps.Trainers?.Count ?? 0) == 0)
+        {
+            WinFormsUtil.Alert(
+                "No Trainer Level Caps configuration is active.",
+                "Load/configure Trainer Level Caps first, close Trainer Editor, then use Sync Trainer Caps here.");
+            return;
+        }
+
+        try
+        {
+            TrainerPlayerLevelCapSyncResult result =
+                TrainerPlayerLevelCapSync7.Build(
+                    trainerTemplate.LevelCaps);
+
+            if (WinFormsUtil.Prompt(
+                    MessageBoxButtons.YesNo,
+                    "Rebuild Player Level Caps from Trainer Caps?",
+                    result.BuildPreview(),
+                    "This rebuilds Player Level Caps from the 21 save-validated checkpoints only.",
+                    "Unvalidated Trainer Level Cap entries are ignored; Ultra Necrozma uses validated Event Work progress.") != DialogResult.Yes)
+            {
+                return;
+            }
+
+            Table =
+                result.Table;
+
+            PresetShift = 0;
+            Preset.SelectedIndex = LevelCapShifts.StandardIndex;
+            FinalCap.Value = Math.Clamp(
+                Table.Entries.Max(z => (int)z.Cap),
+                5,
+                LevelCapTable.HardCeiling);
+
+            PersistCurrent();
+            RefreshSummary();
+
+            WinFormsUtil.Alert(
+                "Player Level Caps rebuilt from save-validated checkpoints.",
+                result.BuildStatusSummary(),
+                "Review Edit before enabling/updating the runtime patch.");
+        }
+        catch (Exception ex)
+        {
+            WinFormsUtil.Error(
+                "Could not sync Player Level Caps from Trainer Caps.",
+                ex.Message);
+        }
+    }
     private void LoadTemplate()
     {
         Directory.CreateDirectory(LevelCapTemplateFile.TemplateDirectory);
