@@ -50,7 +50,7 @@ Move,Type,Category,Quality,Power,Accuracy,PP,Priority,HitMin,HitMax,CriticalStag
 153,,Special,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Explosión / Explosion: categoría Especial.,,
 120,,,,250,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Autodestrucción / Self-Destruct: 250 de potencia.,,
 563,,,,,,,,,,,,,,,,25,,,,AllPokemon,true,,,,,,,,,,,,,,,,,,,,,Fertilizante / Rototiller: cura 25% a todos los Pokémon de tipo Planta en el campo.,,Cura un 25% de los PS máximos\nde todos los Pokémon de tipo Planta en el campo.
-693,,,,30,,,,2,5,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,,"Giro Vil / Brutal Swing: 30 potencia, 2-5 golpes, ambos rivales;",,"Golpea a ambos rivales de 2 a 5 veces."
+693,,,,30,,,,2,5,,,,,,,,,,,AllFoes,,,,,,,,,,,,,,,,,,,,,Gen7BrutalSwingSelfConfusionV1,"Giro Vil / Brutal Swing: 30 potencia, 2-5 golpes, ambos rivales; al terminar, confunde al usuario.",,"Golpea a ambos rivales de 2 a 5 veces.\nAl terminar, confunde al usuario."
 190,,,,,90,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,Pulpocañón / Octazooka: 90% de precisión.,,
 340,,,,,100,,,,,,,,,Paralyze,40,,,,,,,,,,,,,,,,,,,,,,,,,,,Bote / Bounce: 100% precisión y 40% de paralizar.,,Se eleva el primer turno y ataca en el siguiente.\nTiene un 40% de paralizar al objetivo.
 587,Fairy,,13,,,,,,,,,294,,,,,,,,AllPokemon,,,,,,,,,,,,,,,,,,,,,Gen7FairyLockAllFairyV11,Cerrojo Feérico / Fairy Lock: convierte en tipo Hada puro a todos los Pokémon activos.,,Convierte en tipo Hada puro\na todos los Pokémon activos.
