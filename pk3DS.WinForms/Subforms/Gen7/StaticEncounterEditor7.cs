@@ -67,7 +67,22 @@ public partial class StaticEncounterEditor7 : Form
     ];
 
     private static readonly int[] Totem = [020, 105, 735, 738, 743, 746, 752, 754, 758, 777, 778, 784]; // Totem battles
-    private static readonly int[] UnevolvedLegend = [772, 789, 803]; // Type: Null, Cosmog, Poipole gifts
+
+    // Pokemon received directly by the player (starters, gifts and NPC trade
+    // offers) must never randomize into a Legendary or Ultra Beast.
+    //
+    // Legal.Legendary_* includes the Ultra Beasts represented as fully evolved
+    // species in pk3DS. These extra IDs cover special pre-evolutions that the
+    // generic Legendary array does not contain.
+    private static readonly HashSet<int> PlayerReceivedBannedSpecies =
+    [
+        .. Legendary,
+        .. Mythical,
+        772, // Type: Null
+        789, // Cosmog
+        790, // Cosmoem
+        803, // Poipole
+    ];
 
     public StaticEncounterEditor7(byte[][] infiles)
     {
@@ -192,6 +207,7 @@ public partial class StaticEncounterEditor7 : Form
     private GroupBox GB_Progressive;
     private Button B_ProgressiveAcceptAnyPokemon;
     private Button B_TradeHideSpeciesNames;
+    private CheckBox CHK_BlockSpecialPlayerReceived;
 
     private void AddProgressiveUtilityGroup()
     {
@@ -259,9 +275,33 @@ public partial class StaticEncounterEditor7 : Form
                 B_TradeHideSpeciesNames);
         }
 
+        if (CHK_BlockSpecialPlayerReceived == null ||
+            CHK_BlockSpecialPlayerReceived.IsDisposed)
+        {
+            CHK_BlockSpecialPlayerReceived = new CheckBox
+            {
+                Name = "CHK_BlockSpecialPlayerReceived",
+                Text = "Block Legendary / Mythical / Ultra Beast Gifts & Trades",
+                AutoSize = true,
+                Checked = true,
+                UseVisualStyleBackColor = true,
+            };
+
+            GB_Progressive.Controls.Add(
+                CHK_BlockSpecialPlayerReceived);
+
+            // This control is created at runtime, after the constructor's first
+            // RandSettings load. Load the Progressive settings again so the
+            // user's checkbox choice persists between sessions.
+            RandSettings.GetFormSettings(
+                this,
+                GB_Progressive.Controls);
+        }
+
         B_ProgressiveAcceptAnyPokemon.Visible = true;
         B_ProgressiveAcceptAnyPokemon.Enabled = true;
         B_TradeHideSpeciesNames.Visible = true;
+        CHK_BlockSpecialPlayerReceived.Visible = true;
     }
     private void LayoutProgressiveUtilityControls()
     {
@@ -393,7 +433,7 @@ public partial class StaticEncounterEditor7 : Form
             contentLeft,
             270,
             contentWidth,
-            118);
+            148);
 
         const int innerLeft = 12;
         const int innerTop = 22;
@@ -473,6 +513,19 @@ public partial class StaticEncounterEditor7 : Form
             B_TradeHideSpeciesNames.Enabled = true;
             B_TradeHideSpeciesNames.BringToFront();
         }
+
+        if (CHK_BlockSpecialPlayerReceived != null)
+        {
+            CHK_BlockSpecialPlayerReceived.SetBounds(
+                innerLeft,
+                94,
+                contentWidth - (innerLeft * 2),
+                22);
+
+            CHK_BlockSpecialPlayerReceived.Visible = true;
+            CHK_BlockSpecialPlayerReceived.BringToFront();
+        }
+
         // Stock randomization actions belong below the Progressive section.
         int randomButtonsWidth =
             B_RandAll.Width +
@@ -565,19 +618,21 @@ public partial class StaticEncounterEditor7 : Form
 
         SetTrade();
 
-        var specrand = GetRandomizer();
+        var specrand = GetPlayerReceivedRandomizer();
         var formrand = new FormRandomizer(Main.Config)
         {
             AllowMega = CHK_AllowMega.Checked,
             AllowAlolanForm = true,
         };
         var items = Randomizer.GetRandomItemList();
-        int randFinalEvo() => (int)(Util.Random32() % FinalEvo.Length);
 
         foreach (EncounterTrade7 trade in Trades)
         {
             trade.TradeRequestSpecies = 0;
-            trade.Species = specrand.GetRandomSpecies(trade.Species);
+            trade.Species =
+                GetRandomPlayerReceivedSpecies(
+                    specrand,
+                    trade.Species);
 
             if (CHK_Item.Checked)
                 trade.HeldItem = items[Util.Random32() % items.Length];
@@ -589,7 +644,7 @@ public partial class StaticEncounterEditor7 : Form
                 trade.Ability = Util.Rand.Next(0, 3);
 
             if (CHK_ForceFullyEvolved.Checked && trade.Level >= NUD_ForceFullyEvolved.Value && !FinalEvo.Contains(trade.Species))
-                trade.Species = FinalEvo[randFinalEvo()];
+                trade.Species = GetRandomPlayerReceivedFinalEvolution();
 
             trade.Form = Randomizer.GetRandomForme(trade.Species, CHK_AllowMega.Checked, true, Main.SpeciesStat);
             trade.Gender = 0;
@@ -1183,7 +1238,29 @@ public partial class StaticEncounterEditor7 : Form
     }
 
     // Randomization
-    private SpeciesRandomizer GetRandomizer()
+    private bool BlockSpecialPlayerReceived =>
+        CHK_BlockSpecialPlayerReceived?.Checked ?? true;
+
+    private SpeciesRandomizer GetRandomizer() =>
+        CreateRandomizer(
+            allowLegendaryAndUltraBeast: true,
+            allowMythical: true,
+            extendFinalEvolutionPool: true);
+
+    private SpeciesRandomizer GetPlayerReceivedRandomizer()
+    {
+        bool allowSpecial = !BlockSpecialPlayerReceived;
+
+        return CreateRandomizer(
+            allowLegendaryAndUltraBeast: allowSpecial,
+            allowMythical: allowSpecial,
+            extendFinalEvolutionPool: false);
+    }
+
+    private SpeciesRandomizer CreateRandomizer(
+        bool allowLegendaryAndUltraBeast,
+        bool allowMythical,
+        bool extendFinalEvolutionPool)
     {
         var specrand = new SpeciesRandomizer(Main.Config)
         {
@@ -1195,18 +1272,79 @@ public partial class StaticEncounterEditor7 : Form
             G6 = CHK_G6.Checked,
             G7 = CHK_G7.Checked,
 
-            E = CHK_E.Checked,
-            L = CHK_L.Checked,
+            E = allowMythical && CHK_E.Checked,
+
+            // L controls Legendary Pokemon and the Gen 7 Ultra Beast pool.
+            L = allowLegendaryAndUltraBeast && CHK_L.Checked,
 
             rBST = CHK_BST.Checked,
         };
         specrand.Initialize();
 
-        // add Legendary/Mythical to final evolutions if checked
-        if (CHK_L.Checked) FinalEvo = [.. FinalEvo, .. Legendary];
-        if (CHK_E.Checked) FinalEvo = [.. FinalEvo, .. Mythical];
+        if (extendFinalEvolutionPool)
+        {
+            // Preserve stock/static-encounter behavior.
+            if (CHK_L.Checked)
+                FinalEvo = [.. FinalEvo, .. Legendary];
+            if (CHK_E.Checked)
+                FinalEvo = [.. FinalEvo, .. Mythical];
+        }
 
         return specrand;
+    }
+
+    private int GetRandomPlayerReceivedSpecies(
+        SpeciesRandomizer randomizer,
+        int oldSpecies)
+    {
+        if (!BlockSpecialPlayerReceived)
+            return randomizer.GetRandomSpecies(oldSpecies);
+
+        // Explicit post-filter. This also protects against SpeciesRandomizer's
+        // all-species fallback when no generation checkbox contributes a pool.
+        const int maxAttempts = 8192;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            int candidate =
+                randomizer.GetRandomSpecies(
+                    oldSpecies);
+
+            if (!PlayerReceivedBannedSpecies.Contains(candidate))
+                return candidate;
+        }
+
+        throw new InvalidOperationException(
+            "Could not generate a non-Legendary/non-Mythical/non-Ultra-Beast Pokemon for a player-received slot.");
+    }
+
+    private int GetRandomPlayerReceivedFinalEvolution()
+    {
+        int[] pool =
+            Legal.FinalEvolutions_7;
+
+        if (!BlockSpecialPlayerReceived)
+        {
+            if (CHK_L.Checked)
+                pool = [.. pool, .. Legendary];
+            if (CHK_E.Checked)
+                pool = [.. pool, .. Mythical];
+        }
+
+        int[] allowed =
+            BlockSpecialPlayerReceived
+                ? pool
+                    .Where(species => !PlayerReceivedBannedSpecies.Contains(species))
+                    .ToArray()
+                : pool;
+
+        if (allowed.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "No valid final evolutions are available for a player-received Pokemon.");
+        }
+
+        return allowed[Util.Random32() % allowed.Length];
     }
 
     private void B_Starters_Click(object sender, EventArgs e)
@@ -1216,7 +1354,7 @@ public partial class StaticEncounterEditor7 : Form
 
         SetGift();
 
-        var specrand = GetRandomizer();
+        var specrand = GetPlayerReceivedRandomizer();
         var formrand = new FormRandomizer(Main.Config) { AllowMega = false, AllowAlolanForm = true };
         var items = Randomizer.GetRandomItemList();
         int[] banned = [.. Legal.Z_Moves, .. new[] { 165, 464, 621 }];
@@ -1234,7 +1372,10 @@ public partial class StaticEncounterEditor7 : Form
             }
             else
             {
-                t.Species = specrand.GetRandomSpecies(oldStarters[i]);
+                t.Species =
+                    GetRandomPlayerReceivedSpecies(
+                        specrand,
+                        oldStarters[i]);
             }
 
             if (CHK_AllowMega.Checked)
@@ -1281,6 +1422,7 @@ public partial class StaticEncounterEditor7 : Form
         SetTrade();
 
         var specrand = GetRandomizer();
+        var playerReceivedRand = GetPlayerReceivedRandomizer();
         var formrand = new FormRandomizer(Main.Config) { AllowMega = false, AllowAlolanForm = true };
         var move = new LearnsetRandomizer(Main.Config, Main.Config.Learnsets);
         var items = Randomizer.GetRandomItemList();
@@ -1292,13 +1434,13 @@ public partial class StaticEncounterEditor7 : Form
         {
             var t = Gifts[i];
 
-            // Legendary-for-Legendary
-            if ((CHK_ReplaceLegend.Checked && ReplaceLegend.Contains(t.Species)) || UnevolvedLegend.Contains(t.Species))
-                t.Species = ReplaceLegend[randLegend()];
-
-            // every other entry
-            else
-                t.Species = specrand.GetRandomSpecies(t.Species);
+            // Gifts always use the player-received pool. Even vanilla special
+            // gifts (Type: Null, Cosmog, Poipole, etc.) become non-Legendary
+            // and non-Ultra-Beast species when Randomize All is used.
+            t.Species =
+                GetRandomPlayerReceivedSpecies(
+                    playerReceivedRand,
+                    t.Species);
 
             if (CHK_AllowMega.Checked)
                 formrand.AllowMega = true;
@@ -1331,7 +1473,7 @@ public partial class StaticEncounterEditor7 : Form
                 t.Ability = (sbyte)(Util.Rand.Next(0, 3)); // 1, 2, or H
 
             if (CHK_ForceFullyEvolved.Checked && t.Level >= NUD_ForceFullyEvolved.Value && !FinalEvo.Contains(t.Species))
-                t.Species = FinalEvo[randFinalEvo()];
+                t.Species = GetRandomPlayerReceivedFinalEvolution();
 
             t.Form = Randomizer.GetRandomForme(t.Species, CHK_AllowMega.Checked, true, Main.SpeciesStat);
             t.Nature = -1; // random
@@ -1389,8 +1531,15 @@ public partial class StaticEncounterEditor7 : Form
         }
         foreach (EncounterTrade7 t in Trades)
         {
-            t.Species = specrand.GetRandomSpecies(t.Species);
-            t.TradeRequestSpecies = specrand.GetRandomSpecies(t.TradeRequestSpecies);
+            t.Species =
+                GetRandomPlayerReceivedSpecies(
+                    playerReceivedRand,
+                    t.Species);
+
+            t.TradeRequestSpecies =
+                GetRandomPlayerReceivedSpecies(
+                    playerReceivedRand,
+                    t.TradeRequestSpecies);
 
             if (CHK_AllowMega.Checked)
                 formrand.AllowMega = true;
@@ -1405,7 +1554,7 @@ public partial class StaticEncounterEditor7 : Form
                 t.Ability = (sbyte)(Util.Rand.Next(0, 3)); // 1, 2, or H
 
             if (CHK_ForceFullyEvolved.Checked && t.Level >= NUD_ForceFullyEvolved.Value && !FinalEvo.Contains(t.Species))
-                t.Species = FinalEvo[randFinalEvo()]; // only do offered species to be fair
+                t.Species = GetRandomPlayerReceivedFinalEvolution(); // only do offered species to be fair
 
             t.Form = Randomizer.GetRandomForme(t.Species, CHK_AllowMega.Checked, true, Main.SpeciesStat);
             t.Nature = (int)(Util.Random32() % CB_TNature.Items.Count); // randomly selected
