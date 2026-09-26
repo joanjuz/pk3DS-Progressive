@@ -21,6 +21,7 @@ internal sealed class BatchRomBuildOptions
     public int Count { get; set; } = 4;
     public bool Trimmed { get; set; }
     public bool RestoreBackups { get; set; } = true;
+    public bool KeepEditableProjects { get; set; }
 }
 
 internal sealed class BatchRomBuilderDialog : Form
@@ -31,6 +32,7 @@ internal sealed class BatchRomBuilderDialog : Form
     private readonly NumericUpDown NUD_Count = new();
     private readonly ComboBox CB_BuildType = new();
     private readonly CheckBox CHK_RestoreBackups = new();
+    private readonly CheckBox CHK_KeepEditableProjects = new();
 
     public BatchRomBuildOptions Options { get; private set; }
 
@@ -41,7 +43,7 @@ internal sealed class BatchRomBuilderDialog : Form
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
-        ClientSize = new Size(640, 300);
+        ClientSize = new Size(640, 350);
 
         int leftLabel = 16;
         int leftControl = 150;
@@ -92,6 +94,13 @@ internal sealed class BatchRomBuilderDialog : Form
         CHK_RestoreBackups.SetBounds(leftControl, y, 420, 24);
         Controls.Add(CHK_RestoreBackups);
 
+        y += 30;
+        CHK_KeepEditableProjects.Text = "Keep editable extracted project for each ROM";
+        CHK_KeepEditableProjects.AutoSize = true;
+        CHK_KeepEditableProjects.Checked = false;
+        CHK_KeepEditableProjects.SetBounds(leftControl, y, 420, 24);
+        Controls.Add(CHK_KeepEditableProjects);
+
         var info = new Label
         {
             AutoSize = false,
@@ -99,12 +108,12 @@ internal sealed class BatchRomBuilderDialog : Form
             Top = y + 28,
             Width = 465,
             Height = 34,
-            Text = "Every ROM gets a new int32 seed and is rebuilt from the same clean staging copy; randomization never stacks from ROM #1 into ROM #2.",
+            Text = "Each ROM starts from the same clean staging copy. Keeping editable projects uses additional disk space.",
         };
         Controls.Add(info);
 
-        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Width = 92, Height = 28, Left = 430, Top = 260 };
-        var build = new Button { Text = "Build ROMs", Width = 100, Height = 28, Left = 530, Top = 260 };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Width = 92, Height = 28, Left = 430, Top = 310 };
+        var build = new Button { Text = "Build ROMs", Width = 100, Height = 28, Left = 530, Top = 310 };
         build.Click += (_, _) => AcceptOptions();
         Controls.Add(cancel);
         Controls.Add(build);
@@ -194,6 +203,7 @@ internal sealed class BatchRomBuilderDialog : Form
             Count = (int)NUD_Count.Value,
             Trimmed = CB_BuildType.SelectedIndex == 1,
             RestoreBackups = CHK_RestoreBackups.Checked,
+            KeepEditableProjects = CHK_KeepEditableProjects.Checked,
         };
         DialogResult = DialogResult.OK;
         Close();
@@ -323,6 +333,63 @@ internal static class BatchWorkspace
         }
     }
 
+    internal static string GetAvailableEditableProjectPath(string outputDirectory, string baseName, int index)
+    {
+        string desired = Path.Combine(outputDirectory, $"{baseName}_{index:00}_Project");
+        if (!Directory.Exists(desired) && !File.Exists(desired))
+            return desired;
+
+        for (int suffix = 2; suffix < 1000; suffix++)
+        {
+            string candidate = $"{desired}_{suffix}";
+            if (!Directory.Exists(candidate) && !File.Exists(candidate))
+                return candidate;
+        }
+
+        throw new IOException($"Could not find an available editable-project folder name for '{desired}'.");
+    }
+
+    internal static void PreserveEditableProject(string sourcePath, string targetPath)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath) || !Directory.Exists(sourcePath))
+            throw new DirectoryNotFoundException($"Batch staging directory does not exist: {sourcePath}");
+        if (Directory.Exists(targetPath) || File.Exists(targetPath))
+            throw new IOException($"Editable project destination already exists: {targetPath}");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
+
+        string sourceRoot = Path.GetPathRoot(Path.GetFullPath(sourcePath));
+        string targetRoot = Path.GetPathRoot(Path.GetFullPath(targetPath));
+
+        if (string.Equals(sourceRoot, targetRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Directory.Move(sourcePath, targetPath);
+                return;
+            }
+            catch (IOException)
+            {
+                // Fall through to copy/delete.
+            }
+        }
+
+        try
+        {
+            CopyDirectory(sourcePath, targetPath);
+            DeleteDirectoryBestEffort(sourcePath);
+        }
+        catch
+        {
+            try
+            {
+                if (Directory.Exists(targetPath))
+                    DeleteDirectoryBestEffort(targetPath);
+            }
+            catch { }
+            throw;
+        }
+    }
     internal static void DeleteDirectoryBestEffort(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))

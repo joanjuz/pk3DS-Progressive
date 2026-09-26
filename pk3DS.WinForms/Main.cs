@@ -454,6 +454,22 @@ public sealed partial class Main : Form
                     GlobalRandomizationTemplateFile.Apply(template, game);
                 }
 
+                if (options.KeepEditableProjects)
+                {
+                    progressDialog.SetStage("Saving editable extracted project...");
+                    Application.DoEvents();
+
+                    string editableProjectPath = BatchWorkspace.GetAvailableEditableProjectPath(
+                        options.OutputDirectory,
+                        options.BaseName,
+                        i);
+                    string stageToPreserve = activeStage;
+                    await Task.Run(() => BatchWorkspace.PreserveEditableProject(stageToPreserve, editableProjectPath));
+                    activeStage = null;
+                    log.Add($"ROM {i}: Editable project = {editableProjectPath}");
+                    progressDialog.AppendLog($"Editable project saved: {editableProjectPath}");
+                }
+
                 progressDialog.SetStage("Cleaning staging folder...");
                 Application.DoEvents();
                 string stageToDelete = activeStage;
