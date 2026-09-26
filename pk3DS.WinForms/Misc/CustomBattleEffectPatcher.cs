@@ -190,6 +190,25 @@ internal static class CustomBattleEffectPatcher
                 changed += result;
             }
         }
+        if (generation == 7 && list.Any(Gen7BrutalSwingSelfConfusionPatcher.IsRequested))
+        {
+            int result = Gen7BrutalSwingSelfConfusionPatcher.Apply();
+
+            if (result < 0)
+            {
+                failed = true;
+                if (alert is not null)
+                {
+                    alert(
+                        "Special battle patch skipped",
+                        "Could not apply the Gen7 Brutal Swing / Giro Vil post-move self-confusion Battle.cro patch.");
+                }
+            }
+            else
+            {
+                changed += result;
+            }
+        }
         return failed ? -1 : changed;
     }
 
