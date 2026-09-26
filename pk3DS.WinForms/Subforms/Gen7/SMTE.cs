@@ -118,6 +118,7 @@ public partial class SMTE : Form
     private bool ApplyCapsToPreviousTrainers = true;
     private int PreviousTrainerGap = 2;
     private decimal RegularTrainerCurvePower = 1.6m;
+    private const int MinimumTrainerLevel = 5;
     private bool GuaranteeMegaInImportantBattles = false;
     // The Rules tab temporarily expands the randomizer workspace.
     // Other randomizer tabs keep their original dimensions.
@@ -2977,7 +2978,7 @@ public partial class SMTE : Form
             ? ClampLevel(fallbackTrainerAce)
             : ClampLevel(minimumAce);
 
-        return Math.Min(startTarget, endTarget);
+        return Math.Max(MinimumTrainerLevel, Math.Min(startTarget, endTarget));
     }
     private List<TrainerLevelCapStage> BuildLevelCapStages()
     {
@@ -3001,7 +3002,7 @@ public partial class SMTE : Form
             {
                 TrainerID = rule.TrainerID,
                 OriginalAceLevel = ace,
-                LevelCap = ClampLevel(cap),
+                LevelCap = Math.Max(MinimumTrainerLevel, ClampLevel(cap)),
                 GuaranteeMega = rule.GuaranteeMega,
                 GuaranteeZMove = rule.GuaranteeZMove,
                 MinMovePower = ClampMovePower(rule.MinMovePower),
@@ -3031,7 +3032,7 @@ public partial class SMTE : Form
         if (exact is not null)
         {
             forceExactLevel = true;
-            return exact.LevelCap;
+            return Math.Max(MinimumTrainerLevel, exact.LevelCap);
         }
 
         if (!ApplyCapsToPreviousTrainers)
@@ -3108,7 +3109,7 @@ public partial class SMTE : Form
             target = Math.Max(startTarget, target);
             target = Math.Min(endTarget, target);
 
-            return ClampLevel(target);
+            return Math.Max(MinimumTrainerLevel, ClampLevel(target));
         }
 
         // SM keeps the previous level-based behavior unchanged.
@@ -3127,7 +3128,7 @@ public partial class SMTE : Form
         if (previousLegacy is not null && trainerAce > previousLegacy.OriginalAceLevel)
             legacyTarget = Math.Max(legacyTarget, previousLegacy.LevelCap);
 
-        return ClampLevel(legacyTarget);
+        return Math.Max(MinimumTrainerLevel, ClampLevel(legacyTarget));
     }
     private bool ShouldGuaranteeMega(int trainerID, int trainerAce, List<TrainerLevelCapStage> stages)
     {
@@ -3171,12 +3172,15 @@ public partial class SMTE : Form
             return target;
 
         int delta = target - trainerAce;
-        return ClampLevel(currentLevel + delta);
+        return Math.Max(MinimumTrainerLevel, ClampLevel(currentLevel + delta));
     }
 
 
     private void ApplyRandomDoubleBattle(TrainerData7 tr, int trainerAce, int[] protectedBattleRoyalIDs)
     {
+        if (IsProtectedEarlyHauEncounter(tr.ID))
+            return;
+
         if (CHK_RandomDoubleBattles is null || !CHK_RandomDoubleBattles.Checked || NUD_DoubleBattleChance.Value <= 0)
             return;
 
@@ -3291,6 +3295,7 @@ public partial class SMTE : Form
             TrainerImportanceCategory trainerCategory = GetTrainerImportanceCategory(tr.ID);
             bool isImportantTrainer = trainerCategory != TrainerImportanceCategory.Regular;
             string trainerGroup = trainerCategory.ToString();
+            bool protectEarlyHau = IsProtectedEarlyHauEncounter(tr.ID);
 
             // Trainer Properties
             if (CHK_RandomClass.Checked)
@@ -3340,7 +3345,7 @@ public partial class SMTE : Form
                 tr.Pokemon.RemoveRange((int)NUD_RMax.Value, (int)(tr.NumPokemon - NUD_RMax.Value));
                 tr.NumPokemon = (int)NUD_RMax.Value;
             }
-            if (CHK_6PKM.Checked && isImportantTrainer)
+            if (CHK_6PKM.Checked && isImportantTrainer && !protectEarlyHau)
             {
                 for (int g = tr.NumPokemon; g < 6; g++)
                 {
@@ -3358,6 +3363,15 @@ public partial class SMTE : Form
                 tr.NumPokemon = 6;
             }
 
+            // IDs 491/492/493 are the starter-dependent variants of the first Hau battle.
+            // Keep this opening encounter a fair 1v1 even when Important trainers use six Pokemon.
+            if (protectEarlyHau)
+            {
+                if (tr.Pokemon.Count > 1)
+                    tr.Pokemon.RemoveRange(1, tr.Pokemon.Count - 1);
+
+                tr.NumPokemon = 1;
+            }
             // force 1 pkm to keep forced Battle Royal fair
             if (royal.Contains(tr.ID))
                 tr.NumPokemon = 1;
@@ -3514,7 +3528,10 @@ public partial class SMTE : Form
                         pk.Moves = moves;
                 }
 
-                bool canRandomizeItem = CHK_RandomItems.Checked && !(forceMega && p == tr.Pokemon.Count - 1) && !(forceZMove && p == zMoveSlot);
+                if (protectEarlyHau)
+                    pk.Item = 0;
+
+                bool canRandomizeItem = CHK_RandomItems.Checked && !protectEarlyHau && !(forceMega && p == tr.Pokemon.Count - 1) && !(forceZMove && p == zMoveSlot);
                 if (canRandomizeItem && usedHeldItems is not null)
                     usedHeldItems.Remove(pk.Item);
 
@@ -3587,6 +3604,9 @@ public partial class SMTE : Form
         Important,
         Boss,
     }
+
+    private static bool IsProtectedEarlyHauEncounter(int trainerID)
+        => Main.Config.USUM && trainerID is 491 or 492 or 493;
 
     private static TrainerImportanceCategory GetTrainerImportanceCategory(int trainerID)
     {
