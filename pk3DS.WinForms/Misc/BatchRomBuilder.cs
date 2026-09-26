@@ -270,12 +270,35 @@ internal static class BatchRuntime
 
 internal static class BatchWorkspace
 {
-    internal static int PrepareCleanCopy(string sourceRoot, string targetRoot, GameConfig sourceConfig, bool restoreBackups)
+    internal static int PrepareCleanCopy(
+        string sourceRoot,
+        string targetRoot,
+        GameConfig sourceConfig,
+        string sourceExHeader,
+        bool restoreBackups)
     {
         if (Directory.Exists(targetRoot))
             Directory.Delete(targetRoot, true);
 
-        CopyDirectory(sourceRoot, targetRoot);
+        Directory.CreateDirectory(targetRoot);
+
+        if (sourceConfig is null || string.IsNullOrWhiteSpace(sourceConfig.RomFS) || !Directory.Exists(sourceConfig.RomFS))
+            throw new InvalidDataException("The loaded project does not have a valid RomFS directory.");
+        if (string.IsNullOrWhiteSpace(sourceConfig.ExeFS) || !Directory.Exists(sourceConfig.ExeFS))
+            throw new InvalidDataException("The loaded project does not have a valid ExeFS directory.");
+        if (string.IsNullOrWhiteSpace(sourceExHeader) || !File.Exists(sourceExHeader))
+            throw new InvalidDataException("The loaded project does not have a valid ExHeader file.");
+
+        string stageRomFS = Path.Combine(targetRoot, Path.GetRelativePath(sourceRoot, sourceConfig.RomFS));
+        string stageExeFS = Path.Combine(targetRoot, Path.GetRelativePath(sourceRoot, sourceConfig.ExeFS));
+        string stageExHeader = Path.Combine(targetRoot, Path.GetFileName(sourceExHeader));
+
+        // Only copy the extracted project components required to randomize and rebuild.
+        // Large source archives / old .3ds files / update dumps are deliberately excluded.
+        CopyDirectory(sourceConfig.RomFS, stageRomFS);
+        CopyDirectory(sourceConfig.ExeFS, stageExeFS);
+        File.Copy(sourceExHeader, stageExHeader, true);
+
         if (!restoreBackups)
             return 0;
 
@@ -340,6 +363,12 @@ internal static class BatchWorkspace
         string bakDll = Path.Combine(gameBackup, GameBackup.bakdll);
         int restored = 0;
 
+        // Validate the whole GARC backup set before copying anything. A backup folder
+        // can be stale when the same extracted-game folder name was previously used
+        // for another title (for example SM vs USUM).
+        if (Directory.Exists(bakA))
+            ValidateGarcBackupCompatibility(bakA, stageRomFS, config);
+
         // GARC backups use pk3DS' "name (relativegarcpath)" naming convention.
         if (Directory.Exists(bakA))
         {
@@ -365,6 +394,102 @@ internal static class BatchWorkspace
         return restored;
     }
 
+    private static void ValidateGarcBackupCompatibility(string backupRoot, string stageRomFS, GameConfig config)
+    {
+        foreach (var file in config.Files)
+        {
+            string garc = config.GetGARCFileName(file.Name);
+            string backupName = $"{file.Name} ({garc.Replace(Path.DirectorySeparatorChar.ToString(), string.Empty)})";
+            string backupPath = Path.Combine(backupRoot, backupName);
+            if (!File.Exists(backupPath))
+                continue;
+
+            string stagePath = Path.Combine(stageRomFS, garc);
+            if (!File.Exists(stagePath))
+            {
+                throw new InvalidDataException(
+                    $"Cannot validate pk3DS backup '{backupName}' because the staging target does not exist: {stagePath}");
+            }
+
+            ValidateGarcBackupCompatibility(file.Name, backupPath, stagePath, config);
+        }
+    }
+
+    private static void ValidateGarcBackupCompatibility(
+        string logicalName,
+        string backupPath,
+        string stagePath,
+        GameConfig config)
+    {
+        try
+        {
+            var backup = new GARC.MemGARC(File.ReadAllBytes(backupPath));
+            var stage = new GARC.MemGARC(File.ReadAllBytes(stagePath));
+
+            if (backup.FileCount != stage.FileCount)
+            {
+                throw CreateIncompatibleBackupException(
+                    config,
+                    logicalName,
+                    backupPath,
+                    $"GARC entry count is {backup.FileCount}, but the loaded project expects {stage.FileCount}.");
+            }
+
+            if (string.Equals(logicalName, "move", StringComparison.OrdinalIgnoreCase))
+            {
+                byte[][] backupMoves = Mini.UnpackMini(backup.GetFile(0), "WD");
+                byte[][] stageMoves = Mini.UnpackMini(stage.GetFile(0), "WD");
+
+                int backupCount = backupMoves?.Length ?? 0;
+                int stageCount = stageMoves?.Length ?? 0;
+                int expectedCount = config.Moves?.Length ?? stageCount;
+
+                if (backupCount <= 0 || stageCount <= 0)
+                {
+                    throw CreateIncompatibleBackupException(
+                        config,
+                        logicalName,
+                        backupPath,
+                        "Move data does not contain a valid WD Mini archive.");
+                }
+
+                if (backupCount != stageCount || backupCount != expectedCount)
+                {
+                    throw CreateIncompatibleBackupException(
+                        config,
+                        logicalName,
+                        backupPath,
+                        $"Move count is {backupCount}, but the loaded {config.Version} project expects {expectedCount}.");
+                }
+            }
+        }
+        catch (InvalidDataException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidDataException(
+                $"Could not validate pk3DS backup '{Path.GetFileName(backupPath)}' for {config.Version}. " +
+                $"The backup set may be stale or belong to another game. Backup: {backupPath}",
+                ex);
+        }
+    }
+
+    private static InvalidDataException CreateIncompatibleBackupException(
+        GameConfig config,
+        string logicalName,
+        string backupPath,
+        string detail)
+    {
+        return new InvalidDataException(
+            $"Incompatible pk3DS backup detected for the loaded {config.Version} project.{Environment.NewLine}" +
+            $"Backup data: {logicalName}{Environment.NewLine}" +
+            $"{detail}{Environment.NewLine}" +
+            $"Backup: {backupPath}{Environment.NewLine}{Environment.NewLine}" +
+            "No backup files were restored. Uncheck 'Restore pk3DS original-file backups before each ROM' " +
+            "or recreate the pk3DS backup set from the correct game.");
+    }
     private static int OverlayExeFSBackups(string sourceRoot, string targetRoot)
     {
         int count = 0;
@@ -379,7 +504,8 @@ internal static class BatchWorkspace
 
             string relative = Path.GetRelativePath(sourceRoot, source);
             string target = Path.Combine(targetRoot, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target));
+            if (!File.Exists(target))
+                continue; // Never inject stale extra ExeFS files into a clean staging copy.
             File.Copy(source, target, true);
             count++;
         }
