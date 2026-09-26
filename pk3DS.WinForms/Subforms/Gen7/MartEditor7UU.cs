@@ -802,7 +802,7 @@ public partial class MartEditor7UU : Form
         if (megaRingId <= 0)
         {
             error =
-                "Could not resolve 'Mega Ring' from this ROM's item table.";
+                "Could not resolve 'Key Stone' from this ROM's item table.";
             return false;
         }
 
@@ -904,7 +904,7 @@ public partial class MartEditor7UU : Form
             MessageBoxButtons.YesNo,
             "Add EV/training items to progression marts?",
             "This will ADD the six EV Wings and Rare Candy without replacing existing shop items. " +
-            "Heart Scale is added from 3 Trials onward, and Mega Ring from 5 Trials onward. " +
+            "Heart Scale is added from 3 Trials onward, and Key Stone from 5 Trials onward. " +
             "Items already sold by a mart will not be duplicated."))
         {
             return;
@@ -1172,7 +1172,7 @@ public partial class MartEditor7UU : Form
             "Swift Wing|Pluma Ãmpetu|Pluma Impetu",
             "Heart Scale|Escama CorazÃ³n|Escama Corazon",
             "Rare Candy|Caramelo Raro",
-            "Mega Ring|Megaaro|Mega Aro|Mega-Aro",
+            "Key Stone|Piedra Activadora|Piedra Llave",
         ];
 
         var missing =
@@ -1231,7 +1231,7 @@ public partial class MartEditor7UU : Form
                 continue;
 
             throw new InvalidDataException(
-                $"Could not reserve a healing-item slot for Mega Ring in '{locations[mart]}'. " +
+                $"Could not reserve a healing-item slot for Key Stone in '{locations[mart]}'. " +
                 "Legacy EV Items requires a compatible healing slot.");
         }
 
@@ -1409,11 +1409,70 @@ public partial class MartEditor7UU : Form
                 return item;
         }
 
+        // Localized item names may differ only by accents, punctuation, or
+        // encoding-safe aliases. Fall back to a normalized comparison so
+        // mart helpers do not depend on an exact localized glyph.
+        foreach (string name in names)
+        {
+            string normalizedName =
+                NormalizeItemName(
+                    name);
+
+            if (normalizedName.Length == 0)
+                continue;
+
+            int item = Array.FindIndex(itemlist, z =>
+                string.Equals(
+                    NormalizeItemName(z),
+                    normalizedName,
+                    StringComparison.Ordinal));
+
+            if (item > 0)
+                return item;
+        }
+
         return -1;
     }
 
+    private static string NormalizeItemName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        string decomposed =
+            value.Normalize(
+                System.Text.NormalizationForm.FormD);
+
+        var chars =
+            new List<char>(
+                decomposed.Length);
+
+        foreach (char character in decomposed)
+        {
+            System.Globalization.UnicodeCategory category =
+                System.Globalization.CharUnicodeInfo.GetUnicodeCategory(
+                    character);
+
+            if (category ==
+                System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(character))
+            {
+                chars.Add(
+                    char.ToLowerInvariant(
+                        character));
+            }
+        }
+
+        return new string(
+            chars.ToArray());
+    }
+
     private int GetMegaRingItemID() =>
-        FindItemID("Mega Ring", "Megaaro", "Mega Aro", "Mega-Aro");
+        FindItemID("Key Stone", "Piedra Activadora", "Piedra Llave");
 
     private int GetRareCandyItemID()
     {

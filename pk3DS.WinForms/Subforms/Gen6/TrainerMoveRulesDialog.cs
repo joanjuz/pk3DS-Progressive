@@ -9,17 +9,17 @@ namespace pk3DS.WinForms;
 
 public static class TrainerMoveRulesDialog
 {
-    public static bool Edit(IWin32Window owner, ref List<TrainerMoveRule> rules)
+    public static bool Edit(IWin32Window owner, ref List<TrainerMoveRule> rules, bool showPerTrainerBetterSmart = true)
     {
         using var form = new Form
         {
             Text = "Trainer Move Rules",
             StartPosition = FormStartPosition.CenterParent,
-            Size = new Size(1540, 680),
+            Size = showPerTrainerBetterSmart ? new Size(1540, 680) : new Size(1120, 650),
             MinimizeBox = false,
             MaximizeBox = false,
             FormBorderStyle = FormBorderStyle.Sizable,
-            MinimumSize = new Size(1480, 650),
+            MinimumSize = showPerTrainerBetterSmart ? new Size(1480, 650) : new Size(1040, 600),
         };
 
         var editableRules = new BindingList<TrainerMoveRule>(
@@ -135,6 +135,76 @@ public static class TrainerMoveRulesDialog
 
         grid.DataError += (_, e) => e.ThrowException = false;
 
+        if (!showPerTrainerBetterSmart)
+        {
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                if (column.DataPropertyName == nameof(TrainerMoveRule.BetterMovesets) ||
+                    column.DataPropertyName == nameof(TrainerMoveRule.SmartItems))
+                {
+                    column.Visible = false;
+                }
+            }
+        }
+
+        var filterPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 38,
+            FlowDirection = FlowDirection.LeftToRight,
+            Padding = new Padding(8, 6, 8, 4),
+        };
+
+        var filterLabel = new Label
+        {
+            AutoSize = true,
+            Text = "Show:",
+            Padding = new Padding(0, 4, 0, 0),
+        };
+
+        var chkImportant = new CheckBox
+        {
+            AutoSize = true,
+            Checked = true,
+            Text = "Important Trainers",
+        };
+
+        var chkBosses = new CheckBox
+        {
+            AutoSize = true,
+            Checked = true,
+            Text = "Bosses",
+        };
+
+        filterPanel.Controls.Add(filterLabel);
+        filterPanel.Controls.Add(chkImportant);
+        filterPanel.Controls.Add(chkBosses);
+
+        void ApplyTrainerVisibilityFilter()
+        {
+            grid.CurrentCell = null;
+
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                if (row.DataBoundItem is not TrainerMoveRule rule)
+                    continue;
+
+                bool isBoss = string.Equals(
+                    rule.Group,
+                    "Boss",
+                    StringComparison.OrdinalIgnoreCase);
+
+                row.Visible = isBoss
+                    ? chkBosses.Checked
+                    : chkImportant.Checked;
+            }
+        }
+
+        chkImportant.CheckedChanged += (_, _) => ApplyTrainerVisibilityFilter();
+        chkBosses.CheckedChanged += (_, _) => ApplyTrainerVisibilityFilter();
+        grid.DataBindingComplete += (_, _) => ApplyTrainerVisibilityFilter();
+        ApplyTrainerVisibilityFilter();
+
 
         var evPanel = new FlowLayoutPanel
         {
@@ -226,6 +296,14 @@ public static class TrainerMoveRulesDialog
         var smartItemsAll = new Button { Text = "Smart Items All", Width = 124 };
         var smartItemsNone = new Button { Text = "Smart Items None", Width = 138 };
 
+        if (!showPerTrainerBetterSmart)
+        {
+            betterMovesetsAll.Visible = false;
+            betterMovesetsNone.Visible = false;
+            smartItemsAll.Visible = false;
+            smartItemsNone.Visible = false;
+        }
+
         foreach (var button in new[] { ok, cancel, selectAll, selectNone, allowStatusAll, allowStatusNone, betterMovesetsAll, betterMovesetsNone, smartItemsAll, smartItemsNone })
             StyleButton(button);
 
@@ -279,6 +357,7 @@ public static class TrainerMoveRulesDialog
         buttons.Controls.Add(ok);
 
         form.Controls.Add(grid);
+        form.Controls.Add(filterPanel);
         form.Controls.Add(evPanel);
         form.Controls.Add(buttons);
 

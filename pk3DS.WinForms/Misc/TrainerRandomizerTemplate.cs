@@ -44,7 +44,48 @@ public sealed class ProgressiveBSTTemplateRule
 public sealed class TrainerMoveSettingsTemplate
 {
     public TrainerMoveSource Source { get; set; } = TrainerMoveSource.RandomizeAll;
+
+    // Gen7 global Rules settings.
+    // Nullable so older JSON templates do not silently overwrite the current UI.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RandomDoubleBattles { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? DoubleBattleChance { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? MaxTrainerAI { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RandomHeldItems { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BanBadItems { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? ItemClause { get; set; }
     public bool BetterMovesets { get; set; }
+
+    // Gen7 global Better Movesets category selectors.
+    // Defaults preserve the behavior of older templates when BetterMovesets is enabled.
+    public bool BetterMovesetsNormalTrainers { get; set; } = true;
+    public bool BetterMovesetsImportantTrainers { get; set; } = true;
+    public bool BetterMovesetsBosses { get; set; } = true;
+
+    // Gen7 global Smart Items settings.
+    public bool SmartItems { get; set; }
+    public bool SmartItemsNormalTrainers { get; set; } = true;
+    public bool SmartItemsImportantTrainers { get; set; } = true;
+    public bool SmartItemsBosses { get; set; } = true;
+
+    // 0 = Normal, 1 = Strong, 2 = Competitive.
+    // Legacy single quality value. Kept so older trainer templates still load.
+    public int SmartItemMode { get; set; } = 1;
+
+    // -1 means: use the legacy SmartItemMode value.
+    public int SmartItemModeNormalTrainers { get; set; } = -1;
+    public int SmartItemModeImportantTrainers { get; set; } = -1;
+    public int SmartItemModeBosses { get; set; } = -1;
     public bool ForceHighPower { get; set; }
     public int HighPowerLevel { get; set; } = 30;
     public bool NoFixedDamage { get; set; } = true;
@@ -67,7 +108,13 @@ public sealed class TrainerLevelCapTemplateEntry
 {
     public int TrainerID { get; set; }
     public bool Use { get; set; } = true;
+
+    // 0 means: use CurrentAceLevel. CurrentAceLevel is persisted so Player
+    // Level Caps can import the Trainer Caps configuration without reopening
+    // or re-reading trainer GARC data.
     public int LevelCap { get; set; }
+    public int CurrentAceLevel { get; set; }
+
     public bool Mega { get; set; }
     public bool ZMove { get; set; }
 }
@@ -264,12 +311,25 @@ public static class TrainerRandomizerTemplateFile
             var moves = template.MoveSettings;
             if (!Enum.IsDefined(moves.Source))
                 throw new InvalidDataException("Invalid move source in template.");
+
+            if (moves.DoubleBattleChance is < 0 or > 100)
+                throw new InvalidDataException("DoubleBattleChance must be between 0 and 100.");
             if (moves.HighPowerLevel < 1 || moves.HighPowerLevel > 100)
                 throw new InvalidDataException("HighPowerLevel must be between 1 and 100.");
             if (moves.DamagingMoveCount < 0 || moves.DamagingMoveCount > 4)
                 throw new InvalidDataException("DamagingMoveCount must be between 0 and 4.");
             if (moves.STABMoveCount < 0 || moves.STABMoveCount > 4)
                 throw new InvalidDataException("STABMoveCount must be between 0 and 4.");
+
+            if (moves.SmartItemMode < 0 || moves.SmartItemMode > 2)
+                throw new InvalidDataException("SmartItemMode must be 0 (Normal), 1 (Strong), or 2 (Competitive).");
+
+            if (moves.SmartItemModeNormalTrainers < -1 || moves.SmartItemModeNormalTrainers > 2)
+                throw new InvalidDataException("SmartItemModeNormalTrainers must be -1 (legacy), 0 (Normal), 1 (Strong), or 2 (Competitive).");
+            if (moves.SmartItemModeImportantTrainers < -1 || moves.SmartItemModeImportantTrainers > 2)
+                throw new InvalidDataException("SmartItemModeImportantTrainers must be -1 (legacy), 0 (Normal), 1 (Strong), or 2 (Competitive).");
+            if (moves.SmartItemModeBosses < -1 || moves.SmartItemModeBosses > 2)
+                throw new InvalidDataException("SmartItemModeBosses must be -1 (legacy), 0 (Normal), 1 (Strong), or 2 (Competitive).");
         }
 
         if (template.LevelCaps is not null)
@@ -283,6 +343,8 @@ public static class TrainerRandomizerTemplateFile
                 throw new InvalidDataException("Level Cap trainer IDs must be greater than 0.");
             if (entries.Any(e => e.LevelCap < 0 || e.LevelCap > 100))
                 throw new InvalidDataException("Level caps must be 0 (use current ace) or between 1 and 100.");
+            if (entries.Any(e => e.CurrentAceLevel < 0 || e.CurrentAceLevel > 100))
+                throw new InvalidDataException("CurrentAceLevel must be between 0 and 100.");
             if (entries.GroupBy(e => e.TrainerID).Any(g => g.Count() > 1))
                 throw new InvalidDataException("Duplicate trainer IDs found in Level Caps.");
         }

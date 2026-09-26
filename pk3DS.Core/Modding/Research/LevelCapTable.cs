@@ -4,175 +4,316 @@ using System.Linq;
 
 namespace pk3DS.Core.Modding.Research;
 
-public sealed record LevelCapEntry(string Label, byte FlagOffset, byte FlagBit, byte Cap)
+public enum LevelCapConditionKind : byte
 {
-    public byte[] ToBytes() => [FlagOffset, FlagBit, Cap];
-
-    public override string ToString() =>
-        $"{Label} - Lv {Cap} (flag 0x{FlagOffset:X2} bit 0x{FlagBit:X2})";
+    EventFlagSet = 0,
+    EventWorkAtLeast = 1,
 }
 
-public sealed record StoryFlag(string Label, byte Offset, byte Bit)
+public sealed record LevelCapEntry(
+    string Label,
+    LevelCapConditionKind Kind,
+    ushort FlagOffset,
+    ushort FlagBit,
+    byte Cap)
 {
-    public override string ToString() => $"{Label}  (0x{Offset:X2}/0x{Bit:X2})";
+    public LevelCapEntry(
+        string label,
+        ushort flagOffset,
+        ushort flagBit,
+        byte cap)
+        : this(
+            label,
+            LevelCapConditionKind.EventFlagSet,
+            flagOffset,
+            flagBit,
+            cap)
+    {
+    }
+
+    public byte[] ToBytes() =>
+    [
+        (byte)Kind,
+        Cap,
+        (byte)(FlagOffset & 0xFF),
+        (byte)(FlagOffset >> 8),
+        (byte)(FlagBit & 0xFF),
+        (byte)(FlagBit >> 8),
+    ];
+
+    public override string ToString() =>
+        Kind switch
+        {
+            LevelCapConditionKind.EventFlagSet =>
+                $"{Label} - Lv {Cap} (flag byte 0x{FlagOffset:X4}, mask 0x{FlagBit:X2})",
+
+            LevelCapConditionKind.EventWorkAtLeast =>
+                $"{Label} - Lv {Cap} (event work 0x{FlagOffset:X4} >= {FlagBit})",
+
+            _ =>
+                $"{Label} - Lv {Cap} (unknown condition {(byte)Kind})",
+        };
+}
+
+public sealed record StoryFlag(
+    string Label,
+    LevelCapConditionKind Kind,
+    ushort Offset,
+    ushort Bit)
+{
+    public StoryFlag(
+        string label,
+        ushort offset,
+        ushort bit)
+        : this(
+            label,
+            LevelCapConditionKind.EventFlagSet,
+            offset,
+            bit)
+    {
+    }
+
+    public override string ToString() =>
+        Kind switch
+        {
+            LevelCapConditionKind.EventFlagSet =>
+                $"{Label}  (flag 0x{Offset:X4}/0x{Bit:X2})",
+
+            LevelCapConditionKind.EventWorkAtLeast =>
+                $"{Label}  (work 0x{Offset:X4} >= {Bit})",
+
+            _ =>
+                Label,
+        };
 }
 
 /// <summary>
-/// Story-flag driven player level-cap progression researched for USUM.
-/// Each entry is three bytes in the injected runtime table: flag offset, flag bit, level cap.
+/// Save-validated USUM player level-cap progression.
+///
+/// Runtime entry layout (6 bytes):
+///   u8  condition kind
+///   u8  level cap
+///   u16 argument 0
+///   u16 argument 1
+///
+/// EventFlagSet:
+///   argument 0 = global Event Flags byte offset from SaveFlagBase
+///   argument 1 = bit mask
+///
+/// EventWorkAtLeast:
+///   argument 0 = Event Work index
+///   argument 1 = minimum ushort value
+///
+/// The runtime advances while the current checkpoint condition is complete.
+/// The first incomplete checkpoint supplies the active cap. After every
+/// checkpoint is complete, the terminator supplies HardCeiling (Lv100).
 /// </summary>
 public sealed class LevelCapTable
 {
-    public const int EntrySize = 3;
+    public const int EntrySize = 6;
     public const int MaxEntries = 128;
-    public const byte ResearchFinalCap = 98;
+    public const byte ResearchFinalCap = 70;
     public const byte HardCeiling = 100;
+
+    public const ushort EventFlagByteCount = 4960 / 8;
+    public const ushort EventWorkCount = 1000;
 
     public static readonly StoryFlag[] KnownFlags =
     [
-        new("Ride Pager", 0x01, 0x02),
-        new("Tauros Charge", 0x01, 0x04),
-        new("Stoutland Search", 0x01, 0x08),
-        new("Machamp Shove", 0x01, 0x10),
-        new("Mudsdale Ride", 0x01, 0x20),
-        new("Lapras Surf", 0x01, 0x40),
-        new("Sharpedo Jet", 0x01, 0x80),
-        new("Charizard Fly", 0x02, 0x01),
-        new("Fly - Pokemon League", 0x10, 0x20),
-        new("Fly - Ruins of Abundance", 0x10, 0x40),
-        new("Fly - Paniola Ranch", 0x10, 0x80),
-        new("Fly - Route 1", 0x11, 0x01),
-        new("Fly - Hau'oli City", 0x11, 0x02),
-        new("Fly - Route 2", 0x11, 0x04),
-        new("Fly - Iki Town", 0x11, 0x08),
-        new("Fly - Your House", 0x11, 0x10),
-        new("Fly - Ten Carat Hill", 0x11, 0x20),
-        new("Fly - Melemele Meadow", 0x11, 0x40),
-        new("Fly - Verdant Cave", 0x11, 0x80),
-        new("Fly - Ruins of Conflict", 0x12, 0x01),
-        new("Fly - Hau'oli Cemetery", 0x12, 0x02),
-        new("Fly - Heahea City", 0x12, 0x04),
-        new("Fly - Royal Avenue", 0x12, 0x08),
-        new("Fly - Route 8", 0x12, 0x10),
-        new("Fly - Konikoni City", 0x12, 0x20),
-        new("Fly - Paniola Town", 0x12, 0x40),
-        new("Fly - Battle Royale Dome", 0x12, 0x80),
-        new("Fly - Hano Grand Resort", 0x13, 0x01),
-        new("Fly - Route 5/Brooklet Hill", 0x13, 0x02),
-        new("Fly - Lush Jungle", 0x13, 0x04),
-        new("Fly - Route 7/Wela Volcano Park", 0x13, 0x08),
-        new("Fly - Ruins of Life", 0x13, 0x10),
-        new("Fly - Route 9/Memorial Hill", 0x13, 0x20),
-        new("Fly - Malie City", 0x13, 0x40),
-        new("Fly - Tapu Village", 0x14, 0x01),
-        new("Fly - Route 16", 0x14, 0x02),
-        new("Fly - Mount Hokulani", 0x14, 0x04),
-        new("Fly - Blush Mountain", 0x14, 0x08),
-        new("Fly - Seafolk Village", 0x14, 0x20),
-        new("Fly - Battle Tree", 0x14, 0x40),
-        new("Fly - Vast Poni Canyon", 0x14, 0x80),
-        new("Fly - Ruins of Hope", 0x15, 0x01),
-        new("Fly - Poni Meadow", 0x15, 0x02),
-        new("Fly - Exeggutor Island", 0x15, 0x04),
-        new("Fly - Aether Paradise", 0x15, 0x08),
-        new("Fly - Po Town", 0x2D, 0x40),
-        new("Fly - Lake of the Moone", 0x2E, 0x02),
-        new("Fly - Altar of the Sunne", 0x2E, 0x10),
-        new("Fly - Heahea Beach", 0x35, 0x02),
-        new("Fly - Circle Controls", 0x35, 0x04),
-        new("Fly - Big Wave Beach", 0x35, 0x08),
-        new("Fly - Hau'oli Photo Club", 0x35, 0x20),
-        new("Fly - Konikoni Photo Club", 0x35, 0x40),
-        new("Fly - Ula'ula Beach", 0x35, 0x80),
-        new("Fly - Poni Beach", 0x36, 0x01),
-        new("Lanturn 360", 0x3C, 0x02),
-        new("Primarina Twist", 0x3C, 0x04),
-        new("Starmie 720", 0x3C, 0x08),
-        new("Over the Gyarados", 0x3C, 0x10),
+        new("Clear Normal Trial - Ilima (1dom)", 0x0010, 0x0008),
+        new("Defeat Kahuna Hala", 0x0011, 0x0008),
+        new("Clear Water Trial - Lana (2dom)", 0x0010, 0x0010),
+        new("Clear Fire Trial - Kiawe (3dom)", 0x0010, 0x0040),
+        new("Clear Grass Trial - Mallow (4dom)", 0x0010, 0x0020),
+        new("Defeat Olivia - Mayla", 0x0011, 0x0010),
+        new("Clear Electric Trial - Sophocles (5dom)", 0x0010, 0x0080),
+        new("Clear Ghost Trial - Acerola (6dom)", 0x0011, 0x0001),
+        new("Defeat Guzma", 0x0198, 0x0080),
+        new("Defeat Nanu - Denio", 0x0011, 0x0020),
+        new("Defeat Lusamine", 0x018B, 0x0080),
+        new("Clear Dragon Trial - Poni (7dom)", 0x0011, 0x0002),
+
+        new(
+            "Defeat Ultra Necrozma",
+            LevelCapConditionKind.EventWorkAtLeast,
+            0x0044,
+            1796),
+
+        new("Clear Fairy Trial - Mina (8dom)", 0x0013, 0x0020),
+        new("Defeat Hapu - Hela", 0x0011, 0x0040),
+        new(
+            "Defeat Gladion - Mount Lanakila",
+            LevelCapConditionKind.EventWorkAtLeast,
+            0x0044,
+            1850),
+        new("Elite Four - Kahili", 0x018F, 0x0001),
+        new("Elite Four - Molayne (Lario)", 0x01B8, 0x0020),
+        new("Elite Four - Olivia (Mayla)", 0x018E, 0x0020),
+        new("Elite Four - Acerola (Zarala)", 0x018E, 0x0002),
+        new(
+            "Defeat Champion Hau (Tilo)",
+            LevelCapConditionKind.EventWorkAtLeast,
+            0x0044,
+            2000),
     ];
 
     public List<LevelCapEntry> Entries { get; init; } = [];
 
+    /// <summary>
+    /// Canonical table contains only checkpoints proven by the LevelCaps.zip
+    /// before/after save pairs. Earlier/unlisted bosses are intentionally not
+    /// inferred. The validated progression now begins at Lv14 until 1dom.
+    /// </summary>
     public static LevelCapTable Default() => new()
     {
         Entries =
         [
-            new("Iki Town (added)", 0x11, 0x08, 10),
-            new("Ride Pager (added)", 0x01, 0x02, 12),
-            new("Trainer School", 0x11, 0x01, 15),
-            new("Captain Ilima", 0x11, 0x02, 17),
-            new("Route 2 (added)", 0x11, 0x04, 18),
-            new("Totem Gumshoos", 0x11, 0x80, 20),
-            new("Kahuna Hala", 0x11, 0x40, 27),
-            new("Tauros Charge (added: ride 1)", 0x01, 0x04, 28),
-            new("Dexio/Sina Battle", 0x12, 0x04, 29),
-            new("Hau, Paniola Town", 0x12, 0x40, 32),
-            new("Paniola Ranch (added)", 0x10, 0x80, 34),
-            new("Stoutland Search (added: ride 2)", 0x01, 0x08, 35),
-            new("Gladion", 0x13, 0x02, 37),
-            new("Totem Araquanid", 0x01, 0x40, 40),
-            new("Royal Avenue", 0x12, 0x08, 45),
-            new("Battle Royale Dome (added)", 0x12, 0x80, 47),
-            new("Totem Marowak", 0x13, 0x08, 50),
-            new("Charizard Glide (added: ride 4)", 0x02, 0x01, 51),
-            new("Lush Jungle (added)", 0x13, 0x04, 52),
-            new("Totem Lurantis", 0x12, 0x10, 55),
-            new("Konikoni City", 0x12, 0x20, 60),
-            new("Kahuna Olivia", 0x13, 0x10, 63),
-            new("Malie City Hau Battle", 0x13, 0x40, 65),
-            new("Mt. Hokulani Bus (added: Route 16)", 0x14, 0x02, 70),
-            new("Totem Togedemaru", 0x14, 0x04, 72),
-            new("Ula'ula Beach (Mudsdale Ride)", 0x01, 0x20, 75),
-            new("Sharpedo Jet (added: ride 6)", 0x01, 0x80, 77),
-            new("Totem Mimikyu", 0x14, 0x01, 80),
-            new("Po Town", 0x2D, 0x40, 85),
-            new("Kahuna Nanu (added: Ula'ula Beach fly)", 0x35, 0x80, 87),
-            new("Aether Branch Chief Faba", 0x15, 0x08, 90),
-            new("Arrive Seafolk Village", 0x3C, 0x10, 95),
-            new("Vast Poni Canyon (added: after Hapu)", 0x14, 0x80, 96),
-            new("Arrive Altar of the Sunne", 0x2E, 0x10, 97),
-            new("Elite Four (post-game flag)", 0x2E, 0x02, ResearchFinalCap),
+            new("Clear Normal Trial - Ilima (1dom)", 0x0010, 0x0008, 14),
+            new("Defeat Kahuna Hala", 0x0011, 0x0008, 19),
+            new("Clear Water Trial - Lana (2dom)", 0x0010, 0x0010, 24),
+            new("Clear Fire Trial - Kiawe (3dom)", 0x0010, 0x0040, 26),
+            new("Clear Grass Trial - Mallow (4dom)", 0x0010, 0x0020, 29),
+            new("Defeat Olivia - Mayla", 0x0011, 0x0010, 34),
+            new("Clear Electric Trial - Sophocles (5dom)", 0x0010, 0x0080, 40),
+            new("Clear Ghost Trial - Acerola (6dom)", 0x0011, 0x0001, 42),
+            new("Defeat Guzma", 0x0198, 0x0080, 42),
+            new("Defeat Nanu - Denio", 0x0011, 0x0020, 53),
+            new("Defeat Lusamine", 0x018B, 0x0080, 53),
+            new("Clear Dragon Trial - Poni (7dom)", 0x0011, 0x0002, 59),
+
+            new(
+                "Defeat Ultra Necrozma",
+                LevelCapConditionKind.EventWorkAtLeast,
+                0x0044,
+                1796,
+                60),
+
+            new("Clear Fairy Trial - Mina (8dom)", 0x0013, 0x0020, 66),
+            new("Defeat Hapu - Hela", 0x0011, 0x0040, 67),
+            new(
+                "Defeat Gladion - Mount Lanakila",
+                LevelCapConditionKind.EventWorkAtLeast,
+                0x0044,
+                1850,
+                67),
+            new("Elite Four - Kahili", 0x018F, 0x0001, 68),
+            new("Elite Four - Molayne (Lario)", 0x01B8, 0x0020, 68),
+            new("Elite Four - Olivia (Mayla)", 0x018E, 0x0020, 68),
+            new("Elite Four - Acerola (Zarala)", 0x018E, 0x0002, 68),
+            new(
+                "Defeat Champion Hau (Tilo)",
+                LevelCapConditionKind.EventWorkAtLeast,
+                0x0044,
+                2000,
+                ResearchFinalCap),
         ],
     };
 
     public byte[] ToBytes(bool terminate = true)
     {
-        var bytes = new List<byte>((Entries.Count * EntrySize) + EntrySize);
-        foreach (var e in Entries)
-            bytes.AddRange(e.ToBytes());
+        var bytes =
+            new List<byte>(
+                (Entries.Count * EntrySize) +
+                EntrySize);
+
+        foreach (LevelCapEntry entry in Entries)
+            bytes.AddRange(entry.ToBytes());
 
         if (terminate)
-            bytes.AddRange([0, 0, HardCeiling]);
+        {
+            bytes.AddRange(
+            [
+                0xFF,
+                HardCeiling,
+                0,
+                0,
+                0,
+                0,
+            ]);
+        }
 
         return [.. bytes];
     }
 
     public List<string> Validate()
     {
-        var problems = new List<string>();
+        var problems =
+            new List<string>();
+
         if (Entries.Count == 0)
         {
-            problems.Add("the table is empty; no cap would ever apply");
+            problems.Add(
+                "the table is empty; no cap would ever apply");
             return problems;
         }
 
         if (Entries.Count > MaxEntries)
-            problems.Add($"the table has more than {MaxEntries} checkpoints; the runtime table limit is {MaxEntries}");
-
-        foreach (var e in Entries)
-        {
-            if (e.Cap is 0 or > HardCeiling)
-                problems.Add($"'{e.Label}': cap {e.Cap} is outside 1-100");
-
-            if (e.FlagBit == 0 || (e.FlagBit & (e.FlagBit - 1)) != 0)
-                problems.Add($"'{e.Label}': bit 0x{e.FlagBit:X2} is not a single bit");
-        }
-
-        foreach (var g in Entries.GroupBy(e => (e.FlagOffset, e.FlagBit)).Where(g => g.Count() > 1))
         {
             problems.Add(
-                $"flag 0x{g.Key.FlagOffset:X2} bit 0x{g.Key.FlagBit:X2} is used by " +
-                string.Join(" and ", g.Select(e => $"'{e.Label}'")));
+                $"the table has more than {MaxEntries} checkpoints; " +
+                $"the runtime table limit is {MaxEntries}");
+        }
+
+        foreach (LevelCapEntry entry in Entries)
+        {
+            if (entry.Cap is 0 or > HardCeiling)
+            {
+                problems.Add(
+                    $"'{entry.Label}': cap {entry.Cap} is outside 1-100");
+            }
+
+            switch (entry.Kind)
+            {
+                case LevelCapConditionKind.EventFlagSet:
+                    if (entry.FlagOffset >= EventFlagByteCount)
+                    {
+                        problems.Add(
+                            $"'{entry.Label}': Event Flags byte offset " +
+                            $"0x{entry.FlagOffset:X4} is outside the USUM bitfield");
+                    }
+
+                    if (entry.FlagBit is 0 or > 0x00FF)
+                    {
+                        problems.Add(
+                            $"'{entry.Label}': event-flag mask " +
+                            $"0x{entry.FlagBit:X4} must fit in one byte and be non-zero");
+                    }
+                    break;
+
+                case LevelCapConditionKind.EventWorkAtLeast:
+                    if (entry.FlagOffset >= EventWorkCount)
+                    {
+                        problems.Add(
+                            $"'{entry.Label}': Event Work index " +
+                            $"0x{entry.FlagOffset:X4} is outside the USUM work array");
+                    }
+
+                    if (entry.FlagBit == 0)
+                    {
+                        problems.Add(
+                            $"'{entry.Label}': Event Work threshold cannot be zero");
+                    }
+                    break;
+
+                default:
+                    problems.Add(
+                        $"'{entry.Label}': unsupported condition kind {(byte)entry.Kind}");
+                    break;
+            }
+        }
+
+        foreach (var group in Entries
+                     .GroupBy(z => (z.Kind, z.FlagOffset, z.FlagBit))
+                     .Where(z => z.Count() > 1))
+        {
+            problems.Add(
+                $"condition {group.Key.Kind} " +
+                $"0x{group.Key.FlagOffset:X4}/0x{group.Key.FlagBit:X4} " +
+                "is used by " +
+                string.Join(
+                    " and ",
+                    group.Select(z =>
+                        $"'{z.Label}'")));
         }
 
         for (int i = 1; i < Entries.Count; i++)
@@ -180,13 +321,17 @@ public sealed class LevelCapTable
             if (Entries[i].Cap < Entries[i - 1].Cap)
             {
                 problems.Add(
-                    $"'{Entries[i].Label}': cap {Entries[i].Cap} is lower than the previous " +
-                    $"checkpoint cap {Entries[i - 1].Cap}; checkpoint order must never go backwards");
+                    $"'{Entries[i].Label}': cap {Entries[i].Cap} is lower than " +
+                    $"the previous checkpoint cap {Entries[i - 1].Cap}; " +
+                    "checkpoint order must never go backwards");
             }
         }
 
         return problems;
     }
 
-    public LevelCapTable Clone() => new() { Entries = [.. Entries] };
+    public LevelCapTable Clone() => new()
+    {
+        Entries = [.. Entries],
+    };
 }

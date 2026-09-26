@@ -336,9 +336,16 @@ public sealed partial class Main : Form
         File.WriteAllLines(logPath, log, Encoding.UTF8);
 
         GameConfig originalConfig = Config;
+        string originalExHeader = ExHeaderPath;
         string activeStage = null;
         var usedSeeds = new HashSet<int>();
         int completed = 0;
+        bool cancelled = false;
+
+        using var progressDialog = new BatchRomProgressDialog(options.Count, pBar1);
+        progressDialog.Show(this);
+        progressDialog.SetStage("Starting batch...");
+        Application.DoEvents();
 
         Enabled = false;
         UseWaitCursor = true;
@@ -347,20 +354,53 @@ public sealed partial class Main : Form
         {
             for (int i = 1; i <= options.Count; i++)
             {
+                if (progressDialog.CancelRequested)
+                {
+                    cancelled = true;
+                    break;
+                }
+
                 int seed = CreateBatchSeed(usedSeeds);
                 activeStage = Path.Combine(sourceParent, $".pk3ds_batch_{Guid.NewGuid():N}");
                 string outputPath = Path.Combine(options.OutputDirectory, $"{options.BaseName}_{i:00}.3ds");
 
+                progressDialog.BeginRom(i, options.Count, seed, Path.GetFileName(outputPath));
+
+                progressDialog.SetStage("Preparing clean staging copy...");
                 UpdateStatus($"[Batch {i}/{options.Count}] Preparing clean staging copy...", false);
                 int restored = await Task.Run(() =>
-                    BatchWorkspace.PrepareCleanCopy(originalRoot, activeStage, originalConfig, options.RestoreBackups));
+                    BatchWorkspace.PrepareCleanCopy(originalRoot, activeStage, originalConfig, originalExHeader, options.RestoreBackups));
+                progressDialog.AppendLog($"Clean staging copy ready. Restored {restored} original backup file(s).");
 
-                using (BatchRuntime.Begin(message => UpdateStatus($"[Batch {i}/{options.Count}] {message}")))
+                if (progressDialog.CancelRequested)
+                    throw new OperationCanceledException("Batch build cancelled by user.");
+
+                using (BatchRuntime.Begin(message =>
                 {
+                    UpdateStatus($"[Batch {i}/{options.Count}] {message}");
+                    progressDialog.ReportAction(message);
+                    Application.DoEvents();
+
+                    // Cancel only between replay operations. Never interrupt an operation mid-write.
+                    if (progressDialog.CancelRequested)
+                        throw new OperationCanceledException("Batch build cancelled by user.");
+                }))
+                {
+                    progressDialog.SetStage("Opening clean staging copy...");
+                    string stageRomFS = Path.Combine(activeStage, Path.GetRelativePath(originalRoot, originalConfig.RomFS));
+                    string stageExeFS = string.IsNullOrWhiteSpace(originalConfig.ExeFS)
+                        ? string.Empty
+                        : Path.Combine(activeStage, Path.GetRelativePath(originalRoot, originalConfig.ExeFS));
+                    progressDialog.AppendLog($"Stage root: {activeStage}");
+                    progressDialog.AppendLog($"Stage RomFS exists: {Directory.Exists(stageRomFS)} - {stageRomFS}");
+                    progressDialog.AppendLog($"Stage ExeFS exists: {(!string.IsNullOrWhiteSpace(stageExeFS) && Directory.Exists(stageExeFS))} - {stageExeFS}");
+                    Application.DoEvents();
                     OpenQuick(activeStage);
                     if (Config is null || Config.Generation != 7 || !string.Equals(CurrentGlobalTemplateGame, game, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("The staging copy did not reopen as the same Generation 7 game.");
 
+                    progressDialog.SetStage("Applying Global ROM Template...");
+                    Application.DoEvents();
                     GlobalRandomizationTemplateFile.Apply(template, game);
                     Util.ReseedRand(seed);
                     BatchRuntime.Log($"Seed = {seed}");
@@ -370,6 +410,7 @@ public sealed partial class Main : Form
                     if (File.Exists(outputPath))
                         File.Delete(outputPath);
 
+                    progressDialog.BeginRebuild(Path.GetFileName(outputPath));
                     UpdateStatus($"[Batch {i}/{options.Count}] Rebuilding {Path.GetFileName(outputPath)}...");
                     string exeFS = ExeFSPath;
                     string romFS = RomFSPath;
@@ -393,6 +434,7 @@ public sealed partial class Main : Form
                     if (!File.Exists(outputPath))
                         throw new IOException($"CTRUtil finished without creating '{outputPath}'.");
 
+                    progressDialog.EndRebuild();
                     completed++;
                     log.Add($"ROM {i:00}");
                     log.Add($"Seed: {seed}");
@@ -404,12 +446,32 @@ public sealed partial class Main : Form
                     // Reopen the untouched source before the next iteration. OpenQuick
                     // resets session state, so reapply the template to leave the normal
                     // pk3DS UI configured exactly as it was for the batch recipe.
+                    progressDialog.SetStage("Restoring original project...");
+                    Application.DoEvents();
                     OpenQuick(originalRoot);
                     if (Config is null)
                         throw new InvalidOperationException("Could not reopen the original extracted game after building a batch ROM.");
                     GlobalRandomizationTemplateFile.Apply(template, game);
                 }
 
+                if (options.KeepEditableProjects)
+                {
+                    progressDialog.SetStage("Saving editable extracted project...");
+                    Application.DoEvents();
+
+                    string editableProjectPath = BatchWorkspace.GetAvailableEditableProjectPath(
+                        options.OutputDirectory,
+                        options.BaseName,
+                        i);
+                    string stageToPreserve = activeStage;
+                    await Task.Run(() => BatchWorkspace.PreserveEditableProject(stageToPreserve, editableProjectPath));
+                    activeStage = null;
+                    log.Add($"ROM {i}: Editable project = {editableProjectPath}");
+                    progressDialog.AppendLog($"Editable project saved: {editableProjectPath}");
+                }
+
+                progressDialog.SetStage("Cleaning staging folder...");
+                Application.DoEvents();
                 string stageToDelete = activeStage;
                 activeStage = null;
                 try
@@ -423,14 +485,46 @@ public sealed partial class Main : Form
                     UpdateStatus($"[Batch {i}/{options.Count}] Warning: could not delete staging folder.");
                 }
                 UpdateStatus($"[Batch {i}/{options.Count}] Complete: {Path.GetFileName(outputPath)}");
+                progressDialog.CompleteRom(i, Path.GetFileName(outputPath));
+                Application.DoEvents();
             }
 
-            log.Add($"Completed: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            File.WriteAllLines(logPath, log, Encoding.UTF8);
+            if (progressDialog.CancelRequested && completed < options.Count)
+                cancelled = true;
+
+            if (cancelled)
+            {
+                log.Add($"Cancelled by user after {completed}/{options.Count} ROM(s): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                File.WriteAllLines(logPath, log, Encoding.UTF8);
+                progressDialog.MarkCancelled(completed, options.Count);
+                WinFormsUtil.Alert(
+                    "Batch ROM build cancelled.",
+                    $"Completed ROMs kept: {completed}/{options.Count}.",
+                    $"Output folder: {options.OutputDirectory}",
+                    $"Seeds/log: {logPath}");
+            }
+            else
+            {
+                log.Add($"Completed: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                File.WriteAllLines(logPath, log, Encoding.UTF8);
+                progressDialog.MarkCompleted(completed);
+                WinFormsUtil.Alert(
+                    "Batch ROM build complete!",
+                    $"Created {completed} ROM(s).",
+                    $"Output folder: {options.OutputDirectory}",
+                    $"Seeds/log: {logPath}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            cancelled = true;
+            log.Add($"Cancelled by user after {completed}/{options.Count} completed ROM(s): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            try { File.WriteAllLines(logPath, log, Encoding.UTF8); } catch { }
+            progressDialog.MarkCancelled(completed, options.Count);
+
             WinFormsUtil.Alert(
-                "Batch ROM build complete!",
-                $"Created {completed} ROM(s).",
-                $"Output folder: {options.OutputDirectory}",
+                "Batch ROM build cancelled.",
+                $"Completed ROMs kept: {completed}/{options.Count}.",
                 $"Seeds/log: {logPath}");
         }
         catch (Exception ex)
@@ -438,6 +532,7 @@ public sealed partial class Main : Form
             log.Add($"FAILED after {completed}/{options.Count} ROM(s): {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             log.Add(ex.ToString());
             try { File.WriteAllLines(logPath, log, Encoding.UTF8); } catch { }
+            progressDialog.MarkFailed(ex.Message);
 
             WinFormsUtil.Alert(
                 "Batch ROM Builder stopped because an error occurred.",
@@ -446,6 +541,9 @@ public sealed partial class Main : Form
         }
         finally
         {
+            progressDialog.SetStage("Final cleanup...");
+            Application.DoEvents();
+
             // A failure may have happened while a staging project was loaded. Always
             // return pk3DS to the user's original extracted game when possible before
             // deleting that staging folder.
@@ -475,6 +573,8 @@ public sealed partial class Main : Form
 
             UseWaitCursor = false;
             Enabled = true;
+            progressDialog.AllowClose();
+            progressDialog.Close();
         }
     }
 
@@ -705,6 +805,12 @@ public sealed partial class Main : Form
         }
         catch (Exception ex)
         {
+            if (BatchRuntime.IsActive)
+            {
+                BatchRuntime.Log($"Batch OpenQuick failed: {ex}");
+                throw;
+            }
+
             WinFormsUtil.Error($"Failed to open -- {path}", ex.Message);
             ResetStatus();
         }
@@ -849,13 +955,26 @@ public sealed partial class Main : Form
             {
                 if (Config is not null)
                 {
-                    if (ExeFSPath is not null)
+                    if (ExeFSPath is null)
+                    {
+                        if (BatchRuntime.IsActive)
+                            throw new InvalidDataException("Batch staging project RomFS was detected, but ExeFS was not detected.");
+                    }
+                    else
+                    {
                         Config.Initialize(RomFSPath, ExeFSPath, Language);
-                    Config.BackupFiles();
+                        Config.BackupFiles();
+                    }
                 }
             }
             catch (Exception ex)
             {
+                if (BatchRuntime.IsActive)
+                {
+                    BatchRuntime.Log($"Batch OpenDirectory initialization failed: {ex}");
+                    throw;
+                }
+
                 WinFormsUtil.Error("Failed to load game data from romfs. Please double check your ROM dump is correct.", ex.Message);
                 ResetStatus();
                 return;

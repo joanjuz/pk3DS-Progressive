@@ -23,6 +23,7 @@ public sealed class LevelCapTemplate
         Entries = Entries
             .Select(z => new LevelCapEntry(
                 z.Label ?? string.Empty,
+                z.Kind,
                 z.FlagOffset,
                 z.FlagBit,
                 z.Cap))
@@ -48,6 +49,7 @@ public sealed class LevelCapTemplate
                 .Select(z => new LevelCapTemplateEntry
                 {
                     Label = z.Label,
+                    Kind = z.Kind,
                     FlagOffset = z.FlagOffset,
                     FlagBit = z.FlagBit,
                     Cap = z.Cap,
@@ -60,8 +62,12 @@ public sealed class LevelCapTemplate
 public sealed class LevelCapTemplateEntry
 {
     public string Label { get; set; } = string.Empty;
-    public byte FlagOffset { get; set; }
-    public byte FlagBit { get; set; }
+
+    public LevelCapConditionKind Kind { get; set; } =
+        LevelCapConditionKind.EventFlagSet;
+
+    public ushort FlagOffset { get; set; }
+    public ushort FlagBit { get; set; }
     public byte Cap { get; set; }
 }
 
