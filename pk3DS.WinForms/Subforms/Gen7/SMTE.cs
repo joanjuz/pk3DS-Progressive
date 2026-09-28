@@ -3699,9 +3699,32 @@ public partial class SMTE : Form
     }
 
 
+    private static bool IsUSUMBeforeKaudan(int trainerID)
+    {
+        if (!Main.Config.USUM)
+            return false;
+
+        // Kaudan = Hala. Trainer 23 is the audited Melemele Grand Trial
+        // milestone in the existing USUM story map. "Before Kaudan" is strict:
+        // Kaudan himself is eligible for random doubles, trainers earlier in
+        // the audited chronology are not.
+        if (!TryGetUSUMTrainerStoryPoint(23, out var kaudanPoint) ||
+            !TryGetUSUMTrainerStoryPoint(trainerID, out var trainerPoint))
+        {
+            return false;
+        }
+
+        return CompareUSUMStoryPoint(trainerPoint, kaudanPoint) < 0;
+    }
+
     private void ApplyRandomDoubleBattle(TrainerData7 tr, int trainerAce, int[] protectedBattleRoyalIDs)
     {
         if (IsProtectedEarlyHauEncounter(tr.ID))
+            return;
+
+        // Do not introduce random Double Battles before Kaudan/Hala.
+        // Existing Double/Multi/Special battles are never rewritten here.
+        if (IsUSUMBeforeKaudan(tr.ID))
             return;
 
         if (CHK_RandomDoubleBattles is null || !CHK_RandomDoubleBattles.Checked || NUD_DoubleBattleChance.Value <= 0)
