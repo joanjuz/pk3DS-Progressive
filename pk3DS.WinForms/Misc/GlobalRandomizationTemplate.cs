@@ -12,7 +12,7 @@ namespace pk3DS.WinForms;
 public sealed class GlobalRandomizationTemplate
 {
     public int Version { get; set; } = 1;
-    public int ActionCoverageVersion { get; set; } = 3;
+    public int ActionCoverageVersion { get; set; } = 4;
     public string Name { get; set; } = "Global ROM template";
     public string Game { get; set; } = "ANY";
     public int Generation { get; set; }
@@ -158,11 +158,49 @@ public static class GlobalRandomizationTemplateFile
             Trainer = trainer,
             Wild = wild,
             LevelCaps = levelCaps,
-            Actions = RandomizationSessionState.ExportActions(),
+            Actions = CaptureActions(wild, generation),
             Assets = CaptureAssets(generation),
         };
     }
 
+    private static List<GlobalRandomizationAction> CaptureActions(
+        WildRandomizerTemplate wild,
+        int generation)
+    {
+        var actions = RandomizationSessionState.ExportActions();
+
+        // Progressive Wild BST is configuration state as well as an operation.
+        // Save it as a replay action even when the user configured the Wild
+        // editor and saved the Global template before pressing Randomize All.
+        if (generation == 7 &&
+            wild?.ProgressiveBST?.Enabled == true &&
+            wild.ProgressiveBST.Ranges is { Count: > 0 })
+        {
+            actions.RemoveAll(action =>
+                string.Equals(action?.Id, "wild-encounters.randomize", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(action?.Id, "wild-encounters.progressive", StringComparison.OrdinalIgnoreCase));
+
+            string rules = string.Join(
+                ";",
+                wild.ProgressiveBST.Ranges
+                    .OrderBy(rule => rule.MinLevel)
+                    .Select(rule => $"{rule.MinLevel},{rule.MaxLevel},{rule.MinBST},{rule.MaxBST},{rule.FullRandom}"));
+
+            actions.Add(new GlobalRandomizationAction
+            {
+                Id = "wild-encounters.progressive",
+                Parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["progression"] = "area-max-valid-table",
+                    ["rules"] = rules,
+                },
+            });
+        }
+
+        return actions
+            .OrderBy(action => action.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
     public static void Save(string path, GlobalRandomizationTemplate template, string currentGame)
     {
         Validate(template, currentGame);

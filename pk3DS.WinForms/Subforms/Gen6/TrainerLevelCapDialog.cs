@@ -122,7 +122,7 @@ public static class TrainerLevelCapDialog
         {
             AutoSize = true,
             Checked = applyCapsToPreviousTrainers,
-            Text = "Scale regular trainers toward the next cap -",
+            Text = "Scale story trainers toward the next cap -",
         };
         var nudGap = new NumericUpDown
         {
@@ -195,7 +195,7 @@ public static class TrainerLevelCapDialog
             Height = 46,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(8, 0, 8, 0),
-            Text = "LevelCap 0 uses the trainer's current ace. Selected trainers are homogenized to the cap. Regular trainers keep the original level curve but are shifted so the trainers before the next cap approach cap - gap. Move filtering is now configured in Trainer Move Rules.",
+            Text = "Positive caps are exact fixed levels. In USUM, LevelCap 0 (Ace) keeps the global trainer scaling for milestone/fallback values, but main-story Important/Boss trainers are placed on the WikiDex-audited story curve while preserving their team level spread. Unmapped/postgame entries fall back to the globally scaled ace. Regular trainers still use the same story curve when scaling is enabled. Move filtering is configured in Trainer Move Rules.",
         };
 
         var buttons = new FlowLayoutPanel

@@ -34,6 +34,7 @@ partial class ItemEditor7
         this.L_Index = new System.Windows.Forms.Label();
         this.Grid = new System.Windows.Forms.PropertyGrid();
         this.B_Table = new System.Windows.Forms.Button();
+        this.B_FixEconomy = new System.Windows.Forms.Button();
         this.SuspendLayout();
         // 
         // CB_Item
@@ -83,20 +84,30 @@ partial class ItemEditor7
                                                                   | System.Windows.Forms.AnchorStyles.Left) 
                                                                  | System.Windows.Forms.AnchorStyles.Right)));
         this.Grid.LineColor = System.Drawing.SystemColors.ControlDark;
-        this.Grid.Location = new System.Drawing.Point(12, 94);
+        this.Grid.Location = new System.Drawing.Point(12, 123);
         this.Grid.Name = "Grid";
-        this.Grid.Size = new System.Drawing.Size(316, 280);
+        this.Grid.Size = new System.Drawing.Size(316, 251);
         this.Grid.TabIndex = 47;
         // 
         // B_Table
         // 
-        this.B_Table.Location = new System.Drawing.Point(253, 94);
+        this.B_Table.Location = new System.Drawing.Point(170, 94);
         this.B_Table.Name = "B_Table";
-        this.B_Table.Size = new System.Drawing.Size(75, 23);
-        this.B_Table.TabIndex = 48;
+        this.B_Table.Size = new System.Drawing.Size(158, 23);
+        this.B_Table.TabIndex = 49;
         this.B_Table.Text = "Export Table";
         this.B_Table.UseVisualStyleBackColor = true;
         this.B_Table.Click += new System.EventHandler(this.B_Table_Click);
+        // 
+        // B_FixEconomy
+        // 
+        this.B_FixEconomy.Location = new System.Drawing.Point(12, 94);
+        this.B_FixEconomy.Name = "B_FixEconomy";
+        this.B_FixEconomy.Size = new System.Drawing.Size(154, 23);
+        this.B_FixEconomy.TabIndex = 48;
+        this.B_FixEconomy.Text = "Fix Economy";
+        this.B_FixEconomy.UseVisualStyleBackColor = true;
+        this.B_FixEconomy.Click += new System.EventHandler(this.B_FixEconomy_Click);
         // 
         // ItemEditor7
         // 
@@ -104,6 +115,7 @@ partial class ItemEditor7
         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         this.ClientSize = new System.Drawing.Size(339, 381);
         this.Controls.Add(this.B_Table);
+        this.Controls.Add(this.B_FixEconomy);
         this.Controls.Add(this.Grid);
         this.Controls.Add(this.L_Index);
         this.Controls.Add(this.RTB);
@@ -129,4 +141,5 @@ partial class ItemEditor7
     private System.Windows.Forms.Label L_Index;
     private System.Windows.Forms.PropertyGrid Grid;
     private System.Windows.Forms.Button B_Table;
+    private System.Windows.Forms.Button B_FixEconomy;
 }

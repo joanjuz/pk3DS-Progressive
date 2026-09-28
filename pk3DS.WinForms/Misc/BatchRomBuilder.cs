@@ -654,6 +654,7 @@ internal static class BatchGen7ActionExecutor
         "shiny-rate.apply",
         "mega-evolution.unlock-from-start",
         "battle.persistent-consumables",
+        USUMMoveRelearnerPatcher.ActionId,
         "player.level-caps",
     };
 
@@ -827,7 +828,10 @@ internal static class BatchGen7ActionExecutor
         var trpoke = Main.Config.GetGARCData("trpoke");
         byte[][] trd = trdata.Files;
         byte[][] trp = trpoke.Files;
-        using var form = new SMTE(trd, trp);
+        using var form = new SMTE(
+            trd,
+            trp,
+            Get(actions, USUMStoryMilestoneResolver.TotemLevelCapsActionId));
         InvokeEvent(form, "B_Randomize_Click");
         Invoke(form, "SaveEntry");
         trdata.Files = trd;
@@ -1093,7 +1097,10 @@ internal static class BatchGen7ActionExecutor
         bool persistentConsumables =
             Has(actions, "battle.persistent-consumables");
 
-        if (!mega && !persistentConsumables)
+        bool usumMoveRelearner =
+            Has(actions, USUMMoveRelearnerPatcher.ActionId);
+
+        if (!mega && !persistentConsumables && !usumMoveRelearner)
             return;
 
         BatchRuntime.Log("Gameplay QoL patches...");
@@ -1118,6 +1125,18 @@ internal static class BatchGen7ActionExecutor
                 changed == 0
                     ? "Persistent Battle Consumables were already enabled."
                     : $"Persistent Battle Consumables enabled ({changed} instruction(s) changed).");
+        }
+
+        if (usumMoveRelearner)
+        {
+            if (Main.Config?.USUM != true)
+                throw new NotSupportedException("USUM Move Relearner batch replay is available only for Ultra Sun / Ultra Moon.");
+            if (string.IsNullOrWhiteSpace(Main.ExeFSPath))
+                throw new InvalidDataException("USUM Move Relearner batch replay requires a loaded ExeFS.");
+
+            string report = USUMMoveRelearnerPatcher.Apply(Main.ExeFSPath);
+            foreach (string line in report.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries))
+                BatchRuntime.Log(line);
         }
     }
 

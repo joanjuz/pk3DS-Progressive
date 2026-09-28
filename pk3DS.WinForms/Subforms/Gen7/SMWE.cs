@@ -48,7 +48,8 @@ public partial class SMWE : Form
         }
         else if (WildRandomizerTemplateFile.TryLoadLastState(CurrentWildTemplateGame, out var savedWildTemplate))
         {
-            ApplyProgressiveWildRanges(savedWildTemplate.ProgressiveBST?.Ranges);
+            // Restore the complete Wild setup, not only the BST row values.
+            ApplyWildTemplate(savedWildTemplate, showMessage: false);
         }
 
         SyncProgressiveWildUI();
@@ -437,6 +438,8 @@ public partial class SMWE : Form
             RandomizationSessionState.RemoveAction("wild-encounters.progressive");
             RandomizationSessionState.MarkAction("wild-encounters.randomize");
         }
+
+        PersistWildTemplateState();
 
         WinFormsUtil.Alert(
             progressive
@@ -967,7 +970,8 @@ public partial class SMWE : Form
         form.Controls.Add(grid);
         form.Controls.Add(buttons);
 
-        form.ShowDialog(this);
+        if (form.ShowDialog(this) == DialogResult.OK)
+            PersistWildTemplateState();
     }
 
     private static bool ValidateProgressiveWildBSTRules(
@@ -1333,7 +1337,7 @@ public partial class SMWE : Form
         File.WriteAllBytes($"encounter_{gameID}_sos.pkl", Mini.PackMini(sos, ident));
     }
 
-    private void SMWE_FormClosing(object sender, FormClosingEventArgs e)
+    private void PersistWildTemplateState()
     {
         try
         {
@@ -1343,9 +1347,13 @@ public partial class SMWE : Form
         }
         catch
         {
-            // Closing the editor should not be blocked by a persistence failure.
+            // Persistence failures must not block the randomizer UI.
         }
+    }
 
+    private void SMWE_FormClosing(object sender, FormClosingEventArgs e)
+    {
+        PersistWildTemplateState();
         RandSettings.SetFormSettings(this, GB_Tweak.Controls);
     }
 }

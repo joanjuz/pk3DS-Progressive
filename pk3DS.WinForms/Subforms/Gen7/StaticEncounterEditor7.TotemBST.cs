@@ -55,14 +55,25 @@ public partial class StaticEncounterEditor7
         foreach (int index in GetUSUMTotemBossIndices())
         {
             var encounter = Encounters[index];
-            int bst = GetTotemBST(encounter.Species);
-            var range = GetDefaultTotemBSTRange(index);
+            bool ultraNecrozma =
+                IsUSUMUltraNecrozmaEncounterIndex(index);
+
+            int bst =
+                GetTotemBST(
+                    encounter.Species,
+                    encounter.Form);
+
+            var range = ultraNecrozma
+                ? (MinBST: 700, MaxBST: 800)
+                : GetDefaultTotemBSTRange(index);
 
             TotemBSTRules.Add(new TotemBSTRule
             {
                 Enabled = true,
                 EntryID = index,
-                Group = GetTotemGroup(index),
+                Group = ultraNecrozma
+                    ? "Ultra Necrozma"
+                    : GetTotemGroup(index),
                 OriginalTotem = GetTotemSpeciesName(encounter.Species),
                 CurrentPokemon = GetTotemSpeciesName(encounter.Species),
                 Level = encounter.Level,
@@ -99,11 +110,66 @@ public partial class StaticEncounterEditor7
         };
     }
 
-    private int GetTotemBST(int species)
+    private int GetTotemBST(int species, int form)
     {
-        return (uint)species < (uint)Main.SpeciesStat.Length
-            ? Main.SpeciesStat[species].BST
-            : 0;
+        if ((uint)species >= (uint)Main.SpeciesStat.Length)
+            return 0;
+
+        return Main.Config.Personal
+            .GetFormEntry(species, form)
+            .BST;
+    }
+
+    private IEnumerable<int> GetTotemBSTAllowedForms(int species)
+    {
+        if ((uint)species >= (uint)Main.SpeciesStat.Length)
+            yield break;
+
+        int formCount =
+            Math.Max(
+                1,
+                Main.SpeciesStat[species].FormeCount);
+
+        if (formCount <= 1)
+        {
+            yield return 0;
+            yield break;
+        }
+
+        // Mirror Randomizer.GetRandomForme special cases.
+        if (species is 664 or 665 or 666)
+        {
+            yield return 30;
+            yield break;
+        }
+
+        if (species == 774)
+        {
+            int count = Math.Min(7, formCount);
+            for (int form = 0; form < count; form++)
+                yield return form;
+
+            yield break;
+        }
+
+        if (Legal.EvolveToAlolanForms.Contains(species))
+        {
+            yield return 0;
+            if (formCount > 1)
+                yield return 1;
+
+            yield break;
+        }
+
+        if (Legal.Mega_ORAS.Contains((ushort)species) &&
+            !CHK_AllowMega.Checked)
+        {
+            yield return 0;
+            yield break;
+        }
+
+        for (int form = 0; form < formCount; form++)
+            yield return form;
     }
 
     private SpeciesRandomizer CreateTotemBSTSpeciesRandomizer()
@@ -297,9 +363,9 @@ public partial class StaticEncounterEditor7
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(8, 0, 8, 0),
             Text =
-                "Each USUM Totem boss is tracked by Static Encounter entry ID. " +
-                "The selected species must fall inside its configured BST range and obey the current generation / Legendary / Event filters. " +
-                "Force Totem or Force Fully Evolved additionally restricts the base-species pool to final evolutions. Forms are chosen afterward, so an enabled alternate/Mega form can exceed the displayed base-species BST range.",
+                "Each USUM Totem boss plus the plot Ultra Necrozma battle is tracked by Static Encounter entry ID. " +
+                "BST filtering is form-aware: the selected species AND form must fall inside the configured range and obey the current generation / Legendary / Event / Mega filters. " +
+                "Force Totem or Force Fully Evolved additionally restricts the species pool to final evolutions.",
         };
 
         var buttons = new FlowLayoutPanel
@@ -315,10 +381,146 @@ public partial class StaticEncounterEditor7
         var reset = new Button { Text = "Reset Defaults", Width = 120 };
         var selectAll = new Button { Text = "Select All", Width = 100 };
         var selectNone = new Button { Text = "Select None", Width = 105 };
+        var loadTemplate = new Button { Text = "Load Template...", Width = 125 };
+        var saveTemplate = new Button { Text = "Save Template...", Width = 125 };
 
         selectAll.Click += (_, _) => SetTotemBSTRulesSelected(editableRules, true);
         selectNone.Click += (_, _) => SetTotemBSTRulesSelected(editableRules, false);
         reset.Click += (_, _) => ResetTotemBSTDefaults(editableRules);
+
+        loadTemplate.Click += (_, _) =>
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(
+                    TotemBSTTemplateFile.TemplateDirectory);
+
+                using var dialog = new OpenFileDialog
+                {
+                    Title = "Load Totem BST template",
+                    Filter = "Totem BST template (*.json)|*.json|All files (*.*)|*.*",
+                    InitialDirectory =
+                        TotemBSTTemplateFile.TemplateDirectory,
+                    CheckFileExists = true,
+                };
+
+                if (dialog.ShowDialog(form) != DialogResult.OK)
+                    return;
+
+                var template =
+                    TotemBSTTemplateFile.Load(
+                        dialog.FileName,
+                        "USUM");
+
+                var byEntry =
+                    editableRules.ToDictionary(
+                        rule => rule.EntryID);
+
+                var unknown =
+                    new List<int>();
+
+                foreach (var entry in template.Entries ?? [])
+                {
+                    if (!byEntry.TryGetValue(
+                            entry.EntryID,
+                            out var rule))
+                    {
+                        unknown.Add(entry.EntryID);
+                        continue;
+                    }
+
+                    rule.Enabled = entry.Use;
+                    rule.MinBST = entry.MinBST;
+                    rule.MaxBST = entry.MaxBST;
+                }
+
+                chkEnable.Checked =
+                    template.Enabled;
+
+                editableRules.ResetBindings();
+
+                if (unknown.Count != 0)
+                {
+                    WinFormsUtil.Alert(
+                        "Totem BST template loaded with warnings.",
+                        "Static Encounter IDs not present in this USUM table: " +
+                        string.Join(", ", unknown));
+                }
+            }
+            catch (Exception ex)
+            {
+                WinFormsUtil.Alert(
+                    "Could not load Totem BST template.",
+                    ex.Message);
+            }
+        };
+
+        saveTemplate.Click += (_, _) =>
+        {
+            try
+            {
+                grid.EndEdit();
+
+                var candidate =
+                    editableRules
+                        .Select(rule => rule.Clone())
+                        .OrderBy(rule => rule.Level)
+                        .ThenBy(rule => rule.EntryID)
+                        .ToList();
+
+                if (!ValidateTotemBSTRules(candidate))
+                    return;
+
+                System.IO.Directory.CreateDirectory(
+                    TotemBSTTemplateFile.TemplateDirectory);
+
+                using var dialog = new SaveFileDialog
+                {
+                    Title = "Save Totem BST template",
+                    Filter = "Totem BST template (*.json)|*.json",
+                    InitialDirectory =
+                        TotemBSTTemplateFile.TemplateDirectory,
+                    FileName = "totem_bst_usum.json",
+                    AddExtension = true,
+                    DefaultExt = "json",
+                };
+
+                if (dialog.ShowDialog(form) != DialogResult.OK)
+                    return;
+
+                var template =
+                    new TotemBSTTemplate
+                    {
+                        Name = "USUM Totem BST",
+                        Game = "USUM",
+                        Enabled = chkEnable.Checked,
+                        Entries = candidate
+                            .Select(rule =>
+                                new TotemBSTTemplateEntry
+                                {
+                                    EntryID = rule.EntryID,
+                                    Use = rule.Enabled,
+                                    MinBST = rule.MinBST,
+                                    MaxBST = rule.MaxBST,
+                                })
+                            .ToList(),
+                    };
+
+                TotemBSTTemplateFile.Save(
+                    dialog.FileName,
+                    template,
+                    "USUM");
+
+                WinFormsUtil.Alert(
+                    "Totem BST template saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                WinFormsUtil.Alert(
+                    "Could not save Totem BST template.",
+                    ex.Message);
+            }
+        };
 
         List<TotemBSTRule> acceptedRules = null;
         bool acceptedEnabled = TotemBSTEnabled;
@@ -353,6 +555,8 @@ public partial class StaticEncounterEditor7
 
         buttons.Controls.Add(ok);
         buttons.Controls.Add(cancel);
+        buttons.Controls.Add(saveTemplate);
+        buttons.Controls.Add(loadTemplate);
         buttons.Controls.Add(reset);
         buttons.Controls.Add(selectNone);
         buttons.Controls.Add(selectAll);
@@ -459,15 +663,19 @@ public partial class StaticEncounterEditor7
         ImportTotemBSTAction(action);
 
         if (!ValidateTotemBSTRules(TotemBSTRules))
+        {
             throw new InvalidOperationException(
                 "The Totem BST template contains invalid ranges.");
+        }
 
         if (!ValidateTotemBSTPools(TotemBSTRules, out string poolError))
             throw new InvalidOperationException(poolError);
 
         if (!ApplyTotemBST(updateMoves: true))
+        {
             throw new InvalidOperationException(
                 "Totem BST could not be applied.");
+        }
 
         RefreshTotemBSTCurrentState();
     }
@@ -482,13 +690,15 @@ public partial class StaticEncounterEditor7
         rules.ResetBindings();
     }
 
-    private static void ResetTotemBSTDefaults(
+    private void ResetTotemBSTDefaults(
         BindingList<TotemBSTRule> rules)
     {
         foreach (var rule in rules)
         {
             var range =
-                GetDefaultTotemBSTRange(rule.EntryID);
+                IsUSUMUltraNecrozmaEncounterIndex(rule.EntryID)
+                    ? (MinBST: 700, MaxBST: 800)
+                    : GetDefaultTotemBSTRange(rule.EntryID);
 
             rule.Enabled = true;
             rule.MinBST = range.MinBST;
@@ -534,24 +744,25 @@ public partial class StaticEncounterEditor7
     {
         error = string.Empty;
 
-        var specrand = CreateTotemBSTSpeciesRandomizer();
+        var specrand =
+            CreateTotemBSTSpeciesRandomizer();
 
         foreach (var rule in rules.Where(r => r.Enabled))
         {
             if ((uint)rule.EntryID >= (uint)Encounters.Length)
                 continue;
 
-            int[] pool =
+            var pool =
                 GetTotemBSTPool(
                     specrand,
                     rule,
                     Encounters[rule.EntryID]);
 
-            if (pool.Length != 0)
+            if (pool.Count != 0)
                 continue;
 
             error =
-                $"Entry {rule.EntryID} ({rule.OriginalTotem}) has no allowed species between BST {rule.MinBST} and {rule.MaxBST} with the current filters.";
+                $"Entry {rule.EntryID} ({rule.OriginalTotem}) has no allowed species/form between BST {rule.MinBST} and {rule.MaxBST} with the current filters.";
 
             return false;
         }
@@ -559,28 +770,48 @@ public partial class StaticEncounterEditor7
         return true;
     }
 
-    private int[] GetTotemBSTPool(
+    private List<(int Species, int Form)> GetTotemBSTPool(
         SpeciesRandomizer specrand,
         TotemBSTRule rule,
         EncounterStatic7 encounter)
     {
-        int[] pool =
-            specrand.GetSpeciesPoolByBST(
-                rule.MinBST,
-                rule.MaxBST);
-
         bool forceFinal =
             CHK_ForceTotem.Checked ||
             (CHK_ForceFullyEvolved.Checked &&
              encounter.Level >= NUD_ForceFullyEvolved.Value);
 
-        if (forceFinal)
-        {
-            var finalSet = GetTotemFinalEvolutionPool();
+        HashSet<int> finalSet =
+            forceFinal
+                ? GetTotemFinalEvolutionPool()
+                : null;
 
-            pool = pool
-                .Where(finalSet.Contains)
-                .ToArray();
+        var pool =
+            new List<(int Species, int Form)>();
+
+        foreach (int species in specrand.GetAllowedSpeciesPool())
+        {
+            if (forceFinal &&
+                !finalSet.Contains(species))
+            {
+                continue;
+            }
+
+            foreach (int form in
+                     GetTotemBSTAllowedForms(species))
+            {
+                int bst =
+                    GetTotemBST(
+                        species,
+                        form);
+
+                if (bst < rule.MinBST ||
+                    bst > rule.MaxBST)
+                {
+                    continue;
+                }
+
+                pool.Add((species, form));
+            }
         }
 
         return pool;
@@ -595,7 +826,9 @@ public partial class StaticEncounterEditor7
             CreateTotemBSTSpeciesRandomizer();
 
         var prepared =
-            new List<(TotemBSTRule Rule, int[] Pool)>();
+            new List<(
+                TotemBSTRule Rule,
+                List<(int Species, int Form)> Pool)>();
 
         foreach (var rule in TotemBSTRules.Where(r => r.Enabled))
         {
@@ -604,17 +837,17 @@ public partial class StaticEncounterEditor7
             if ((uint)index >= (uint)Encounters.Length)
                 continue;
 
-            int[] pool =
+            var pool =
                 GetTotemBSTPool(
                     specrand,
                     rule,
                     Encounters[index]);
 
-            if (pool.Length == 0)
+            if (pool.Count == 0)
             {
                 WinFormsUtil.Alert(
                     "Totem BST was not applied.",
-                    $"Entry {rule.EntryID} ({rule.OriginalTotem}) has no allowed species between BST {rule.MinBST} and {rule.MaxBST} with the current filters.");
+                    $"Entry {rule.EntryID} ({rule.OriginalTotem}) has no allowed species/form between BST {rule.MinBST} and {rule.MaxBST} with the current filters.");
 
                 return false;
             }
@@ -627,26 +860,28 @@ public partial class StaticEncounterEditor7
             int index = item.Rule.EntryID;
             var encounter = Encounters[index];
 
-            int[] alternatives =
+            var alternatives =
                 item.Pool
-                    .Where(species =>
-                        species != encounter.Species)
+                    .Where(candidate =>
+                        candidate.Species != encounter.Species ||
+                        candidate.Form != encounter.Form)
                     .ToArray();
 
-            int[] choices =
+            var choices =
                 alternatives.Length != 0
                     ? alternatives
-                    : item.Pool;
+                    : item.Pool.ToArray();
+
+            var selected =
+                choices[
+                    Util.Rand.Next(
+                        choices.Length)];
 
             encounter.Species =
-                choices[Util.Rand.Next(choices.Length)];
+                selected.Species;
 
             encounter.Form =
-                Randomizer.GetRandomForme(
-                    encounter.Species,
-                    CHK_AllowMega.Checked,
-                    true,
-                    Main.SpeciesStat);
+                selected.Form;
 
             if (updateMoves)
             {
@@ -660,7 +895,8 @@ public partial class StaticEncounterEditor7
                             4);
             }
 
-            if ((uint)index < (uint)LB_Encounter.Items.Count)
+            if ((uint)index <
+                (uint)LB_Encounter.Items.Count)
             {
                 LB_Encounter.Items[index] =
                     GetEntryText(encounter, index);
@@ -687,7 +923,9 @@ public partial class StaticEncounterEditor7
                 encounter.Level;
 
             rule.CurrentBST =
-                GetTotemBST(encounter.Species);
+                GetTotemBST(
+                    encounter.Species,
+                    encounter.Form);
         }
     }
 }

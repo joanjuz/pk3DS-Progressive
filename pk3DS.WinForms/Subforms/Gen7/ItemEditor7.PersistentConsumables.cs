@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
 
 namespace pk3DS.WinForms;
@@ -24,9 +23,14 @@ public partial class ItemEditor7
             return;
         }
 
+        int gap = 4;
+        int width = Math.Max(70, (Grid.Width - (gap * 2)) / 3);
+
         B_PersistentBattleConsumables = new Button
         {
+            Location = new Point(Grid.Right - width, B_Table.Top),
             Name = "B_PersistentBattleConsumables",
+            Size = new Size(width, B_Table.Height),
             Text = "Persistent Items",
             UseVisualStyleBackColor = true,
         };
@@ -42,61 +46,73 @@ public partial class ItemEditor7
 
     private void ArrangeItemEditorActionButtons()
     {
-        if (B_PersistentBattleConsumables is null)
-            return;
-
-        var fixEconomy = Controls
-            .Find("B_FixEconomy", false)
-            .OfType<Button>()
-            .FirstOrDefault();
-
-        int margin = 6;
         int gap = 4;
+        int left = Grid.Left;
+        int totalWidth = Grid.Width;
         int y = B_Table.Top;
         int height = B_Table.Height;
 
-        if (fixEconomy is null)
+        if (B_PersistentBattleConsumables is null)
         {
-            B_PersistentBattleConsumables.SetBounds(
-                margin,
+            int leftWidth =
+                Math.Max(
+                    70,
+                    (totalWidth - gap) / 2);
+
+            int rightWidth =
+                Math.Max(
+                    70,
+                    totalWidth - leftWidth - gap);
+
+            B_FixEconomy.SetBounds(
+                left,
                 y,
-                Math.Max(90, B_Table.Width),
+                leftWidth,
                 height);
+
+            B_Table.SetBounds(
+                left + leftWidth + gap,
+                y,
+                rightWidth,
+                height);
+
+            B_FixEconomy.BringToFront();
+            B_Table.BringToFront();
             return;
         }
 
-        int usable =
-            ClientSize.Width -
-            (margin * 2) -
-            (gap * 2);
-
         int width =
-            Math.Max(70, usable / 3);
+            Math.Max(
+                70,
+                (totalWidth - (gap * 2)) / 3);
 
         int lastWidth =
             Math.Max(
                 70,
-                usable - (width * 2));
+                totalWidth - (width * 2) - (gap * 2));
 
-        B_PersistentBattleConsumables.SetBounds(
-            margin,
-            y,
-            width,
-            height);
-
-        fixEconomy.SetBounds(
-            margin + width + gap,
+        B_FixEconomy.SetBounds(
+            left,
             y,
             width,
             height);
 
         B_Table.SetBounds(
-            margin + (width * 2) + (gap * 2),
+            left + width + gap,
+            y,
+            width,
+            height);
+
+        B_PersistentBattleConsumables.SetBounds(
+            left + (width * 2) + (gap * 2),
             y,
             lastWidth,
             height);
-    }
 
+        B_FixEconomy.BringToFront();
+        B_Table.BringToFront();
+        B_PersistentBattleConsumables.BringToFront();
+    }
     private void B_PersistentBattleConsumables_Click(
         object sender,
         EventArgs e)

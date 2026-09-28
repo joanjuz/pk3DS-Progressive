@@ -1182,6 +1182,7 @@ public sealed partial class Main : Form
         try
         {
             string report = USUMMoveRelearnerPatcher.Apply(ExeFSPath);
+            RandomizationSessionState.MarkAction(USUMMoveRelearnerPatcher.ActionId);
             WinFormsUtil.Alert("USUM Move Relearner patch applied!", report);
         }
         catch (Exception ex)

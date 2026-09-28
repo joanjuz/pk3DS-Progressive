@@ -119,6 +119,8 @@ public partial class SMTE : Form
     private int PreviousTrainerGap = 2;
     private decimal RegularTrainerCurvePower = 1.6m;
     private const int MinimumTrainerLevel = 1;
+    private readonly GlobalRandomizationAction USUMTotemLevelCapsAction;
+    private readonly IReadOnlyDictionary<int, int> USUMStaticEncounterLevels;
     private bool GuaranteeMegaInImportantBattles = false;
     // The Rules tab temporarily expands the randomizer workspace.
     // Other randomizer tabs keep their original dimensions.
@@ -145,12 +147,20 @@ public partial class SMTE : Form
     //private readonly TextData trText = Main.Config.GetTextData(TextName.TrainerText);
     private readonly TextData TrainerNames;
 
-    public SMTE(byte[][] trd, byte[][] trp)
+    public SMTE(
+        byte[][] trd,
+        byte[][] trp,
+        GlobalRandomizationAction usumTotemLevelCapsAction = null)
     {
         //trclass = trc;
         trdata = trd;
         trpoke = trp;
         TrainerNames = new TextData(trName);
+        USUMTotemLevelCapsAction = usumTotemLevelCapsAction ??
+            USUMStoryMilestoneResolver.GetSessionTotemLevelCapsAction();
+        USUMStaticEncounterLevels = Main.Config.USUM
+            ? USUMStoryMilestoneResolver.ReadCurrentStaticEncounterLevels()
+            : new Dictionary<int, int>();
         InitializeComponent();
 
         // Allow an exact trainer shiny chance from 0.00% through 100.00%.
@@ -225,7 +235,7 @@ public partial class SMTE : Form
     {
         return
         [
-            new ProgressiveBSTRule { MinLevel = 1,  MaxLevel = 10,  MinBST = 180, MaxBST = 320, FullRandom = false },
+        new ProgressiveBSTRule { MinLevel = 1,  MaxLevel = 10,  MinBST = 180, MaxBST = 320, FullRandom = false },
         new ProgressiveBSTRule { MinLevel = 11, MaxLevel = 20,  MinBST = 220, MaxBST = 380, FullRandom = false },
         new ProgressiveBSTRule { MinLevel = 21, MaxLevel = 30,  MinBST = 280, MaxBST = 450, FullRandom = false },
         new ProgressiveBSTRule { MinLevel = 31, MaxLevel = 40,  MinBST = 340, MaxBST = 520, FullRandom = false },
@@ -415,23 +425,217 @@ public partial class SMTE : Form
             FullRandom = false,
         };
     }
-    private int GetProgressiveRandomSpecies(SpeciesRandomizer rnd, int oldSpecies, int type, int level)
+    private IEnumerable<int> GetProgressiveBSTAllowedForms(int species)
+    {
+        if (species <= 0 || species >= Main.SpeciesStat.Length)
+            yield break;
+
+        int formCount = Math.Max(1, Main.SpeciesStat[species].FormeCount);
+
+        if (formCount <= 1)
+        {
+            yield return 0;
+            yield break;
+        }
+
+        // Mirror the existing Randomizer.GetRandomForme special cases.
+        if (species is 664 or 665 or 666) // Vivillon family
+        {
+            yield return 30;
+            yield break;
+        }
+
+        if (species == 774) // Minior
+        {
+            int count = Math.Min(7, formCount);
+            for (int form = 0; form < count; form++)
+                yield return form;
+            yield break;
+        }
+
+        if (Legal.EvolveToAlolanForms.Contains(species))
+        {
+            yield return 0;
+            if (formCount > 1)
+                yield return 1;
+            yield break;
+        }
+
+        // Preserve the existing Random Mega Form checkbox behavior.
+        if (Legal.Mega_ORAS.Contains((ushort)species) &&
+            !CHK_RandomMegaForm.Checked)
+        {
+            yield return 0;
+            yield break;
+        }
+
+        for (int form = 0; form < formCount; form++)
+            yield return form;
+    }
+
+    private List<(int Species, int Form, int BST)> GetProgressiveBSTFormCandidates(
+        SpeciesRandomizer rnd,
+        int oldSpecies,
+        int oldForm,
+        int type,
+        int minBST,
+        int maxBST,
+        bool requireFinalEvolution,
+        bool enforceBST)
+    {
+        var candidates = new List<(int Species, int Form, int BST)>();
+
+        foreach (int species in rnd.GetAllowedSpeciesPool())
+        {
+            if (species <= 0 || species >= Main.SpeciesStat.Length)
+                continue;
+
+            if (requireFinalEvolution && !FinalEvo.Contains(species))
+                continue;
+
+            foreach (int form in GetProgressiveBSTAllowedForms(species))
+            {
+                // A->A is still avoided, but a different form of the same
+                // species is a valid form-aware replacement.
+                if (species == oldSpecies && form == oldForm)
+                    continue;
+
+                var personal = Main.Config.Personal.GetFormEntry(species, form);
+
+                if (type >= 0 && !personal.Types.Contains(type))
+                    continue;
+
+                int bst = personal.BST;
+
+                if (enforceBST && (bst < minBST || bst > maxBST))
+                    continue;
+
+                candidates.Add((species, form, bst));
+            }
+        }
+
+        return candidates;
+    }
+
+    private (int Species, int Form) GetProgressiveRandomSpeciesForm(
+        SpeciesRandomizer rnd,
+        int oldSpecies,
+        int oldForm,
+        int type,
+        int level,
+        bool requireFinalEvolution)
     {
         var rule = GetProgressiveBSTRule(level);
 
         if (rule.FullRandom)
         {
-            return type == -1
+            int species = type == -1
                 ? rnd.GetRandomSpecies(oldSpecies)
                 : rnd.GetRandomSpeciesType(oldSpecies, type);
+
+            int form = Randomizer.GetRandomForme(
+                species,
+                CHK_RandomMegaForm.Checked,
+                true,
+                Main.SpeciesStat);
+
+            return (species, form);
         }
 
-        return rnd.GetRandomSpeciesProgressiveBST(
+        // First choice: exact BST range + requested type, evaluated using
+        // the PERSONAL ENTRY OF THE FORM, not only the base species.
+        var candidates = GetProgressiveBSTFormCandidates(
+            rnd,
             oldSpecies,
+            oldForm,
             type,
             rule.MinBST,
-            rule.MaxBST
-        );
+            rule.MaxBST,
+            requireFinalEvolution,
+            enforceBST: true);
+
+        // Preserve BST progression over type theme if the requested type has
+        // no valid species/form candidate in this range.
+        if (candidates.Count == 0 && type >= 0)
+        {
+            candidates = GetProgressiveBSTFormCandidates(
+                rnd,
+                oldSpecies,
+                oldForm,
+                -1,
+                rule.MinBST,
+                rule.MaxBST,
+                requireFinalEvolution,
+                enforceBST: true);
+        }
+
+        if (candidates.Count > 0)
+        {
+            var selected = candidates[(int)(Util.Random32() % candidates.Count)];
+            return (selected.Species, selected.Form);
+        }
+
+        // No exact form exists under the currently enabled generation /
+        // Legendary / Mythical / Mega restrictions. Do NOT fall back to an
+        // unrelated full-random species. Pick the closest legal form instead.
+        var nearest = GetProgressiveBSTFormCandidates(
+            rnd,
+            oldSpecies,
+            oldForm,
+            type,
+            rule.MinBST,
+            rule.MaxBST,
+            requireFinalEvolution,
+            enforceBST: false);
+
+        if (nearest.Count == 0 && type >= 0)
+        {
+            nearest = GetProgressiveBSTFormCandidates(
+                rnd,
+                oldSpecies,
+                oldForm,
+                -1,
+                rule.MinBST,
+                rule.MaxBST,
+                requireFinalEvolution,
+                enforceBST: false);
+        }
+
+        if (nearest.Count == 0)
+            return (oldSpecies, oldForm);
+
+        int DistanceToRange((int Species, int Form, int BST) c)
+        {
+            if (c.BST < rule.MinBST)
+                return rule.MinBST - c.BST;
+            if (c.BST > rule.MaxBST)
+                return c.BST - rule.MaxBST;
+            return 0;
+        }
+
+        int bestDistance = nearest.Min(DistanceToRange);
+        var closest = nearest
+            .Where(c => DistanceToRange(c) == bestDistance)
+            .ToArray();
+
+        var fallback = closest[(int)(Util.Random32() % closest.Length)];
+        return (fallback.Species, fallback.Form);
+    }
+
+    // Compatibility wrapper for code paths that only need a species.
+    private int GetProgressiveRandomSpecies(
+        SpeciesRandomizer rnd,
+        int oldSpecies,
+        int type,
+        int level)
+    {
+        return GetProgressiveRandomSpeciesForm(
+            rnd,
+            oldSpecies,
+            0,
+            type,
+            level,
+            requireFinalEvolution: false).Species;
     }
     private List<TrainerLevelCapRule> GetLevelCapCandidates()
     {
@@ -894,7 +1098,7 @@ public partial class SMTE : Form
 
                 int previousCap = 0;
                 int stageIndex = (int)point.Stage;
-                if (stageIndex > (int)USUMTrainerStoryStage.StartToIlima)
+                if (stageIndex > (int)USUMTrainerStoryStage.StartToFirstTotem)
                 {
                     var previousStage = (USUMTrainerStoryStage)(stageIndex - 1);
                     previousCap = ResolveUSUMRegularScalingMilestoneCap(
@@ -902,9 +1106,9 @@ public partial class SMTE : Form
                         stages);
                 }
 
-                int endTarget = ClampLevel(resolvedNextCap - PreviousTrainerGap);
-                if (previousCap > 0)
-                    endTarget = Math.Max(endTarget, previousCap);
+                int endTarget = ResolveUSUMStoryEndTarget(
+                    resolvedNextCap,
+                    previousCap);
 
                 int startTarget = ResolveUSUMRegularStageStartTarget(
                     point.Stage,
@@ -999,18 +1203,28 @@ public partial class SMTE : Form
                         internalMismatchByStage.GetValueOrDefault(point.Stage) + 1;
                 }
 
-                bool configuredOverride = false;
+                bool configuredTrainerOverride = false;
                 if (USUMRegularScalingMilestoneTrainerIDs.TryGetValue(
                     point.Stage,
                     out var milestoneTrainerIDs))
                 {
-                    configuredOverride = stages.Any(
+                    configuredTrainerOverride = stages.Any(
                         s => milestoneTrainerIDs.Contains(s.TrainerID));
                 }
 
-                string milestoneSource = configuredOverride
-                    ? "CONFIGURED CANONICAL TRAINER CAP"
-                    : "INTERNAL STORY MILESTONE";
+                bool configuredStaticOverride =
+                    USUMRegularScalingMilestoneStaticEntryIDs.TryGetValue(
+                        point.Stage,
+                        out var milestoneStaticIDs) &&
+                    USUMStoryMilestoneResolver.HasEnabledStaticEntry(
+                        USUMTotemLevelCapsAction,
+                        milestoneStaticIDs);
+
+                string milestoneSource = configuredStaticOverride
+                    ? "CONFIGURED STATIC TOTEM CAP"
+                    : configuredTrainerOverride
+                        ? "CONFIGURED CANONICAL TRAINER CAP"
+                        : "INTERNAL STORY MILESTONE";
 
                 string[] fields =
                 [
@@ -1102,7 +1316,7 @@ public partial class SMTE : Form
 
                 int previousCap = 0;
                 int stageIndex = (int)stage;
-                if (stageIndex > (int)USUMTrainerStoryStage.StartToIlima)
+                if (stageIndex > (int)USUMTrainerStoryStage.StartToFirstTotem)
                 {
                     var previousStage = (USUMTrainerStoryStage)(stageIndex - 1);
                     previousCap = ResolveUSUMRegularScalingMilestoneCap(
@@ -1110,9 +1324,9 @@ public partial class SMTE : Form
                         stages);
                 }
 
-                int endTarget = ClampLevel(resolvedNextCap - PreviousTrainerGap);
-                if (previousCap > 0)
-                    endTarget = Math.Max(endTarget, previousCap);
+                int endTarget = ResolveUSUMStoryEndTarget(
+                    resolvedNextCap,
+                    previousCap);
 
                 int startTarget = ResolveUSUMRegularStageStartTarget(
                     stage,
@@ -2328,21 +2542,22 @@ public partial class SMTE : Form
 
     private enum USUMTrainerStoryStage
     {
-        StartToIlima = 0,
-        IlimaToHala = 1,
-        HalaToLana = 2,
-        LanaToKiawe = 3,
-        KiaweToMallow = 4,
-        MallowToOlivia = 5,
-        OliviaToSophocles = 6,
-        SophoclesToAcerola = 7,
-        AcerolaToNanu = 8,
-        NanuToDragon = 9,
-        DragonToMina = 10,
-        MinaToHapu = 11,
-        HapuToLeague = 12,
-        League = 13,
-        Postgame = 14,
+        StartToFirstTotem = 0,
+        FirstTotemToHala = 1,
+        HalaToAraquanid = 2,
+        AraquanidToMarowak = 3,
+        MarowakToLurantis = 4,
+        LurantisToOlivia = 5,
+        OliviaToTogedemaru = 6,
+        TogedemaruToMimikyu = 7,
+        MimikyuToNanu = 8,
+        NanuToKommoo = 9,
+        KommooToUltraNecrozma = 10,
+        UltraNecrozmaToRibombee = 11,
+        RibombeeToHapu = 12,
+        HapuToLeague = 13,
+        League = 14,
+        Postgame = 15,
     }
 
     // Explicit USUM chronology point:
@@ -2358,351 +2573,388 @@ public partial class SMTE : Form
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [459] = (USUMTrainerStoryStage.StartToIlima, 100),
-        [25] = (USUMTrainerStoryStage.StartToIlima, 110),
-        [28] = (USUMTrainerStoryStage.StartToIlima, 120),
-        [26] = (USUMTrainerStoryStage.StartToIlima, 200),
-        [1] = (USUMTrainerStoryStage.StartToIlima, 210),
-        [512] = (USUMTrainerStoryStage.StartToIlima, 220),
-        [21] = (USUMTrainerStoryStage.StartToIlima, 300),
-        [24] = (USUMTrainerStoryStage.StartToIlima, 310),
-        [22] = (USUMTrainerStoryStage.StartToIlima, 320),
-        [436] = (USUMTrainerStoryStage.StartToIlima, 330),
-        [485] = (USUMTrainerStoryStage.StartToIlima, 400),
-        [486] = (USUMTrainerStoryStage.StartToIlima, 400),
-        [487] = (USUMTrainerStoryStage.StartToIlima, 400),
-        [47] = (USUMTrainerStoryStage.StartToIlima, 500),
-        [52] = (USUMTrainerStoryStage.StartToIlima, 900),
-        [215] = (USUMTrainerStoryStage.StartToIlima, 900),
-        [216] = (USUMTrainerStoryStage.StartToIlima, 900),
+        [459] = (USUMTrainerStoryStage.StartToFirstTotem, 100),
+        // Hau/Tilo first battle: before entering Iki/Pueblo Lilii.
+        [491] = (USUMTrainerStoryStage.StartToFirstTotem, 10),
+        [492] = (USUMTrainerStoryStage.StartToFirstTotem, 10),
+        [493] = (USUMTrainerStoryStage.StartToFirstTotem, 10),
+        [25] = (USUMTrainerStoryStage.StartToFirstTotem, 110),
+        [28] = (USUMTrainerStoryStage.StartToFirstTotem, 120),
+        // Hau/Tilo festival battle: after the first Route 1 trainers.
+        [9] = (USUMTrainerStoryStage.StartToFirstTotem, 130),
+        [10] = (USUMTrainerStoryStage.StartToFirstTotem, 130),
+        [11] = (USUMTrainerStoryStage.StartToFirstTotem, 130),
+        [26] = (USUMTrainerStoryStage.StartToFirstTotem, 200),
+        [1] = (USUMTrainerStoryStage.StartToFirstTotem, 210),
+        [512] = (USUMTrainerStoryStage.StartToFirstTotem, 220),
+        [21] = (USUMTrainerStoryStage.StartToFirstTotem, 300),
+        [24] = (USUMTrainerStoryStage.StartToFirstTotem, 310),
+        [22] = (USUMTrainerStoryStage.StartToFirstTotem, 320),
+        [436] = (USUMTrainerStoryStage.StartToFirstTotem, 330),
+        [485] = (USUMTrainerStoryStage.StartToFirstTotem, 400),
+        [486] = (USUMTrainerStoryStage.StartToFirstTotem, 400),
+        [487] = (USUMTrainerStoryStage.StartToFirstTotem, 400),
+        [47] = (USUMTrainerStoryStage.StartToFirstTotem, 500),
+        [52] = (USUMTrainerStoryStage.StartToFirstTotem, 900),
+        [215] = (USUMTrainerStoryStage.StartToFirstTotem, 900),
+        [216] = (USUMTrainerStoryStage.StartToFirstTotem, 900),
 
         // ============================================================
         // 1 - Ilima -> Hala
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [472] = (USUMTrainerStoryStage.IlimaToHala, 100),
-        [469] = (USUMTrainerStoryStage.IlimaToHala, 110),
-        [633] = (USUMTrainerStoryStage.IlimaToHala, 120),
-        [40] = (USUMTrainerStoryStage.IlimaToHala, 200),
-        [468] = (USUMTrainerStoryStage.IlimaToHala, 210),
-        [41] = (USUMTrainerStoryStage.IlimaToHala, 220),
-        [19] = (USUMTrainerStoryStage.IlimaToHala, 300),
-        [42] = (USUMTrainerStoryStage.IlimaToHala, 400),
-        [2] = (USUMTrainerStoryStage.IlimaToHala, 410),
-        [30] = (USUMTrainerStoryStage.IlimaToHala, 420),
-        [43] = (USUMTrainerStoryStage.IlimaToHala, 500),
-        [648] = (USUMTrainerStoryStage.IlimaToHala, 500),
-        [649] = (USUMTrainerStoryStage.IlimaToHala, 500),
-        [31] = (USUMTrainerStoryStage.IlimaToHala, 600),
-        [33] = (USUMTrainerStoryStage.IlimaToHala, 610),
-        [32] = (USUMTrainerStoryStage.IlimaToHala, 620),
-        [16] = (USUMTrainerStoryStage.IlimaToHala, 700),
-        [536] = (USUMTrainerStoryStage.IlimaToHala, 710),
-        [23] = (USUMTrainerStoryStage.IlimaToHala, 900),
+        [472] = (USUMTrainerStoryStage.FirstTotemToHala, 100),
+        [469] = (USUMTrainerStoryStage.FirstTotemToHala, 110),
+        [633] = (USUMTrainerStoryStage.FirstTotemToHala, 120),
+        [40] = (USUMTrainerStoryStage.FirstTotemToHala, 200),
+        [468] = (USUMTrainerStoryStage.FirstTotemToHala, 210),
+        [41] = (USUMTrainerStoryStage.FirstTotemToHala, 220),
+        [19] = (USUMTrainerStoryStage.FirstTotemToHala, 300),
+        [42] = (USUMTrainerStoryStage.FirstTotemToHala, 400),
+        [2] = (USUMTrainerStoryStage.FirstTotemToHala, 410),
+        [30] = (USUMTrainerStoryStage.FirstTotemToHala, 420),
+        [43] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
+        [648] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
+        [649] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
+        [31] = (USUMTrainerStoryStage.FirstTotemToHala, 600),
+        [33] = (USUMTrainerStoryStage.FirstTotemToHala, 610),
+        [32] = (USUMTrainerStoryStage.FirstTotemToHala, 620),
+        [16] = (USUMTrainerStoryStage.FirstTotemToHala, 700),
+        [536] = (USUMTrainerStoryStage.FirstTotemToHala, 710),
+        // Hau/Tilo Route 3 rematch after the Normal Trial, before Hala.
+        [12] = (USUMTrainerStoryStage.FirstTotemToHala, 800),
+        [13] = (USUMTrainerStoryStage.FirstTotemToHala, 800),
+        [14] = (USUMTrainerStoryStage.FirstTotemToHala, 800),
+        [23] = (USUMTrainerStoryStage.FirstTotemToHala, 900),
 
         // ============================================================
         // 2 - Hala -> Lana
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [563] = (USUMTrainerStoryStage.HalaToLana, 20),
-        [567] = (USUMTrainerStoryStage.HalaToLana, 30),
-        [74] = (USUMTrainerStoryStage.HalaToLana, 80),
-        [75] = (USUMTrainerStoryStage.HalaToLana, 80),
-        [182] = (USUMTrainerStoryStage.HalaToLana, 100),
-        [61] = (USUMTrainerStoryStage.HalaToLana, 110),
-        [64] = (USUMTrainerStoryStage.HalaToLana, 120),
-        [513] = (USUMTrainerStoryStage.HalaToLana, 130),
-        [333] = (USUMTrainerStoryStage.HalaToLana, 140),
-        [125] = (USUMTrainerStoryStage.HalaToLana, 200),
-        [122] = (USUMTrainerStoryStage.HalaToLana, 210),
-        [124] = (USUMTrainerStoryStage.HalaToLana, 220),
-        [390] = (USUMTrainerStoryStage.HalaToLana, 230),
-        [516] = (USUMTrainerStoryStage.HalaToLana, 240),
-        [97] = (USUMTrainerStoryStage.HalaToLana, 300),
-        [98] = (USUMTrainerStoryStage.HalaToLana, 300),
-        [95] = (USUMTrainerStoryStage.HalaToLana, 310),
-        [92] = (USUMTrainerStoryStage.HalaToLana, 320),
-        [93] = (USUMTrainerStoryStage.HalaToLana, 320),
-        [94] = (USUMTrainerStoryStage.HalaToLana, 330),
-        [96] = (USUMTrainerStoryStage.HalaToLana, 340),
-        [102] = (USUMTrainerStoryStage.HalaToLana, 350),
-        [104] = (USUMTrainerStoryStage.HalaToLana, 360),
-        [651] = (USUMTrainerStoryStage.HalaToLana, 360),
-        [652] = (USUMTrainerStoryStage.HalaToLana, 360),
-        [395] = (USUMTrainerStoryStage.HalaToLana, 390),
-        [55] = (USUMTrainerStoryStage.HalaToLana, 500),
-        [56] = (USUMTrainerStoryStage.HalaToLana, 510),
-        [58] = (USUMTrainerStoryStage.HalaToLana, 520),
-        [60] = (USUMTrainerStoryStage.HalaToLana, 530),
-        [79] = (USUMTrainerStoryStage.HalaToLana, 850),
-        [185] = (USUMTrainerStoryStage.HalaToLana, 850),
+        [563] = (USUMTrainerStoryStage.HalaToAraquanid, 20),
+        [567] = (USUMTrainerStoryStage.HalaToAraquanid, 30),
+        [74] = (USUMTrainerStoryStage.HalaToAraquanid, 80),
+        [75] = (USUMTrainerStoryStage.HalaToAraquanid, 80),
+        [182] = (USUMTrainerStoryStage.HalaToAraquanid, 100),
+        [61] = (USUMTrainerStoryStage.HalaToAraquanid, 110),
+        [64] = (USUMTrainerStoryStage.HalaToAraquanid, 120),
+        [513] = (USUMTrainerStoryStage.HalaToAraquanid, 130),
+        [333] = (USUMTrainerStoryStage.HalaToAraquanid, 140),
+        // Hau/Tilo in Paniola/Pueblo Ohana, before the Water Trial.
+        [76] = (USUMTrainerStoryStage.HalaToAraquanid, 150),
+        [77] = (USUMTrainerStoryStage.HalaToAraquanid, 150),
+        [78] = (USUMTrainerStoryStage.HalaToAraquanid, 150),
+        [125] = (USUMTrainerStoryStage.HalaToAraquanid, 200),
+        [122] = (USUMTrainerStoryStage.HalaToAraquanid, 210),
+        [124] = (USUMTrainerStoryStage.HalaToAraquanid, 220),
+        [390] = (USUMTrainerStoryStage.HalaToAraquanid, 230),
+        [516] = (USUMTrainerStoryStage.HalaToAraquanid, 240),
+        [97] = (USUMTrainerStoryStage.HalaToAraquanid, 300),
+        [98] = (USUMTrainerStoryStage.HalaToAraquanid, 300),
+        [95] = (USUMTrainerStoryStage.HalaToAraquanid, 310),
+        [92] = (USUMTrainerStoryStage.HalaToAraquanid, 320),
+        [93] = (USUMTrainerStoryStage.HalaToAraquanid, 320),
+        [94] = (USUMTrainerStoryStage.HalaToAraquanid, 330),
+        [96] = (USUMTrainerStoryStage.HalaToAraquanid, 340),
+        [102] = (USUMTrainerStoryStage.HalaToAraquanid, 350),
+        [104] = (USUMTrainerStoryStage.HalaToAraquanid, 360),
+        [651] = (USUMTrainerStoryStage.HalaToAraquanid, 360),
+        [652] = (USUMTrainerStoryStage.HalaToAraquanid, 360),
+        [395] = (USUMTrainerStoryStage.HalaToAraquanid, 390),
+        [55] = (USUMTrainerStoryStage.HalaToAraquanid, 500),
+        [56] = (USUMTrainerStoryStage.HalaToAraquanid, 510),
+        [58] = (USUMTrainerStoryStage.HalaToAraquanid, 520),
+        [60] = (USUMTrainerStoryStage.HalaToAraquanid, 530),
+        [79] = (USUMTrainerStoryStage.HalaToAraquanid, 850),
+        [185] = (USUMTrainerStoryStage.HalaToAraquanid, 850),
 
         // ============================================================
         // 3 - Lana -> Kiawe
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [54] = (USUMTrainerStoryStage.LanaToKiawe, 20),
-        [576] = (USUMTrainerStoryStage.LanaToKiawe, 30),
-        [65] = (USUMTrainerStoryStage.LanaToKiawe, 100),
-        [68] = (USUMTrainerStoryStage.LanaToKiawe, 110),
-        [334] = (USUMTrainerStoryStage.LanaToKiawe, 120),
-        [80] = (USUMTrainerStoryStage.LanaToKiawe, 130),
-        [529] = (USUMTrainerStoryStage.LanaToKiawe, 140),
-        [530] = (USUMTrainerStoryStage.LanaToKiawe, 140),
-        [81] = (USUMTrainerStoryStage.LanaToKiawe, 200),
-        [537] = (USUMTrainerStoryStage.LanaToKiawe, 210),
-        [70] = (USUMTrainerStoryStage.LanaToKiawe, 300),
-        [71] = (USUMTrainerStoryStage.LanaToKiawe, 310),
-        [72] = (USUMTrainerStoryStage.LanaToKiawe, 320),
-        [73] = (USUMTrainerStoryStage.LanaToKiawe, 330),
-        [174] = (USUMTrainerStoryStage.LanaToKiawe, 400),
-        [245] = (USUMTrainerStoryStage.LanaToKiawe, 410),
-        [246] = (USUMTrainerStoryStage.LanaToKiawe, 420),
-        [186] = (USUMTrainerStoryStage.LanaToKiawe, 500),
+        [54] = (USUMTrainerStoryStage.AraquanidToMarowak, 20),
+        [576] = (USUMTrainerStoryStage.AraquanidToMarowak, 30),
+        [65] = (USUMTrainerStoryStage.AraquanidToMarowak, 100),
+        [68] = (USUMTrainerStoryStage.AraquanidToMarowak, 110),
+        [334] = (USUMTrainerStoryStage.AraquanidToMarowak, 120),
+        [80] = (USUMTrainerStoryStage.AraquanidToMarowak, 130),
+        [529] = (USUMTrainerStoryStage.AraquanidToMarowak, 140),
+        [530] = (USUMTrainerStoryStage.AraquanidToMarowak, 140),
+        [81] = (USUMTrainerStoryStage.AraquanidToMarowak, 200),
+        [537] = (USUMTrainerStoryStage.AraquanidToMarowak, 210),
+        [70] = (USUMTrainerStoryStage.AraquanidToMarowak, 300),
+        [71] = (USUMTrainerStoryStage.AraquanidToMarowak, 310),
+        [72] = (USUMTrainerStoryStage.AraquanidToMarowak, 320),
+        [73] = (USUMTrainerStoryStage.AraquanidToMarowak, 330),
+        [174] = (USUMTrainerStoryStage.AraquanidToMarowak, 400),
+        [245] = (USUMTrainerStoryStage.AraquanidToMarowak, 410),
+        [246] = (USUMTrainerStoryStage.AraquanidToMarowak, 420),
+        [186] = (USUMTrainerStoryStage.AraquanidToMarowak, 500),
+        // Battle Royal: Hau/Tilo participates with the player, Gladion and Masked Royal.
+        [82] = (USUMTrainerStoryStage.AraquanidToMarowak, 600),
+        [83] = (USUMTrainerStoryStage.AraquanidToMarowak, 600),
+        [84] = (USUMTrainerStoryStage.AraquanidToMarowak, 600),
 
         // ============================================================
         // 4 - Kiawe -> Mallow
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [34] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [35] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [36] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [37] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [38] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [39] = (USUMTrainerStoryStage.KiaweToMallow, 80),
-        [101] = (USUMTrainerStoryStage.KiaweToMallow, 300),
-        [99] = (USUMTrainerStoryStage.KiaweToMallow, 310),
-        [100] = (USUMTrainerStoryStage.KiaweToMallow, 320),
-        [105] = (USUMTrainerStoryStage.KiaweToMallow, 330),
-        [629] = (USUMTrainerStoryStage.KiaweToMallow, 340),
-        [171] = (USUMTrainerStoryStage.KiaweToMallow, 350),
-        [170] = (USUMTrainerStoryStage.KiaweToMallow, 360),
-        [331] = (USUMTrainerStoryStage.KiaweToMallow, 370),
-        [332] = (USUMTrainerStoryStage.KiaweToMallow, 370),
-        [509] = (USUMTrainerStoryStage.KiaweToMallow, 500),
-        [474] = (USUMTrainerStoryStage.KiaweToMallow, 900),
+        [34] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [35] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [36] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [37] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [38] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [39] = (USUMTrainerStoryStage.MarowakToLurantis, 80),
+        [101] = (USUMTrainerStoryStage.MarowakToLurantis, 300),
+        [99] = (USUMTrainerStoryStage.MarowakToLurantis, 310),
+        [100] = (USUMTrainerStoryStage.MarowakToLurantis, 320),
+        [105] = (USUMTrainerStoryStage.MarowakToLurantis, 330),
+        [629] = (USUMTrainerStoryStage.MarowakToLurantis, 340),
+        [171] = (USUMTrainerStoryStage.MarowakToLurantis, 350),
+        [170] = (USUMTrainerStoryStage.MarowakToLurantis, 360),
+        [331] = (USUMTrainerStoryStage.MarowakToLurantis, 370),
+        [332] = (USUMTrainerStoryStage.MarowakToLurantis, 370),
+        [509] = (USUMTrainerStoryStage.MarowakToLurantis, 500),
+        [474] = (USUMTrainerStoryStage.MarowakToLurantis, 900),
 
         // ============================================================
         // 5 - Mallow -> Olivia
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [119] = (USUMTrainerStoryStage.MallowToOlivia, 100),
-        [117] = (USUMTrainerStoryStage.MallowToOlivia, 110),
-        [118] = (USUMTrainerStoryStage.MallowToOlivia, 120),
-        [443] = (USUMTrainerStoryStage.MallowToOlivia, 200),
-        [444] = (USUMTrainerStoryStage.MallowToOlivia, 200),
-        [126] = (USUMTrainerStoryStage.MallowToOlivia, 300),
-        [335] = (USUMTrainerStoryStage.MallowToOlivia, 310),
-        [115] = (USUMTrainerStoryStage.MallowToOlivia, 400),
-        [113] = (USUMTrainerStoryStage.MallowToOlivia, 410),
-        [114] = (USUMTrainerStoryStage.MallowToOlivia, 420),
-        [116] = (USUMTrainerStoryStage.MallowToOlivia, 430),
-        [88] = (USUMTrainerStoryStage.MallowToOlivia, 440),
-        [121] = (USUMTrainerStoryStage.MallowToOlivia, 500),
-        [120] = (USUMTrainerStoryStage.MallowToOlivia, 510),
-        [89] = (USUMTrainerStoryStage.MallowToOlivia, 650),
-        [90] = (USUMTrainerStoryStage.MallowToOlivia, 900),
+        [119] = (USUMTrainerStoryStage.LurantisToOlivia, 100),
+        [117] = (USUMTrainerStoryStage.LurantisToOlivia, 110),
+        [118] = (USUMTrainerStoryStage.LurantisToOlivia, 120),
+        [443] = (USUMTrainerStoryStage.LurantisToOlivia, 200),
+        [444] = (USUMTrainerStoryStage.LurantisToOlivia, 200),
+        [126] = (USUMTrainerStoryStage.LurantisToOlivia, 300),
+        [335] = (USUMTrainerStoryStage.LurantisToOlivia, 310),
+        // Hau/Tilo partner battle in Diglett's Tunnel on the way to Konikoni.
+        [438] = (USUMTrainerStoryStage.LurantisToOlivia, 350),
+        [439] = (USUMTrainerStoryStage.LurantisToOlivia, 350),
+        [440] = (USUMTrainerStoryStage.LurantisToOlivia, 350),
+        [115] = (USUMTrainerStoryStage.LurantisToOlivia, 400),
+        [113] = (USUMTrainerStoryStage.LurantisToOlivia, 410),
+        [114] = (USUMTrainerStoryStage.LurantisToOlivia, 420),
+        [116] = (USUMTrainerStoryStage.LurantisToOlivia, 430),
+        [88] = (USUMTrainerStoryStage.LurantisToOlivia, 440),
+        [121] = (USUMTrainerStoryStage.LurantisToOlivia, 500),
+        [120] = (USUMTrainerStoryStage.LurantisToOlivia, 510),
+        [89] = (USUMTrainerStoryStage.LurantisToOlivia, 650),
+        [90] = (USUMTrainerStoryStage.LurantisToOlivia, 900),
 
         // ============================================================
         // 6 - Olivia -> Sophocles
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [108] = (USUMTrainerStoryStage.OliviaToSophocles, 20),
-        [109] = (USUMTrainerStoryStage.OliviaToSophocles, 30),
-        [110] = (USUMTrainerStoryStage.OliviaToSophocles, 40),
-        [111] = (USUMTrainerStoryStage.OliviaToSophocles, 50),
-        [112] = (USUMTrainerStoryStage.OliviaToSophocles, 60),
-        [375] = (USUMTrainerStoryStage.OliviaToSophocles, 70),
-        [376] = (USUMTrainerStoryStage.OliviaToSophocles, 70),
-        [510] = (USUMTrainerStoryStage.OliviaToSophocles, 80),
-        [540] = (USUMTrainerStoryStage.OliviaToSophocles, 85),
-        [574] = (USUMTrainerStoryStage.OliviaToSophocles, 90),
-        [217] = (USUMTrainerStoryStage.OliviaToSophocles, 100),
-        [218] = (USUMTrainerStoryStage.OliviaToSophocles, 100),
-        [219] = (USUMTrainerStoryStage.OliviaToSophocles, 100),
-        [279] = (USUMTrainerStoryStage.OliviaToSophocles, 180),
-        [266] = (USUMTrainerStoryStage.OliviaToSophocles, 190),
-        [514] = (USUMTrainerStoryStage.OliviaToSophocles, 200),
-        [521] = (USUMTrainerStoryStage.OliviaToSophocles, 200),
-        [276] = (USUMTrainerStoryStage.OliviaToSophocles, 210),
-        [177] = (USUMTrainerStoryStage.OliviaToSophocles, 240),
-        [366] = (USUMTrainerStoryStage.OliviaToSophocles, 250),
-        [383] = (USUMTrainerStoryStage.OliviaToSophocles, 260),
-        [420] = (USUMTrainerStoryStage.OliviaToSophocles, 400),
-        [248] = (USUMTrainerStoryStage.OliviaToSophocles, 410),
-        [173] = (USUMTrainerStoryStage.OliviaToSophocles, 420),
-        [223] = (USUMTrainerStoryStage.OliviaToSophocles, 430),
-        [224] = (USUMTrainerStoryStage.OliviaToSophocles, 430),
-        [344] = (USUMTrainerStoryStage.OliviaToSophocles, 600),
-        [286] = (USUMTrainerStoryStage.OliviaToSophocles, 610),
-        [522] = (USUMTrainerStoryStage.OliviaToSophocles, 620),
-        [284] = (USUMTrainerStoryStage.OliviaToSophocles, 630),
-        [476] = (USUMTrainerStoryStage.OliviaToSophocles, 640),
+        [108] = (USUMTrainerStoryStage.OliviaToTogedemaru, 20),
+        [109] = (USUMTrainerStoryStage.OliviaToTogedemaru, 30),
+        [110] = (USUMTrainerStoryStage.OliviaToTogedemaru, 40),
+        [111] = (USUMTrainerStoryStage.OliviaToTogedemaru, 50),
+        [112] = (USUMTrainerStoryStage.OliviaToTogedemaru, 60),
+        [375] = (USUMTrainerStoryStage.OliviaToTogedemaru, 70),
+        [376] = (USUMTrainerStoryStage.OliviaToTogedemaru, 70),
+        [510] = (USUMTrainerStoryStage.OliviaToTogedemaru, 80),
+        [540] = (USUMTrainerStoryStage.OliviaToTogedemaru, 85),
+        [574] = (USUMTrainerStoryStage.OliviaToTogedemaru, 90),
+        [217] = (USUMTrainerStoryStage.OliviaToTogedemaru, 100),
+        [218] = (USUMTrainerStoryStage.OliviaToTogedemaru, 100),
+        [219] = (USUMTrainerStoryStage.OliviaToTogedemaru, 100),
+        [279] = (USUMTrainerStoryStage.OliviaToTogedemaru, 180),
+        [266] = (USUMTrainerStoryStage.OliviaToTogedemaru, 190),
+        [514] = (USUMTrainerStoryStage.OliviaToTogedemaru, 200),
+        [521] = (USUMTrainerStoryStage.OliviaToTogedemaru, 200),
+        [276] = (USUMTrainerStoryStage.OliviaToTogedemaru, 210),
+        [177] = (USUMTrainerStoryStage.OliviaToTogedemaru, 240),
+        [366] = (USUMTrainerStoryStage.OliviaToTogedemaru, 250),
+        [383] = (USUMTrainerStoryStage.OliviaToTogedemaru, 260),
+        [420] = (USUMTrainerStoryStage.OliviaToTogedemaru, 400),
+        [248] = (USUMTrainerStoryStage.OliviaToTogedemaru, 410),
+        [173] = (USUMTrainerStoryStage.OliviaToTogedemaru, 420),
+        [223] = (USUMTrainerStoryStage.OliviaToTogedemaru, 430),
+        [224] = (USUMTrainerStoryStage.OliviaToTogedemaru, 430),
+        [344] = (USUMTrainerStoryStage.OliviaToTogedemaru, 600),
+        [286] = (USUMTrainerStoryStage.OliviaToTogedemaru, 610),
+        [522] = (USUMTrainerStoryStage.OliviaToTogedemaru, 620),
+        [284] = (USUMTrainerStoryStage.OliviaToTogedemaru, 630),
+        [476] = (USUMTrainerStoryStage.OliviaToTogedemaru, 640),
 
         // ============================================================
         // 7 - Sophocles -> Acerola
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [138] = (USUMTrainerStoryStage.SophoclesToAcerola, 80),
-        [421] = (USUMTrainerStoryStage.SophoclesToAcerola, 200),
-        [422] = (USUMTrainerStoryStage.SophoclesToAcerola, 200),
-        [437] = (USUMTrainerStoryStage.SophoclesToAcerola, 210),
-        [616] = (USUMTrainerStoryStage.SophoclesToAcerola, 220),
-        [424] = (USUMTrainerStoryStage.SophoclesToAcerola, 230),
-        [425] = (USUMTrainerStoryStage.SophoclesToAcerola, 300),
-        [426] = (USUMTrainerStoryStage.SophoclesToAcerola, 300),
-        [326] = (USUMTrainerStoryStage.SophoclesToAcerola, 310),
-        [327] = (USUMTrainerStoryStage.SophoclesToAcerola, 320),
-        [254] = (USUMTrainerStoryStage.SophoclesToAcerola, 330),
-        [631] = (USUMTrainerStoryStage.SophoclesToAcerola, 340),
-        [340] = (USUMTrainerStoryStage.SophoclesToAcerola, 350),
-        [393] = (USUMTrainerStoryStage.SophoclesToAcerola, 390),
-        [427] = (USUMTrainerStoryStage.SophoclesToAcerola, 400),
-        [575] = (USUMTrainerStoryStage.SophoclesToAcerola, 450),
-        [253] = (USUMTrainerStoryStage.SophoclesToAcerola, 500),
-        [237] = (USUMTrainerStoryStage.SophoclesToAcerola, 520),
-        [473] = (USUMTrainerStoryStage.SophoclesToAcerola, 530),
-        [257] = (USUMTrainerStoryStage.SophoclesToAcerola, 600),
-        [269] = (USUMTrainerStoryStage.SophoclesToAcerola, 610),
-        [341] = (USUMTrainerStoryStage.SophoclesToAcerola, 620),
-        [518] = (USUMTrainerStoryStage.SophoclesToAcerola, 630),
+        [138] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 80),
+        [421] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 200),
+        [422] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 200),
+        [437] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 210),
+        [616] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 220),
+        [424] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 230),
+        [425] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 300),
+        [426] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 300),
+        [326] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 310),
+        [327] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 320),
+        [254] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 330),
+        [631] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 340),
+        [340] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 350),
+        [393] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 390),
+        [427] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 400),
+        [575] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 450),
+        [253] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 500),
+        [237] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 520),
+        [473] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 530),
+        [257] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 600),
+        [269] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 610),
+        [341] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 620),
+        [518] = (USUMTrainerStoryStage.TogedemaruToMimikyu, 630),
 
         // ============================================================
         // 8 - Acerola -> Nanu
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [238] = (USUMTrainerStoryStage.AcerolaToNanu, 100),
-        [488] = (USUMTrainerStoryStage.AcerolaToNanu, 100),
-        [533] = (USUMTrainerStoryStage.AcerolaToNanu, 110),
-        [271] = (USUMTrainerStoryStage.AcerolaToNanu, 120),
-        [270] = (USUMTrainerStoryStage.AcerolaToNanu, 130),
-        [299] = (USUMTrainerStoryStage.AcerolaToNanu, 130),
-        [300] = (USUMTrainerStoryStage.AcerolaToNanu, 140),
-        [251] = (USUMTrainerStoryStage.AcerolaToNanu, 150),
-        [342] = (USUMTrainerStoryStage.AcerolaToNanu, 200),
-        [565] = (USUMTrainerStoryStage.AcerolaToNanu, 210),
-        [520] = (USUMTrainerStoryStage.AcerolaToNanu, 220),
-        [343] = (USUMTrainerStoryStage.AcerolaToNanu, 300),
-        [538] = (USUMTrainerStoryStage.AcerolaToNanu, 305),
-        [428] = (USUMTrainerStoryStage.AcerolaToNanu, 310),
-        [291] = (USUMTrainerStoryStage.AcerolaToNanu, 320),
-        [465] = (USUMTrainerStoryStage.AcerolaToNanu, 390),
-        [141] = (USUMTrainerStoryStage.AcerolaToNanu, 400),
-        [227] = (USUMTrainerStoryStage.AcerolaToNanu, 410),
-        [524] = (USUMTrainerStoryStage.AcerolaToNanu, 500),
-        [310] = (USUMTrainerStoryStage.AcerolaToNanu, 510),
-        [311] = (USUMTrainerStoryStage.AcerolaToNanu, 520),
-        [312] = (USUMTrainerStoryStage.AcerolaToNanu, 530),
-        [313] = (USUMTrainerStoryStage.AcerolaToNanu, 540),
-        [314] = (USUMTrainerStoryStage.AcerolaToNanu, 550),
-        [315] = (USUMTrainerStoryStage.AcerolaToNanu, 560),
-        [316] = (USUMTrainerStoryStage.AcerolaToNanu, 570),
-        [318] = (USUMTrainerStoryStage.AcerolaToNanu, 580),
-        [319] = (USUMTrainerStoryStage.AcerolaToNanu, 590),
-        [321] = (USUMTrainerStoryStage.AcerolaToNanu, 600),
-        [322] = (USUMTrainerStoryStage.AcerolaToNanu, 610),
-        [323] = (USUMTrainerStoryStage.AcerolaToNanu, 620),
-        [324] = (USUMTrainerStoryStage.AcerolaToNanu, 630),
-        [231] = (USUMTrainerStoryStage.AcerolaToNanu, 640),
-        [232] = (USUMTrainerStoryStage.AcerolaToNanu, 640),
-        [457] = (USUMTrainerStoryStage.AcerolaToNanu, 650),
-        [458] = (USUMTrainerStoryStage.AcerolaToNanu, 660),
-        [235] = (USUMTrainerStoryStage.AcerolaToNanu, 700),
-        [239] = (USUMTrainerStoryStage.AcerolaToNanu, 820),
-        [154] = (USUMTrainerStoryStage.AcerolaToNanu, 900),
-        [508] = (USUMTrainerStoryStage.AcerolaToNanu, 900),
+        [238] = (USUMTrainerStoryStage.MimikyuToNanu, 100),
+        [488] = (USUMTrainerStoryStage.MimikyuToNanu, 100),
+        [533] = (USUMTrainerStoryStage.MimikyuToNanu, 110),
+        [271] = (USUMTrainerStoryStage.MimikyuToNanu, 120),
+        [270] = (USUMTrainerStoryStage.MimikyuToNanu, 130),
+        [299] = (USUMTrainerStoryStage.MimikyuToNanu, 130),
+        [300] = (USUMTrainerStoryStage.MimikyuToNanu, 140),
+        [251] = (USUMTrainerStoryStage.MimikyuToNanu, 150),
+        [342] = (USUMTrainerStoryStage.MimikyuToNanu, 200),
+        [565] = (USUMTrainerStoryStage.MimikyuToNanu, 210),
+        [520] = (USUMTrainerStoryStage.MimikyuToNanu, 220),
+        [343] = (USUMTrainerStoryStage.MimikyuToNanu, 300),
+        [538] = (USUMTrainerStoryStage.MimikyuToNanu, 305),
+        [428] = (USUMTrainerStoryStage.MimikyuToNanu, 310),
+        [291] = (USUMTrainerStoryStage.MimikyuToNanu, 320),
+        [465] = (USUMTrainerStoryStage.MimikyuToNanu, 390),
+        [141] = (USUMTrainerStoryStage.MimikyuToNanu, 400),
+        [227] = (USUMTrainerStoryStage.MimikyuToNanu, 410),
+        [524] = (USUMTrainerStoryStage.MimikyuToNanu, 500),
+        [310] = (USUMTrainerStoryStage.MimikyuToNanu, 510),
+        [311] = (USUMTrainerStoryStage.MimikyuToNanu, 520),
+        [312] = (USUMTrainerStoryStage.MimikyuToNanu, 530),
+        [313] = (USUMTrainerStoryStage.MimikyuToNanu, 540),
+        [314] = (USUMTrainerStoryStage.MimikyuToNanu, 550),
+        [315] = (USUMTrainerStoryStage.MimikyuToNanu, 560),
+        [316] = (USUMTrainerStoryStage.MimikyuToNanu, 570),
+        [318] = (USUMTrainerStoryStage.MimikyuToNanu, 580),
+        [319] = (USUMTrainerStoryStage.MimikyuToNanu, 590),
+        [321] = (USUMTrainerStoryStage.MimikyuToNanu, 600),
+        [322] = (USUMTrainerStoryStage.MimikyuToNanu, 610),
+        [323] = (USUMTrainerStoryStage.MimikyuToNanu, 620),
+        [324] = (USUMTrainerStoryStage.MimikyuToNanu, 630),
+        [231] = (USUMTrainerStoryStage.MimikyuToNanu, 640),
+        [232] = (USUMTrainerStoryStage.MimikyuToNanu, 640),
+        [457] = (USUMTrainerStoryStage.MimikyuToNanu, 650),
+        [458] = (USUMTrainerStoryStage.MimikyuToNanu, 660),
+        [235] = (USUMTrainerStoryStage.MimikyuToNanu, 700),
+        [239] = (USUMTrainerStoryStage.MimikyuToNanu, 820),
+        [154] = (USUMTrainerStoryStage.MimikyuToNanu, 900),
+        [508] = (USUMTrainerStoryStage.MimikyuToNanu, 900),
 
         // ============================================================
         // 9 - Nanu -> Dragon Trial
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [134] = (USUMTrainerStoryStage.NanuToDragon, 120),
-        [136] = (USUMTrainerStoryStage.NanuToDragon, 130),
-        [137] = (USUMTrainerStoryStage.NanuToDragon, 140),
-        [242] = (USUMTrainerStoryStage.NanuToDragon, 160),
-        [243] = (USUMTrainerStoryStage.NanuToDragon, 170),
-        [258] = (USUMTrainerStoryStage.NanuToDragon, 180),
-        [259] = (USUMTrainerStoryStage.NanuToDragon, 190),
-        [346] = (USUMTrainerStoryStage.NanuToDragon, 200),
-        [347] = (USUMTrainerStoryStage.NanuToDragon, 210),
-        [348] = (USUMTrainerStoryStage.NanuToDragon, 220),
-        [453] = (USUMTrainerStoryStage.NanuToDragon, 230),
-        [454] = (USUMTrainerStoryStage.NanuToDragon, 240),
-        [455] = (USUMTrainerStoryStage.NanuToDragon, 250),
-        [456] = (USUMTrainerStoryStage.NanuToDragon, 260),
-        [517] = (USUMTrainerStoryStage.NanuToDragon, 270),
-        [132] = (USUMTrainerStoryStage.NanuToDragon, 320),
-        [241] = (USUMTrainerStoryStage.NanuToDragon, 380),
-        [228] = (USUMTrainerStoryStage.NanuToDragon, 430),
-        [229] = (USUMTrainerStoryStage.NanuToDragon, 430),
-        [236] = (USUMTrainerStoryStage.NanuToDragon, 500),
-        [498] = (USUMTrainerStoryStage.NanuToDragon, 600),
-        [500] = (USUMTrainerStoryStage.NanuToDragon, 600),
-        [131] = (USUMTrainerStoryStage.NanuToDragon, 700),
-        [545] = (USUMTrainerStoryStage.NanuToDragon, 780),
-        [178] = (USUMTrainerStoryStage.NanuToDragon, 790),
-        [511] = (USUMTrainerStoryStage.NanuToDragon, 790),
-        [446] = (USUMTrainerStoryStage.NanuToDragon, 800),
-        [445] = (USUMTrainerStoryStage.NanuToDragon, 810),
-        [330] = (USUMTrainerStoryStage.NanuToDragon, 820),
-        [466] = (USUMTrainerStoryStage.NanuToDragon, 830),
-        [285] = (USUMTrainerStoryStage.NanuToDragon, 850),
-        [277] = (USUMTrainerStoryStage.NanuToDragon, 860),
-        [526] = (USUMTrainerStoryStage.NanuToDragon, 870),
-        [233] = (USUMTrainerStoryStage.NanuToDragon, 890),
-        [230] = (USUMTrainerStoryStage.NanuToDragon, 900),
-        [499] = (USUMTrainerStoryStage.NanuToDragon, 920),
-        [501] = (USUMTrainerStoryStage.NanuToDragon, 920),
-        [306] = (USUMTrainerStoryStage.NanuToDragon, 930),
-        [297] = (USUMTrainerStoryStage.NanuToDragon, 940),
-        [262] = (USUMTrainerStoryStage.NanuToDragon, 950),
-        [265] = (USUMTrainerStoryStage.NanuToDragon, 950),
-        [289] = (USUMTrainerStoryStage.NanuToDragon, 960),
-        [309] = (USUMTrainerStoryStage.NanuToDragon, 970),
-        [261] = (USUMTrainerStoryStage.NanuToDragon, 980),
-        [283] = (USUMTrainerStoryStage.NanuToDragon, 990),
-        [302] = (USUMTrainerStoryStage.NanuToDragon, 1000),
-        [301] = (USUMTrainerStoryStage.NanuToDragon, 1010),
-        [274] = (USUMTrainerStoryStage.NanuToDragon, 1020),
-        [525] = (USUMTrainerStoryStage.NanuToDragon, 1030),
-        [275] = (USUMTrainerStoryStage.NanuToDragon, 1040),
-        [632] = (USUMTrainerStoryStage.NanuToDragon, 1050),
-        [264] = (USUMTrainerStoryStage.NanuToDragon, 1060),
-        [308] = (USUMTrainerStoryStage.NanuToDragon, 1070),
-        [305] = (USUMTrainerStoryStage.NanuToDragon, 1080),
+        [134] = (USUMTrainerStoryStage.NanuToKommoo, 120),
+        [136] = (USUMTrainerStoryStage.NanuToKommoo, 130),
+        [137] = (USUMTrainerStoryStage.NanuToKommoo, 140),
+        [242] = (USUMTrainerStoryStage.NanuToKommoo, 160),
+        [243] = (USUMTrainerStoryStage.NanuToKommoo, 170),
+        [258] = (USUMTrainerStoryStage.NanuToKommoo, 180),
+        [259] = (USUMTrainerStoryStage.NanuToKommoo, 190),
+        [346] = (USUMTrainerStoryStage.NanuToKommoo, 200),
+        [347] = (USUMTrainerStoryStage.NanuToKommoo, 210),
+        [348] = (USUMTrainerStoryStage.NanuToKommoo, 220),
+        [453] = (USUMTrainerStoryStage.NanuToKommoo, 230),
+        [454] = (USUMTrainerStoryStage.NanuToKommoo, 240),
+        [455] = (USUMTrainerStoryStage.NanuToKommoo, 250),
+        [456] = (USUMTrainerStoryStage.NanuToKommoo, 260),
+        [517] = (USUMTrainerStoryStage.NanuToKommoo, 270),
+        [132] = (USUMTrainerStoryStage.NanuToKommoo, 320),
+        // Aether Paradise rescue: two partner battles with Hau/Tilo,
+        // then the partner battle with Gladion, in story order.
+        [220] = (USUMTrainerStoryStage.NanuToKommoo, 340),
+        [221] = (USUMTrainerStoryStage.NanuToKommoo, 340),
+        [222] = (USUMTrainerStoryStage.NanuToKommoo, 340),
+        [447] = (USUMTrainerStoryStage.NanuToKommoo, 360),
+        [448] = (USUMTrainerStoryStage.NanuToKommoo, 360),
+        [449] = (USUMTrainerStoryStage.NanuToKommoo, 360),
+        [441] = (USUMTrainerStoryStage.NanuToKommoo, 370),
+        [241] = (USUMTrainerStoryStage.NanuToKommoo, 380),
+        // Hau/Tilo partner roster used for the Fabio + employee multi battle.
+        [450] = (USUMTrainerStoryStage.NanuToKommoo, 380),
+        [451] = (USUMTrainerStoryStage.NanuToKommoo, 380),
+        [452] = (USUMTrainerStoryStage.NanuToKommoo, 380),
+        [228] = (USUMTrainerStoryStage.NanuToKommoo, 430),
+        [229] = (USUMTrainerStoryStage.NanuToKommoo, 430),
+        [236] = (USUMTrainerStoryStage.NanuToKommoo, 500),
+        [498] = (USUMTrainerStoryStage.NanuToKommoo, 600),
+        [500] = (USUMTrainerStoryStage.NanuToKommoo, 600),
+        [131] = (USUMTrainerStoryStage.NanuToKommoo, 700),
+        [545] = (USUMTrainerStoryStage.NanuToKommoo, 780),
+        [178] = (USUMTrainerStoryStage.NanuToKommoo, 790),
+        [511] = (USUMTrainerStoryStage.NanuToKommoo, 790),
+        [446] = (USUMTrainerStoryStage.NanuToKommoo, 800),
+        [445] = (USUMTrainerStoryStage.NanuToKommoo, 810),
+        [330] = (USUMTrainerStoryStage.NanuToKommoo, 820),
+        [466] = (USUMTrainerStoryStage.NanuToKommoo, 830),
+        [285] = (USUMTrainerStoryStage.NanuToKommoo, 850),
+        [277] = (USUMTrainerStoryStage.NanuToKommoo, 860),
+        [526] = (USUMTrainerStoryStage.NanuToKommoo, 870),
+        [233] = (USUMTrainerStoryStage.NanuToKommoo, 890),
+        [230] = (USUMTrainerStoryStage.NanuToKommoo, 900),
+        [499] = (USUMTrainerStoryStage.NanuToKommoo, 920),
+        [501] = (USUMTrainerStoryStage.NanuToKommoo, 920),
+        [306] = (USUMTrainerStoryStage.NanuToKommoo, 930),
+        [297] = (USUMTrainerStoryStage.NanuToKommoo, 940),
+        [262] = (USUMTrainerStoryStage.NanuToKommoo, 950),
+        [265] = (USUMTrainerStoryStage.NanuToKommoo, 950),
+        [289] = (USUMTrainerStoryStage.NanuToKommoo, 960),
+        [309] = (USUMTrainerStoryStage.NanuToKommoo, 970),
+        [261] = (USUMTrainerStoryStage.NanuToKommoo, 980),
+        [283] = (USUMTrainerStoryStage.NanuToKommoo, 990),
+        [302] = (USUMTrainerStoryStage.NanuToKommoo, 1000),
+        [301] = (USUMTrainerStoryStage.NanuToKommoo, 1010),
+        [274] = (USUMTrainerStoryStage.NanuToKommoo, 1020),
+        [525] = (USUMTrainerStoryStage.NanuToKommoo, 1030),
+        [275] = (USUMTrainerStoryStage.NanuToKommoo, 1040),
+        [632] = (USUMTrainerStoryStage.NanuToKommoo, 1050),
+        [264] = (USUMTrainerStoryStage.NanuToKommoo, 1060),
+        [308] = (USUMTrainerStoryStage.NanuToKommoo, 1070),
+        [305] = (USUMTrainerStoryStage.NanuToKommoo, 1080),
 
         // ============================================================
-        // 10 - Dragon Trial -> Mina
+        // 10/11 - Ultra Necrozma -> Ribombee / Mina trial
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [569] = (USUMTrainerStoryStage.DragonToMina, 100),
-        [502] = (USUMTrainerStoryStage.DragonToMina, 300),
-        [503] = (USUMTrainerStoryStage.DragonToMina, 400),
-        [504] = (USUMTrainerStoryStage.DragonToMina, 500),
-        [505] = (USUMTrainerStoryStage.DragonToMina, 600),
-        [506] = (USUMTrainerStoryStage.DragonToMina, 700),
-        [507] = (USUMTrainerStoryStage.DragonToMina, 800),
+        [569] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 100),
+        [502] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 300),
+        [503] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 400),
+        [504] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 500),
+        [505] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 600),
+        [506] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 700),
+        [507] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 800),
 
         // ============================================================
-        // 11 - Mina -> Hapu
+        // 12 - Ribombee -> Hapu
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
-        [535] = (USUMTrainerStoryStage.MinaToHapu, 100),
-        [497] = (USUMTrainerStoryStage.MinaToHapu, 900),
+        [535] = (USUMTrainerStoryStage.UltraNecrozmaToRibombee, 850),
+        [497] = (USUMTrainerStoryStage.RibombeeToHapu, 900),
 
         // ============================================================
-        // 12 - Hapu -> League
+        // 13 - Hapu -> League
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
@@ -2726,7 +2978,7 @@ public partial class SMTE : Form
         [626] = (USUMTrainerStoryStage.HapuToLeague, 1010),
 
         // ============================================================
-        // 13 - League -> Champion
+        // 14 - League -> Champion
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
@@ -2767,18 +3019,19 @@ public partial class SMTE : Form
     {
         return stage switch
         {
-            USUMTrainerStoryStage.StartToIlima => "Start -> Ilima",
-            USUMTrainerStoryStage.IlimaToHala => "Ilima -> Hala",
-            USUMTrainerStoryStage.HalaToLana => "Hala -> Lana",
-            USUMTrainerStoryStage.LanaToKiawe => "Lana -> Kiawe",
-            USUMTrainerStoryStage.KiaweToMallow => "Kiawe -> Mallow",
-            USUMTrainerStoryStage.MallowToOlivia => "Mallow -> Olivia",
-            USUMTrainerStoryStage.OliviaToSophocles => "Olivia -> Sophocles",
-            USUMTrainerStoryStage.SophoclesToAcerola => "Sophocles -> Acerola",
-            USUMTrainerStoryStage.AcerolaToNanu => "Acerola -> Nanu",
-            USUMTrainerStoryStage.NanuToDragon => "Nanu -> Dragon",
-            USUMTrainerStoryStage.DragonToMina => "Dragon -> Mina",
-            USUMTrainerStoryStage.MinaToHapu => "Mina -> Hapu",
+            USUMTrainerStoryStage.StartToFirstTotem => "Start -> First Totem",
+            USUMTrainerStoryStage.FirstTotemToHala => "First Totem -> Hala",
+            USUMTrainerStoryStage.HalaToAraquanid => "Hala -> Araquanid",
+            USUMTrainerStoryStage.AraquanidToMarowak => "Araquanid -> Marowak",
+            USUMTrainerStoryStage.MarowakToLurantis => "Marowak -> Lurantis",
+            USUMTrainerStoryStage.LurantisToOlivia => "Lurantis -> Olivia",
+            USUMTrainerStoryStage.OliviaToTogedemaru => "Olivia -> Togedemaru",
+            USUMTrainerStoryStage.TogedemaruToMimikyu => "Togedemaru -> Mimikyu",
+            USUMTrainerStoryStage.MimikyuToNanu => "Mimikyu -> Nanu",
+            USUMTrainerStoryStage.NanuToKommoo => "Nanu -> Kommo-o",
+            USUMTrainerStoryStage.KommooToUltraNecrozma => "Kommo-o -> Ultra Necrozma",
+            USUMTrainerStoryStage.UltraNecrozmaToRibombee => "Ultra Necrozma -> Ribombee",
+            USUMTrainerStoryStage.RibombeeToHapu => "Ribombee -> Hapu",
             USUMTrainerStoryStage.HapuToLeague => "Hapu -> League",
             USUMTrainerStoryStage.League => "League -> Champion",
             USUMTrainerStoryStage.Postgame => "Postgame",
@@ -2790,18 +3043,19 @@ public partial class SMTE : Form
     {
         return stage switch
         {
-            USUMTrainerStoryStage.StartToIlima => "Parts 1-3",
-            USUMTrainerStoryStage.IlimaToHala => "Parts 3-5",
-            USUMTrainerStoryStage.HalaToLana => "Parts 5-8",
-            USUMTrainerStoryStage.LanaToKiawe => "Parts 8-9",
-            USUMTrainerStoryStage.KiaweToMallow => "Parts 9-10",
-            USUMTrainerStoryStage.MallowToOlivia => "Parts 10-12",
-            USUMTrainerStoryStage.OliviaToSophocles => "Parts 12-16",
-            USUMTrainerStoryStage.SophoclesToAcerola => "Parts 16-18",
-            USUMTrainerStoryStage.AcerolaToNanu => "Parts 18-20",
-            USUMTrainerStoryStage.NanuToDragon => "Parts 20-24",
-            USUMTrainerStoryStage.DragonToMina => "Parts 24-26",
-            USUMTrainerStoryStage.MinaToHapu => "Part 26",
+            USUMTrainerStoryStage.StartToFirstTotem => "Parts 1-3",
+            USUMTrainerStoryStage.FirstTotemToHala => "Parts 3-5",
+            USUMTrainerStoryStage.HalaToAraquanid => "Parts 5-8",
+            USUMTrainerStoryStage.AraquanidToMarowak => "Parts 8-9",
+            USUMTrainerStoryStage.MarowakToLurantis => "Parts 9-10",
+            USUMTrainerStoryStage.LurantisToOlivia => "Parts 10-12",
+            USUMTrainerStoryStage.OliviaToTogedemaru => "Parts 12-16",
+            USUMTrainerStoryStage.TogedemaruToMimikyu => "Parts 16-18",
+            USUMTrainerStoryStage.MimikyuToNanu => "Parts 18-20",
+            USUMTrainerStoryStage.NanuToKommoo => "Parts 20-24",
+            USUMTrainerStoryStage.KommooToUltraNecrozma => "Part 24",
+            USUMTrainerStoryStage.UltraNecrozmaToRibombee => "Parts 24-26",
+            USUMTrainerStoryStage.RibombeeToHapu => "Part 26",
             USUMTrainerStoryStage.HapuToLeague => "Parts 26-28",
             USUMTrainerStoryStage.League => "Part 28",
             USUMTrainerStoryStage.Postgame => "Parts 29-33",
@@ -2822,18 +3076,19 @@ public partial class SMTE : Form
 
     private static readonly Dictionary<USUMTrainerStoryStage, int> USUMRegularScalingMilestoneCaps = new()
     {
-        [USUMTrainerStoryStage.StartToIlima] = 14,
-        [USUMTrainerStoryStage.IlimaToHala] = 19,
-        [USUMTrainerStoryStage.HalaToLana] = 24,
-        [USUMTrainerStoryStage.LanaToKiawe] = 26,
-        [USUMTrainerStoryStage.KiaweToMallow] = 29,
-        [USUMTrainerStoryStage.MallowToOlivia] = 34,
-        [USUMTrainerStoryStage.OliviaToSophocles] = 40,
-        [USUMTrainerStoryStage.SophoclesToAcerola] = 42,
-        [USUMTrainerStoryStage.AcerolaToNanu] = 53,
-        [USUMTrainerStoryStage.NanuToDragon] = 59,
-        [USUMTrainerStoryStage.DragonToMina] = 66,
-        [USUMTrainerStoryStage.MinaToHapu] = 67,
+        [USUMTrainerStoryStage.StartToFirstTotem] = 14,
+        [USUMTrainerStoryStage.FirstTotemToHala] = 19,
+        [USUMTrainerStoryStage.HalaToAraquanid] = 24,
+        [USUMTrainerStoryStage.AraquanidToMarowak] = 26,
+        [USUMTrainerStoryStage.MarowakToLurantis] = 29,
+        [USUMTrainerStoryStage.LurantisToOlivia] = 34,
+        [USUMTrainerStoryStage.OliviaToTogedemaru] = 40,
+        [USUMTrainerStoryStage.TogedemaruToMimikyu] = 42,
+        [USUMTrainerStoryStage.MimikyuToNanu] = 53,
+        [USUMTrainerStoryStage.NanuToKommoo] = 59,
+        [USUMTrainerStoryStage.KommooToUltraNecrozma] = 60,
+        [USUMTrainerStoryStage.UltraNecrozmaToRibombee] = 66,
+        [USUMTrainerStoryStage.RibombeeToHapu] = 67,
         [USUMTrainerStoryStage.HapuToLeague] = 68,
         [USUMTrainerStoryStage.League] = 70,
     };
@@ -2843,14 +3098,29 @@ public partial class SMTE : Form
     // anchor intentionally use the internal milestone above.
     private static readonly Dictionary<USUMTrainerStoryStage, int[]> USUMRegularScalingMilestoneTrainerIDs = new()
     {
-        [USUMTrainerStoryStage.StartToIlima] = new[] { 52, 215, 216 },       // Ilima variants
-        [USUMTrainerStoryStage.IlimaToHala] = new[] { 23 },                 // Hala
-        [USUMTrainerStoryStage.MallowToOlivia] = new[] { 90 },              // Olivia
-        [USUMTrainerStoryStage.AcerolaToNanu] = new[] { 154, 508 },         // Nanu variants
-        [USUMTrainerStoryStage.DragonToMina] = new[] { 507 },               // Mina
-        [USUMTrainerStoryStage.MinaToHapu] = new[] { 497 },                 // Hapu
-        [USUMTrainerStoryStage.HapuToLeague] = new[] { 149, 153, 156, 489 },// Elite Four
-        [USUMTrainerStoryStage.League] = new[] { 494, 495, 496 },           // Champion Hau
+        [USUMTrainerStoryStage.FirstTotemToHala] = new[] { 23 },                  // Hala
+        [USUMTrainerStoryStage.LurantisToOlivia] = new[] { 90 },                 // Olivia
+        [USUMTrainerStoryStage.MimikyuToNanu] = new[] { 154, 508 },              // Nanu variants
+        [USUMTrainerStoryStage.RibombeeToHapu] = new[] { 497 },                  // Hapu
+        [USUMTrainerStoryStage.HapuToLeague] = new[] { 149, 153, 156, 489 },     // Elite Four
+        [USUMTrainerStoryStage.League] = new[] { 494, 495, 496 },                // Champion Hau
+    };
+
+    // Static Encounter milestones that end a main-story progression window.
+    // Entry IDs are stable identities in the USUM static table. The first
+    // trial is a 4/9 variant pair because the loaded pk3DS config identifies
+    // the pair as USUM rather than retaining an exact US-vs-UM selector.
+    private static readonly Dictionary<USUMTrainerStoryStage, int[]> USUMRegularScalingMilestoneStaticEntryIDs = new()
+    {
+        [USUMTrainerStoryStage.StartToFirstTotem] = new[] { 4, 9 },
+        [USUMTrainerStoryStage.HalaToAraquanid] = new[] { 137 },
+        [USUMTrainerStoryStage.AraquanidToMarowak] = new[] { 249 },
+        [USUMTrainerStoryStage.MarowakToLurantis] = new[] { 24 },
+        [USUMTrainerStoryStage.OliviaToTogedemaru] = new[] { 146 },
+        [USUMTrainerStoryStage.TogedemaruToMimikyu] = new[] { 39 },
+        [USUMTrainerStoryStage.NanuToKommoo] = new[] { 45 },
+        [USUMTrainerStoryStage.KommooToUltraNecrozma] = new[] { 160 },
+        [USUMTrainerStoryStage.UltraNecrozmaToRibombee] = new[] { 162 },
     };
 
     private static bool TryGetUSUMRegularScalingBaseCap(
@@ -2858,12 +3128,23 @@ public partial class SMTE : Form
         out int cap)
         => USUMRegularScalingMilestoneCaps.TryGetValue(stage, out cap);
 
-    private static int ResolveUSUMRegularScalingMilestoneCap(
+    private int ResolveUSUMRegularScalingMilestoneCap(
         USUMTrainerStoryStage stage,
         List<TrainerLevelCapStage> stages)
     {
         if (!TryGetUSUMRegularScalingBaseCap(stage, out int baseCap))
             return 0;
+
+        if (USUMRegularScalingMilestoneStaticEntryIDs.TryGetValue(stage, out var staticEntryIDs))
+        {
+            int? staticCap = USUMStoryMilestoneResolver.ResolveEnabledStaticCap(
+                USUMTotemLevelCapsAction,
+                staticEntryIDs,
+                USUMStaticEncounterLevels);
+
+            if (staticCap is > 0)
+                return Math.Max(MinimumTrainerLevel, ClampLevel(staticCap.Value));
+        }
 
         if (!USUMRegularScalingMilestoneTrainerIDs.TryGetValue(stage, out var trainerIDs) ||
             trainerIDs.Length == 0)
@@ -2892,10 +3173,13 @@ public partial class SMTE : Form
     private List<int> GetUSUMRegularMainlineOrders(
         USUMTrainerStoryStage stage)
     {
+        // Despite the historical method name, the denominator now contains
+        // every audited main-story position: Regular + Important + Boss.
+        // This lets a LevelCap 0 Important/Boss trainer scale according to its
+        // real walkthrough position instead of its old ROM level.
         return USUMTrainerStoryPoints
             .Where(entry =>
                 entry.Value.Stage == stage &&
-                GetTrainerImportanceCategory(entry.Key) == TrainerImportanceCategory.Regular &&
                 !IsUSUMOptionalStoryTrainer(entry.Key))
             .Select(entry => entry.Value.Order)
             .Distinct()
@@ -2943,6 +3227,26 @@ public partial class SMTE : Form
 
         return rank / (double)(distinctOrderCount - 1);
     }
+    private int ResolveUSUMStoryEndTarget(int nextCap, int previousCap)
+    {
+        // PreviousTrainerGap remains configurable, but story-scaled trainers
+        // must always stay strictly below the next Dominant/Kahuna/League cap.
+        int requestedTarget = ClampLevel(nextCap - PreviousTrainerGap);
+        int hardCeiling = Math.Max(
+            MinimumTrainerLevel,
+            ClampLevel(nextCap - 1));
+
+        int endTarget = Math.Min(requestedTarget, hardCeiling);
+
+        // Preserve the old previous-milestone floor only while it remains
+        // compatible with the upcoming cap. Late USUM is intentionally
+        // non-monotonic (for example Ultra Necrozma -> Ribombee -> Hapu),
+        // so an older higher cap must never push a trainer over the next boss.
+        if (previousCap > 0 && previousCap < nextCap)
+            endTarget = Math.Max(endTarget, Math.Min(previousCap, hardCeiling));
+
+        return Math.Min(endTarget, hardCeiling);
+    }
     private int ResolveUSUMRegularStageStartTarget(
         USUMTrainerStoryStage stage,
         int previousCap,
@@ -2960,7 +3264,7 @@ public partial class SMTE : Form
         foreach (var entry in USUMTrainerStoryPoints)
         {
             if (entry.Value.Stage != stage ||
-                GetTrainerImportanceCategory(entry.Key) != TrainerImportanceCategory.Regular ||
+                IsUSUMOptionalStoryTrainer(entry.Key) ||
                 entry.Key <= 0 ||
                 entry.Key >= Trainers.Length)
             {
@@ -2996,7 +3300,18 @@ public partial class SMTE : Form
                 continue;
 
             int ace = GetAceLevel(trainer);
-            int cap = rule.LevelCap == 0 ? ace : rule.LevelCap;
+            int capBaselineAce =
+                Main.Config.USUM && rule.CurrentAceLevel > 0
+                    ? rule.CurrentAceLevel
+                    : ace;
+
+            // LevelCap 0 ("Ace") must use the stable ace captured when the
+            // Trainer Editor opened. Rebuilding stages after randomization must
+            // not apply the global level modifier a second time to an already
+            // scaled milestone trainer. SM keeps its previous current-ace behavior.
+            int cap = rule.LevelCap == 0
+                ? Randomizer.GetModifiedLevel(capBaselineAce, NUD_LevelBoost.Value)
+                : rule.LevelCap;
 
             stages.Add(new TrainerLevelCapStage
             {
@@ -3020,116 +3335,252 @@ public partial class SMTE : Form
         return trainer.Pokemon.Count == 0 ? 1 : trainer.Pokemon.Max(pk => pk.Level);
     }
 
-    private int? GetTrainerTargetLevel(int trainerID, int trainerAce, List<TrainerLevelCapStage> stages, out bool forceExactLevel)
+    private static bool TryGetUSUMMilestoneStageForTrainer(
+        int trainerID,
+        out USUMTrainerStoryStage stage)
+    {
+        foreach (var entry in USUMRegularScalingMilestoneTrainerIDs)
+        {
+            if (entry.Value.Contains(trainerID))
+            {
+                stage = entry.Key;
+                return true;
+            }
+        }
+
+        stage = default;
+        return false;
+    }
+
+    private int? GetUSUMStoryScaledTarget(
+        int trainerID,
+        int trainerAce,
+        List<TrainerLevelCapStage> stages)
+    {
+        if (!TryGetUSUMTrainerStoryPoint(trainerID, out var trainerPoint) ||
+            trainerPoint.Stage == USUMTrainerStoryStage.Postgame)
+        {
+            return null;
+        }
+
+        // Milestone fights land on the milestone itself.
+        if (TryGetUSUMMilestoneStageForTrainer(
+                trainerID,
+                out var milestoneStage))
+        {
+            int milestoneCap =
+                ResolveUSUMRegularScalingMilestoneCap(
+                    milestoneStage,
+                    stages);
+
+            return milestoneCap > 0
+                ? Math.Max(
+                    MinimumTrainerLevel,
+                    ClampLevel(milestoneCap))
+                : null;
+        }
+
+        if (!TryGetUSUMRegularScalingBaseCap(
+                trainerPoint.Stage,
+                out _))
+        {
+            return null;
+        }
+
+        int nextCap =
+            ResolveUSUMRegularScalingMilestoneCap(
+                trainerPoint.Stage,
+                stages);
+
+        if (nextCap <= 0)
+            return null;
+
+        int previousCap = 0;
+        int stageIndex = (int)trainerPoint.Stage;
+
+        if (stageIndex >
+            (int)USUMTrainerStoryStage.StartToFirstTotem)
+        {
+            var previousStage =
+                (USUMTrainerStoryStage)(stageIndex - 1);
+
+            previousCap =
+                ResolveUSUMRegularScalingMilestoneCap(
+                    previousStage,
+                    stages);
+        }
+
+        int endTarget =
+            ResolveUSUMStoryEndTarget(
+                nextCap,
+                previousCap);
+
+        int startTarget =
+            ResolveUSUMRegularStageStartTarget(
+                trainerPoint.Stage,
+                previousCap,
+                endTarget,
+                trainerAce);
+
+        double progress =
+            GetUSUMRegularStoryProgress(
+                trainerPoint.Stage,
+                trainerPoint.Order);
+
+        double curvedProgress =
+            Math.Pow(
+                Math.Clamp(progress, 0.0, 1.0),
+                USUMRegularTrainerCurvePower);
+
+        double interpolated =
+            startTarget +
+            ((endTarget - startTarget) * curvedProgress);
+
+        int target =
+            ClampLevel(
+                (int)Math.Round(
+                    interpolated,
+                    MidpointRounding.AwayFromZero));
+
+        target = Math.Max(startTarget, target);
+        target = Math.Min(endTarget, target);
+
+        return Math.Max(
+            MinimumTrainerLevel,
+            ClampLevel(target));
+    }
+    private int? GetTrainerTargetLevel(
+        int trainerID,
+        int trainerAce,
+        List<TrainerLevelCapStage> stages,
+        out bool forceExactLevel)
     {
         forceExactLevel = false;
 
         if (!CHK_LevelCaps.Checked || stages.Count == 0)
             return null;
 
-        // Explicit Trainer Level Cap rules always win for that exact trainer.
-        var exact = stages.FirstOrDefault(s => s.TrainerID == trainerID);
-        if (exact is not null)
+        var exactRule = LevelCapRules.FirstOrDefault(
+            rule =>
+                rule.Enabled &&
+                rule.TrainerID == trainerID);
+
+        var exactStage = stages.FirstOrDefault(
+            stage => stage.TrainerID == trainerID);
+
+        // Positive cap = literal fixed target and homogeneous team.
+        if (exactRule is not null &&
+            exactRule.LevelCap > 0)
         {
             forceExactLevel = true;
-            return Math.Max(MinimumTrainerLevel, exact.LevelCap);
+
+            int cap = exactStage?.LevelCap ??
+                      exactRule.LevelCap;
+
+            return Math.Max(
+                MinimumTrainerLevel,
+                ClampLevel(cap));
+        }
+
+        if (Main.Config.USUM)
+        {
+            // LevelCap 0 ("Ace") is a deliberate per-trainer request.
+            // Main-story Important/Boss entries therefore use the same
+            // WikiDex-audited story curve as Regular trainers, while keeping
+            // their original intra-team level spread.
+            if (exactRule is not null &&
+                exactRule.LevelCap == 0)
+            {
+                int? storyTarget =
+                    GetUSUMStoryScaledTarget(
+                        trainerID,
+                        trainerAce,
+                        stages);
+
+                // Main-story mapped rows use chronology. For postgame/unmapped
+                // rows, keep v1's global Ace scaling as the safe fallback.
+                return storyTarget ??
+                       exactStage?.LevelCap ??
+                       trainerAce;
+            }
+
+            // Regular trainers participate only when the existing option is on.
+            if (!ApplyCapsToPreviousTrainers)
+                return null;
+
+            if (GetTrainerImportanceCategory(trainerID) !=
+                TrainerImportanceCategory.Regular)
+            {
+                return null;
+            }
+
+            return GetUSUMStoryScaledTarget(
+                trainerID,
+                trainerAce,
+                stages);
+        }
+
+        // SM keeps the previous level-based behavior.
+        if (exactStage is not null)
+        {
+            forceExactLevel =
+                exactRule is not null &&
+                exactRule.LevelCap > 0;
+
+            return Math.Max(
+                MinimumTrainerLevel,
+                exactStage.LevelCap);
         }
 
         if (!ApplyCapsToPreviousTrainers)
             return null;
 
-        if (Main.Config.USUM)
-        {
-            // Regular scaling is for ordinary trainers only.
-            // Important and Boss trainers are changed only by an explicit cap.
-            if (GetTrainerImportanceCategory(trainerID) != TrainerImportanceCategory.Regular)
-                return null;
+        var nextLegacy =
+            stages.FirstOrDefault(
+                stage =>
+                    trainerAce <=
+                    stage.OriginalAceLevel);
 
-            // Fail closed: only the audited chronology whitelist participates.
-            if (!TryGetUSUMTrainerStoryPoint(trainerID, out var trainerPoint) ||
-                trainerPoint.Stage == USUMTrainerStoryStage.Postgame)
-            {
-                return null;
-            }
-
-            // StoryStage selects the milestone. Arbitrary Important/Boss caps
-            // cannot become Regular progression anchors.
-            if (!TryGetUSUMRegularScalingBaseCap(trainerPoint.Stage, out _))
-                return null;
-
-            int nextCap = ResolveUSUMRegularScalingMilestoneCap(
-                trainerPoint.Stage,
-                stages);
-
-            if (nextCap <= 0)
-                return null;
-
-            int previousCap = 0;
-            int stageIndex = (int)trainerPoint.Stage;
-            if (stageIndex > (int)USUMTrainerStoryStage.StartToIlima)
-            {
-                var previousStage = (USUMTrainerStoryStage)(stageIndex - 1);
-                previousCap = ResolveUSUMRegularScalingMilestoneCap(
-                    previousStage,
-                    stages);
-            }
-
-            // The end of a stage normally sits gap levels below its next
-            // milestone. If the two milestones are closer than the gap,
-            // never force the Regular trainer below the previous milestone.
-            int endTarget = ClampLevel(nextCap - PreviousTrainerGap);
-            if (previousCap > 0)
-                endTarget = Math.Max(endTarget, previousCap);
-
-            int startTarget = ResolveUSUMRegularStageStartTarget(
-                trainerPoint.Stage,
-                previousCap,
-                endTarget,
-                trainerAce);
-
-            // Order is ordinal. Rank the trainer among DISTINCT Regular
-            // story positions so arbitrary numeric spacing between Order
-            // values does not distort progression.
-            double progress = GetUSUMRegularStoryProgress(
-                trainerPoint.Stage,
-                trainerPoint.Order);
-
-            double curvedProgress = Math.Pow(
-                Math.Clamp(progress, 0.0, 1.0),
-                USUMRegularTrainerCurvePower);
-
-            double interpolated =
-                startTarget +
-                ((endTarget - startTarget) * curvedProgress);
-
-            int target = ClampLevel((int)Math.Round(
-                interpolated,
-                MidpointRounding.AwayFromZero));
-
-            target = Math.Max(startTarget, target);
-            target = Math.Min(endTarget, target);
-
-            return Math.Max(MinimumTrainerLevel, ClampLevel(target));
-        }
-
-        // SM keeps the previous level-based behavior unchanged.
-        var nextLegacy = stages.FirstOrDefault(s => trainerAce <= s.OriginalAceLevel);
         if (nextLegacy is null)
             return null;
 
-        int nextIndex = stages.IndexOf(nextLegacy);
+        int nextIndex =
+            stages.IndexOf(nextLegacy);
+
         TrainerLevelCapStage previousLegacy =
-            nextIndex > 0 ? stages[nextIndex - 1] : null;
+            nextIndex > 0
+                ? stages[nextIndex - 1]
+                : null;
 
-        int legacyEndTarget = ClampLevel(nextLegacy.LevelCap - PreviousTrainerGap);
-        int legacyDelta = legacyEndTarget - nextLegacy.OriginalAceLevel;
-        int legacyTarget = ClampLevel(trainerAce + legacyDelta);
+        int legacyEndTarget =
+            ClampLevel(
+                nextLegacy.LevelCap -
+                PreviousTrainerGap);
 
-        if (previousLegacy is not null && trainerAce > previousLegacy.OriginalAceLevel)
-            legacyTarget = Math.Max(legacyTarget, previousLegacy.LevelCap);
+        int legacyDelta =
+            legacyEndTarget -
+            nextLegacy.OriginalAceLevel;
 
-        return Math.Max(MinimumTrainerLevel, ClampLevel(legacyTarget));
+        int legacyTarget =
+            ClampLevel(
+                trainerAce +
+                legacyDelta);
+
+        if (previousLegacy is not null &&
+            trainerAce >
+            previousLegacy.OriginalAceLevel)
+        {
+            legacyTarget =
+                Math.Max(
+                    legacyTarget,
+                    previousLegacy.LevelCap);
+        }
+
+        return Math.Max(
+            MinimumTrainerLevel,
+            ClampLevel(legacyTarget));
     }
+
     private bool ShouldGuaranteeMega(int trainerID, int trainerAce, List<TrainerLevelCapStage> stages)
     {
         return stages.Any(s => s.TrainerID == trainerID && s.GuaranteeMega);
@@ -3146,6 +3597,13 @@ public partial class SMTE : Form
         return rule?.Clone();
     }
 
+    private int GetTrainerEVOverride(int trainerID)
+    {
+        // EVs (-1=Off) is its own override.
+        // Do not require the row's "Use" checkbox: -1 itself is the Off switch.
+        var rule = MoveRules?.FirstOrDefault(r => r.TrainerID == trainerID);
+        return rule?.OverrideEVs ?? -1;
+    }
     private static int ClampMovePower(int power)
     {
         if (power < 0)
@@ -3266,19 +3724,20 @@ public partial class SMTE : Form
             rSTAB = CHK_STAB.Checked,
         };
 
-        var items = Randomizer.GetRandomItemList();
+        var normalItems = Randomizer.GetRandomItemList();
 
         if (CHK_BanBadItems is not null && CHK_BanBadItems.Checked)
         {
-            int[] cleanItems = SmartTrainerItemPicker.GetBanBadItemPool(items);
+            int[] cleanItems = SmartTrainerItemPicker.GetBanBadItemPool(normalItems);
             if (cleanItems.Length > 0)
-                items = cleanItems;
+                normalItems = cleanItems;
         }
 
-        bool anySmartItems = UseSmartTrainerItems();
-
-        if (anySmartItems)
-            items = SmartTrainerItemPicker.AddSmartTrainerItemPoolExtras(items);
+        // Strong / Competitive may use the expanded competitive pool.
+        // Normal deliberately stays on the base legal pool.
+        var smartItems = UseSmartTrainerItems()
+            ? SmartTrainerItemPicker.AddSmartTrainerItemPoolExtras(normalItems)
+            : normalItems;
         var levelCapStages = BuildLevelCapStages();
 
         int progressTotal = Math.Max(1, Trainers.Length);
@@ -3382,10 +3841,39 @@ public partial class SMTE : Form
             bool forceMega = ShouldGuaranteeMega(tr.ID, trainerAce, levelCapStages);
             bool forceZMove = ShouldGuaranteeZMove(tr.ID, levelCapStages);
             var moveRule = GetTrainerMoveRule(tr.ID);
-            var randomItemPool = GetTrainerRandomItemPool(items, forceMega, forceZMove);
-            int zMoveSlot = GetZMoveSlot(tr.Pokemon.Count, forceMega, forceZMove);
-            var usedHeldItems = UseItemClause() ? new HashSet<int>() : null;
+            int trainerEVOverride = GetTrainerEVOverride(tr.ID);
 
+            int heldItemMode = GetSmartTrainerItemMode(trainerGroup);
+
+            bool smartCategoryEnabled =
+                UseSmartTrainerItems() &&
+                IsSmartItemsCategoryEnabled(trainerGroup);
+
+            bool useStrongSmartPicker =
+                smartCategoryEnabled &&
+                heldItemMode > 0;
+
+            var sourceItemPool =
+                useStrongSmartPicker
+                    ? smartItems
+                    : normalItems;
+
+            var randomItemPool =
+                GetTrainerRandomItemPool(
+                    sourceItemPool,
+                    forceMega,
+                    forceZMove);
+
+            int zMoveSlot =
+                GetZMoveSlot(
+                    tr.Pokemon.Count,
+                    forceMega,
+                    forceZMove);
+
+            var usedHeldItems =
+                UseItemClause()
+                    ? new HashSet<int>()
+                    : null;
             // PKM Properties
             for (int p = 0; p < tr.Pokemon.Count; p++)
             {
@@ -3395,7 +3883,6 @@ public partial class SMTE : Form
                 else if (CHK_Level.Checked)
                     pk.Level = Randomizer.GetModifiedLevel(pk.Level, NUD_LevelBoost.Value);
 
-                ApplyTrainerEVOverride(pk, moveRule);
 
                 if (CHK_RandomPKM.Checked)
                 {
@@ -3424,25 +3911,39 @@ public partial class SMTE : Form
                                 range.MinBST,
                                 range.MaxBST
                             );
+
+                            pk.Form = Randomizer.GetRandomForme(
+                                pk.Species,
+                                CHK_RandomMegaForm.Checked,
+                                true,
+                                Main.SpeciesStat);
+                        }
+                        else if (CHK_ProgressiveBST.Checked)
+                        {
+                            bool requireFinalEvolution =
+                                CHK_ForceFullyEvolved.Checked &&
+                                pk.Level >= NUD_ForceFullyEvolved.Value;
+
+                            var progressive = GetProgressiveRandomSpeciesForm(
+                                rnd,
+                                pk.Species,
+                                pk.Form,
+                                Type,
+                                pk.Level,
+                                requireFinalEvolution);
+
+                            pk.Species = progressive.Species;
+                            pk.Form = progressive.Form;
                         }
                         else
                         {
-                            if (CHK_ProgressiveBST.Checked)
-                            {
-                                pk.Species = GetProgressiveRandomSpecies(
-                                    rnd,
-                                    pk.Species,
-                                    Type,
-                                    pk.Level
-                                );
-                            }
-                            else
-                            {
-                                pk.Species = rnd.GetRandomSpeciesType(pk.Species, Type);
-                            }
+                            pk.Species = rnd.GetRandomSpeciesType(pk.Species, Type);
+                            pk.Form = Randomizer.GetRandomForme(
+                                pk.Species,
+                                CHK_RandomMegaForm.Checked,
+                                true,
+                                Main.SpeciesStat);
                         }
-                        // Item is assigned after final moves so Smart Held Items can match the moveset.
-                        pk.Form = Randomizer.GetRandomForme(pk.Species, CHK_RandomMegaForm.Checked, true, Main.SpeciesStat);
                     }
 
                     pk.Gender = 0; // random
@@ -3480,6 +3981,9 @@ public partial class SMTE : Form
                     pk.Form = Randomizer.GetRandomForme(pk.Species, CHK_RandomMegaForm.Checked, true, Main.SpeciesStat);
                 }
 
+                // EV spread must use the FINAL randomized species/form.
+                // EV override uses the FINAL randomized species/form.
+                ApplyTrainerEVOverride(pk, trainerEVOverride);
                 pk.Moves = CB_Moves.SelectedIndex switch
                 {
                     // Random
@@ -3531,22 +4035,39 @@ public partial class SMTE : Form
                 if (protectEarlyHau)
                     pk.Item = 0;
 
-                bool canRandomizeItem = CHK_RandomItems.Checked && !protectEarlyHau && !(forceMega && p == tr.Pokemon.Count - 1) && !(forceZMove && p == zMoveSlot);
-                if (canRandomizeItem && usedHeldItems is not null)
-                    usedHeldItems.Remove(pk.Item);
+                bool canRandomizeItem =
+                    CHK_RandomItems.Checked &&
+                    !protectEarlyHau &&
+                    !(forceMega && p == tr.Pokemon.Count - 1) &&
+                    !(forceZMove && p == zMoveSlot);
 
-                int[] slotItemPool = ApplyItemClauseToPool(randomItemPool, usedHeldItems);
+                int[] slotItemPool =
+                    ApplyItemClauseToPool(
+                        randomItemPool,
+                        usedHeldItems);
 
                 if (canRandomizeItem)
                 {
-                    // GetTrainerMoveRule() only returns Use-checked rules.
-                    // When present, its Smart Items checkbox completely overrides
-                    // the global Smart Items category setting for this trainer.
-                    bool useSmartItems =
-                        UseSmartTrainerItems() &&
-                        IsSmartItemsCategoryEnabled(trainerGroup);
-
-                    if (useSmartItems)
+                    if (slotItemPool.Length == 0)
+                    {
+                        pk.Item = 0;
+                    }
+                    else if (smartCategoryEnabled && heldItemMode == 0)
+                    {
+                        // Normal Smart:
+                        // random among items that are actually relevant/useful,
+                        // without taking only the strongest competitive candidates.
+                        pk.Item = SmartTrainerItemPicker.PickNormalRelevant(
+                            pk.Species,
+                            pk.Form,
+                            pk.Level,
+                            pk.Moves,
+                            slotItemPool,
+                            pk.Ability,
+                            FinalEvo.Contains(pk.Species)
+                        );
+                    }
+                    else if (useStrongSmartPicker)
                     {
                         pk.Item = SmartTrainerItemPicker.Pick(
                             pk.Species,
@@ -3556,17 +4077,26 @@ public partial class SMTE : Form
                             slotItemPool,
                             pk.Ability,
                             FinalEvo.Contains(pk.Species),
-                            GetSmartTrainerItemMode(trainerGroup)
+                            heldItemMode
                         );
                     }
                     else
                     {
-                        pk.Item = slotItemPool[Util.Random32() % slotItemPool.Length];
+                        pk.Item =
+                            slotItemPool[
+                                Util.Random32() %
+                                slotItemPool.Length
+                            ];
                     }
+
                     TrackItemClause(pk.Item, usedHeldItems);
                 }
-            }
-            SaveData(tr, i);
+                else
+                {
+                    // Fixed/protected Mega Stones and Z-Crystals count too.
+                    TrackItemClause(pk.Item, usedHeldItems);
+                }
+            }            SaveData(tr, i);
         }
         RandomizationSessionState.MarkAction("trainers.randomize");
         WinFormsUtil.Alert("Randomized all Trainers according to specification!", "Press the Dump to .TXT button to view the new Trainer information!");
@@ -3582,14 +4112,18 @@ public partial class SMTE : Form
 
     private static int[] ApplyItemClauseToPool(IEnumerable<int> itemPool, HashSet<int> usedItems)
     {
-        int[] pool = itemPool.Where(i => i > 0).Distinct().ToArray();
+        int[] pool = itemPool
+            .Where(i => i > 0)
+            .Distinct()
+            .ToArray();
+
         if (usedItems is null || usedItems.Count == 0)
             return pool;
 
-        int[] filtered = pool.Where(item => !usedItems.Contains(item)).ToArray();
-        return filtered.Length > 0 ? filtered : pool;
+        return pool
+            .Where(item => !usedItems.Contains(item))
+            .ToArray();
     }
-
     private static void TrackItemClause(int item, HashSet<int> usedItems)
     {
         if (usedItems is null || item <= 0)
@@ -3606,7 +4140,7 @@ public partial class SMTE : Form
     }
 
     private static bool IsProtectedEarlyHauEncounter(int trainerID)
-        => Main.Config.USUM && trainerID is 491 or 492 or 493;
+        => Main.Config.USUM && trainerID is 491 or 492 or 493 or 09 or 010 or 011;
 
     private static TrainerImportanceCategory GetTrainerImportanceCategory(int trainerID)
     {
@@ -3928,12 +4462,44 @@ public partial class SMTE : Form
         return eligible[(int)(Util.Random32() % eligible.Count)];
     }
 
-    private static void ApplyTrainerEVOverride(TrainerPoke7 pk, TrainerMoveRule rule)
+    private static void ApplyTrainerEVOverride(TrainerPoke7 pk, int overrideEVs)
     {
-        if (rule is null || rule.OverrideEVs < 0)
+        if (pk is null || overrideEVs < 0)
             return;
-        int ev = Math.Clamp(rule.OverrideEVs, 0, 252);
-        pk.EVs = Enumerable.Repeat(ev, 6).ToArray();
+
+        int ev = Math.Clamp(overrideEVs, 0, 252);
+
+        // EVs (-1=Off):
+        // any explicit value from 0..252 is applied ONLY to the two
+        // strongest base stats of the FINAL randomized species/form.
+        // The other four EV stats are cleared to 0.
+        var personal =
+            Main.Config.Personal.GetFormEntry(
+                pk.Species,
+                pk.Form);
+
+        int[] baseStats =
+        [
+            personal.HP,
+            personal.ATK,
+            personal.DEF,
+            personal.SPA,
+            personal.SPD,
+            personal.SPE,
+        ];
+
+        int[] spread = new int[6];
+
+        foreach (int index in
+                 Enumerable.Range(0, 6)
+                     .OrderByDescending(i => baseStats[i])
+                     .ThenBy(i => i)
+                     .Take(2))
+        {
+            spread[index] = ev;
+        }
+
+        pk.EVs = spread;
     }
     private void FixGen7TrainerOptionsLayout()
     {
