@@ -12,7 +12,7 @@ namespace pk3DS.WinForms;
 public sealed class GlobalRandomizationTemplate
 {
     public int Version { get; set; } = 1;
-    public int ActionCoverageVersion { get; set; } = 6;
+    public int ActionCoverageVersion { get; set; } = 7;
     public string Name { get; set; } = "Global ROM template";
     public string Game { get; set; } = "ANY";
     public int Generation { get; set; }
