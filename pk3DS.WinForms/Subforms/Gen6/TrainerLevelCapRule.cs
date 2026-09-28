@@ -11,6 +11,10 @@ public sealed class TrainerLevelCapRule
     // 0 means dynamic Ace. In USUM main story it follows audited story scaling; otherwise it uses the globally scaled ace fallback.
     public int LevelCap { get; set; }
 
+    // Per-trainer option: reduce this selected important battle to at most 3 Pokémon.
+    // The strongest-level ace is always preserved.
+    public bool NerfTeam { get; set; }
+
     // Per-trainer option: force the selected important battle to have a Mega-capable ace.
     public bool GuaranteeMega { get; set; }
 
@@ -31,6 +35,7 @@ public sealed class TrainerLevelCapRule
             Trainer = Trainer,
             CurrentAceLevel = CurrentAceLevel,
             LevelCap = LevelCap,
+            NerfTeam = NerfTeam,
             GuaranteeMega = GuaranteeMega,
             GuaranteeZMove = GuaranteeZMove,
             MinMovePower = MinMovePower,

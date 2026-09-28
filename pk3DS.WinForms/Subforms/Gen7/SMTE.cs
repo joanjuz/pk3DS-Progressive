@@ -1522,6 +1522,7 @@ public partial class SMTE : Form
                     Use = true,
                     LevelCap = r.LevelCap,
                     CurrentAceLevel = r.CurrentAceLevel,
+                    NerfTeam = r.NerfTeam,
                     Mega = r.GuaranteeMega,
                     ZMove = r.GuaranteeZMove,
                 }).ToList(),
@@ -3581,6 +3582,55 @@ public partial class SMTE : Form
             ClampLevel(legacyTarget));
     }
 
+    private bool ShouldNerfTrainerTeam(int trainerID)
+    {
+        if (!CHK_LevelCaps.Checked)
+            return false;
+
+        return LevelCapRules.Any(rule =>
+            rule.Enabled &&
+            rule.TrainerID == trainerID &&
+            rule.NerfTeam);
+    }
+
+    private void ApplyTrainerTeamNerf(TrainerData7 tr)
+    {
+        if (!ShouldNerfTrainerTeam(tr.ID) || tr.Pokemon.Count <= 3)
+            return;
+
+        // Preserve the strongest-level ace. When several Pokémon share the
+        // highest level, keep the last such slot because important-trainer
+        // rosters commonly place their ace later in the team.
+        int aceIndex = 0;
+        int aceLevel = int.MinValue;
+        for (int i = 0; i < tr.Pokemon.Count; i++)
+        {
+            int level = tr.Pokemon[i].Level;
+            if (level >= aceLevel)
+            {
+                aceLevel = level;
+                aceIndex = i;
+            }
+        }
+
+        var keepIndices = Enumerable.Range(0, tr.Pokemon.Count)
+            .Where(index => index != aceIndex)
+            .Take(2)
+            .Append(aceIndex)
+            .OrderBy(index => index)
+            .ToArray();
+
+        var kept = keepIndices
+            .Select(index => tr.Pokemon[index])
+            .ToArray();
+
+        tr.Pokemon.Clear();
+        foreach (var pk in kept)
+            tr.Pokemon.Add(pk);
+
+        tr.NumPokemon = tr.Pokemon.Count;
+    }
+
     private bool ShouldGuaranteeMega(int trainerID, int trainerAce, List<TrainerLevelCapStage> stages)
     {
         return stages.Any(s => s.TrainerID == trainerID && s.GuaranteeMega);
@@ -3831,6 +3881,11 @@ public partial class SMTE : Form
 
                 tr.NumPokemon = 1;
             }
+
+            // Per-trainer Level Caps option. Apply this after global min/max/6-Pokémon
+            // team-size rules so Max 3 remains the final upper bound for this trainer.
+            ApplyTrainerTeamNerf(tr);
+
             // force 1 pkm to keep forced Battle Royal fair
             if (royal.Contains(tr.ID))
                 tr.NumPokemon = 1;
