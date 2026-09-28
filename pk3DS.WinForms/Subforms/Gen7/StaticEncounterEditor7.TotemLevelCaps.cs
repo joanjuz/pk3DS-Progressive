@@ -52,7 +52,7 @@ public partial class StaticEncounterEditor7
             {
                 Enabled = true,
                 EntryID = index,
-                Group = GetTotemGroup(index),
+                Group = IsUSUMUltraNecrozmaEncounterIndex(index) ? "Ultra Necrozma" : GetTotemGroup(index),
                 OriginalTotem = GetTotemSpeciesName(encounter.Species),
                 CurrentPokemon = GetTotemSpeciesName(encounter.Species),
                 OriginalLevel = encounter.Level,
@@ -84,16 +84,29 @@ public partial class StaticEncounterEditor7
         231, // Alolan Raticate Lv.60 - Ultra Moon postgame
     ];
 
+    private const int USUMUltraNecrozmaEntryID = 160;
+
     private int[] GetUSUMTotemBossIndices()
     {
-        // Use the known Static Encounter entry IDs directly. The USUM static
-        // table also contains old SM Totems and SOS allies, so structural
-        // detection produces false positives. Entry IDs remain stable even
-        // after species/level randomization, which is exactly what level caps
-        // need to track.
-        return USUMTotemBossEntryIDs
+        // Static Encounter IDs are the stable identity used by Totem Level Caps
+        // and Totem BST. Ultra Necrozma is always entry 160 in USUM.
+        var indices = USUMTotemBossEntryIDs
             .Where(i => (uint)i < (uint)Encounters.Length)
-            .ToArray();
+            .ToList();
+
+        if ((uint)USUMUltraNecrozmaEntryID < (uint)Encounters.Length &&
+            !indices.Contains(USUMUltraNecrozmaEntryID))
+        {
+            indices.Add(USUMUltraNecrozmaEntryID);
+        }
+
+        return indices.ToArray();
+    }
+
+    private bool IsUSUMUltraNecrozmaEncounterIndex(int index)
+    {
+        return index == USUMUltraNecrozmaEntryID &&
+               (uint)index < (uint)Encounters.Length;
     }
 
     private static string GetTotemGroup(int entryID)
@@ -268,9 +281,95 @@ public partial class StaticEncounterEditor7
         var cancel = new Button { Text = "Cancel", Width = 90, DialogResult = DialogResult.Cancel };
         var selectAll = new Button { Text = "Select All", Width = 105 };
         var selectNone = new Button { Text = "Select None", Width = 115 };
+        var loadTemplate = new Button { Text = "Load Template...", Width = 125 };
+        var saveTemplate = new Button { Text = "Save Template...", Width = 125 };
 
         selectAll.Click += (_, _) => SetTotemRulesSelected(editableRules, true);
         selectNone.Click += (_, _) => SetTotemRulesSelected(editableRules, false);
+
+        loadTemplate.Click += (_, _) =>
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(TotemLevelCapTemplateFile.TemplateDirectory);
+                using var dialog = new OpenFileDialog
+                {
+                    Title = "Load Totem Level Caps template",
+                    Filter = "Totem Level Caps template (*.json)|*.json|All files (*.*)|*.*",
+                    InitialDirectory = TotemLevelCapTemplateFile.TemplateDirectory,
+                    CheckFileExists = true,
+                };
+                if (dialog.ShowDialog(form) != DialogResult.OK) return;
+
+                var template = TotemLevelCapTemplateFile.Load(dialog.FileName, "USUM");
+                var byEntry = editableRules.ToDictionary(rule => rule.EntryID);
+                var unknown = new List<int>();
+                foreach (var entry in template.Entries ?? [])
+                {
+                    if (!byEntry.TryGetValue(entry.EntryID, out var rule))
+                    {
+                        unknown.Add(entry.EntryID);
+                        continue;
+                    }
+                    rule.Enabled = entry.Use;
+                    rule.LevelCap = entry.LevelCap;
+                }
+
+                chkEnable.Checked = template.Enabled;
+                editableRules.ResetBindings();
+                if (unknown.Count != 0)
+                    WinFormsUtil.Alert("Totem Level Caps template loaded with warnings.", "Static Encounter IDs not present in this USUM table: " + string.Join(", ", unknown));
+            }
+            catch (Exception ex)
+            {
+                WinFormsUtil.Alert("Could not load Totem Level Caps template.", ex.Message);
+            }
+        };
+
+        saveTemplate.Click += (_, _) =>
+        {
+            try
+            {
+                grid.EndEdit();
+                var candidate = editableRules
+                    .Select(rule => rule.Clone())
+                    .OrderBy(rule => rule.OriginalLevel)
+                    .ThenBy(rule => rule.EntryID)
+                    .ToList();
+                if (!ValidateTotemLevelCaps(candidate)) return;
+
+                System.IO.Directory.CreateDirectory(TotemLevelCapTemplateFile.TemplateDirectory);
+                using var dialog = new SaveFileDialog
+                {
+                    Title = "Save Totem Level Caps template",
+                    Filter = "Totem Level Caps template (*.json)|*.json",
+                    InitialDirectory = TotemLevelCapTemplateFile.TemplateDirectory,
+                    FileName = "totem_level_caps_usum.json",
+                    AddExtension = true,
+                    DefaultExt = "json",
+                };
+                if (dialog.ShowDialog(form) != DialogResult.OK) return;
+
+                var template = new TotemLevelCapTemplate
+                {
+                    Name = "USUM Totem Level Caps",
+                    Game = "USUM",
+                    Enabled = chkEnable.Checked,
+                    Entries = candidate.Select(rule => new TotemLevelCapTemplateEntry
+                    {
+                        EntryID = rule.EntryID,
+                        Use = rule.Enabled,
+                        LevelCap = rule.LevelCap,
+                    }).ToList(),
+                };
+                TotemLevelCapTemplateFile.Save(dialog.FileName, template, "USUM");
+                WinFormsUtil.Alert("Totem Level Caps template saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                WinFormsUtil.Alert("Could not save Totem Level Caps template.", ex.Message);
+            }
+        };
 
         List<TotemLevelCapRule> acceptedRules = null;
         bool acceptedEnabled = TotemLevelCapsEnabled;
@@ -295,6 +394,8 @@ public partial class StaticEncounterEditor7
 
         buttons.Controls.Add(ok);
         buttons.Controls.Add(cancel);
+        buttons.Controls.Add(saveTemplate);
+        buttons.Controls.Add(loadTemplate);
         buttons.Controls.Add(selectNone);
         buttons.Controls.Add(selectAll);
 

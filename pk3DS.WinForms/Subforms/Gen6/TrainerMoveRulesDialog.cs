@@ -97,7 +97,7 @@ public static class TrainerMoveRulesDialog
         {
             DataPropertyName = nameof(TrainerMoveRule.OverrideEVs),
             HeaderText = "EVs (-1=Off)",
-            ToolTipText = "Set all EV stats for every Pokémon in this trainer battle. -1 disables EV override.",
+            ToolTipText = "Apply this EV value to the two strongest base stats of every final Pokémon; the other four are set to 0. -1 disables EV override.",
             Width = 95,
         });
 
@@ -217,7 +217,7 @@ public static class TrainerMoveRulesDialog
         var evLabel = new Label
         {
             AutoSize = true,
-            Text = "EVs for Use checked:",
+            Text = "EV value for Use checked:",
             Padding = new Padding(0, 6, 0, 0),
         };
 

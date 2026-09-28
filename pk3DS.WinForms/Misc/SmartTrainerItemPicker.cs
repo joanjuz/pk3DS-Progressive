@@ -59,6 +59,67 @@ internal static class SmartTrainerItemPicker
 
         return pool.OrderBy(i => i).ToArray();
     }
+    public static int PickNormalRelevant(
+        int species,
+        int form,
+        int level,
+        IEnumerable<int> moveIDs,
+        IEnumerable<int> itemPool,
+        int abilitySlot,
+        bool isFinalEvolution)
+    {
+        string[] itemNames = Main.Config.GetText(TextName.ItemNames);
+        string[] moveNames = Main.Config.GetText(TextName.MoveNames);
+        string[] abilityNames = Main.Config.GetText(TextName.AbilityNames);
+
+        int maxItemID = itemNames.Length;
+
+        if (!Main.Config.ORAS && !Main.Config.SM && !Main.Config.USUM)
+            maxItemID = Math.Min(maxItemID, 718);
+
+        int[] pool = itemPool
+            .Select(Convert.ToInt32)
+            .Where(i => i > 0 && i < maxItemID && i < itemNames.Length)
+            .Where(i => !string.IsNullOrWhiteSpace(itemNames[i]))
+            .Where(i => !IsNeverUsefulTrainerItem(Normalize(itemNames[i])))
+            .Distinct()
+            .ToArray();
+
+        if (pool.Length == 0)
+            return 0;
+
+        var moveInfo = BuildMoveInfo(species, moveIDs, moveNames);
+        var abilityKeys = GetAbilityKeys(species, abilitySlot, abilityNames);
+        int[] speciesTypes = GetSpeciesTypes(species);
+        string speciesKey = GetSpeciesKey(species);
+
+        var relevant = new List<int>();
+
+        foreach (int item in pool)
+        {
+            string itemKey = Normalize(itemNames[item]);
+
+            int score = ScoreItem(
+                item,
+                itemKey,
+                species,
+                speciesKey,
+                speciesTypes,
+                isFinalEvolution,
+                moveInfo,
+                abilityKeys,
+                0,
+                level);
+
+            if (score > 0)
+                relevant.Add(item);
+        }
+
+        if (relevant.Count == 0)
+            return PickSafeFallback(pool, itemNames);
+
+        return relevant[(int)(Util.Random32() % relevant.Count)];
+    }
     public static int Pick(
         int species,
         int form,
@@ -566,7 +627,7 @@ internal static class SmartTrainerItemPicker
             "pokeball", "superball", "ultraball", "masterball",
             "mail", "correo", "fossil", "fosil", "key", "llave", "shard", "parte",
             "nugget", "pepita", "pearl", "perla", "starpiece", "trozoestrella",
-            "honey", "miel", "mulch", "abono"
+            "honey", "miel", "mulch", "abono", "pluma", "wing"
         );
     }
 

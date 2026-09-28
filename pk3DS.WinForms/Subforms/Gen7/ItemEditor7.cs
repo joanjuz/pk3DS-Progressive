@@ -16,23 +16,7 @@ public partial class ItemEditor7 : Form
         itemlist[0] = "";
 
         InitializeComponent();
-        Setup(); AddFixEconomyButton(); }
-
-        private void AddFixEconomyButton()
-    {
-        var button = new Button
-        {
-            Location = new System.Drawing.Point(B_Table.Left - 118, B_Table.Top),
-            Name = "B_FixEconomy",
-            Size = new System.Drawing.Size(112, B_Table.Height),
-            TabIndex = B_Table.TabIndex + 1,
-            Text = "Fix Economy",
-            UseVisualStyleBackColor = true,
-        };
-
-        button.Click += B_FixEconomy_Click;
-        Controls.Add(button);
-        button.BringToFront();
+        Setup();
     }
 
     private void B_FixEconomy_Click(object sender, EventArgs e)

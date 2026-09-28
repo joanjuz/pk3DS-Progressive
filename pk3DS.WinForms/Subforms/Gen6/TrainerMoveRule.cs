@@ -27,7 +27,7 @@ public sealed class TrainerMoveRule
 
     // Give this trainer competitive/smart held items after its final moveset is generated.
     public bool SmartItems { get; set; } = true;
-    // -1 means disabled. If set, all EV stats for every Pokémon in this trainer battle use this value when supported.
+    // -1 means disabled. Otherwise this value is applied to the two strongest base stats of each final Pokémon; the other four EV stats are set to 0.
     public int OverrideEVs { get; set; } = -1;
 
     public TrainerMoveRule Clone()

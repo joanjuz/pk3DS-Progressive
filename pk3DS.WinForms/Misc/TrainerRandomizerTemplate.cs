@@ -109,9 +109,9 @@ public sealed class TrainerLevelCapTemplateEntry
     public int TrainerID { get; set; }
     public bool Use { get; set; } = true;
 
-    // 0 means: use CurrentAceLevel. CurrentAceLevel is persisted so Player
-    // Level Caps can import the Trainer Caps configuration without reopening
-    // or re-reading trainer GARC data.
+    // 0 means dynamic Ace. In USUM main story, trainer randomization resolves
+    // it from the audited story position; unmapped/postgame rows fall back to
+    // the globally scaled ace. CurrentAceLevel remains persisted for compatibility/imports.
     public int LevelCap { get; set; }
     public int CurrentAceLevel { get; set; }
 

@@ -8,7 +8,7 @@ public sealed class TrainerLevelCapRule
     public string Trainer { get; set; } = string.Empty;
     public int CurrentAceLevel { get; set; }
 
-    // 0 means: use the trainer's current highest-level Pokémon as the cap.
+    // 0 means dynamic Ace. In USUM main story it follows audited story scaling; otherwise it uses the globally scaled ace fallback.
     public int LevelCap { get; set; }
 
     // Per-trainer option: force the selected important battle to have a Mega-capable ace.
