@@ -614,6 +614,7 @@ internal static class BatchGen7ActionExecutor
         "personal.randomize",
         "personal.modify-all",
         "pokemon-stats.apply",
+        PersonalEditor7.BanTrappingAbilitiesActionId,
         "evolutions.normalize",
         "evolutions.randomize",
         "evolutions.remove-trade",
@@ -732,8 +733,13 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunPersonal(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, "personal.randomize") && !Has(actions, "personal.modify-all") && !Has(actions, "pokemon-stats.apply"))
+        if (!Has(actions, "personal.randomize") &&
+            !Has(actions, "personal.modify-all") &&
+            !Has(actions, "pokemon-stats.apply") &&
+            !Has(actions, PersonalEditor7.BanTrappingAbilitiesActionId))
+        {
             return;
+        }
 
         BatchRuntime.Log("Pokemon personal data...");
         byte[][] data = Main.Config.GARCPersonal.Files;
@@ -744,6 +750,17 @@ internal static class BatchGen7ActionExecutor
         if (Has(actions, "personal.randomize")) InvokeEvent(form, "B_Randomize_Click");
         if (Has(actions, "personal.modify-all")) InvokeEvent(form, "B_ModifyAll");
         if (Has(actions, "pokemon-stats.apply")) InvokeEvent(form, "B_PokemonStatsTemplate_Click");
+
+        // Apply the trapping-ability ban last so it remains a final invariant
+        // regardless of other personal-data randomization/template actions.
+        if (Has(actions, PersonalEditor7.BanTrappingAbilitiesActionId))
+        {
+            int changed = Convert.ToInt32(
+                Invoke(form, "ApplyTrappingAbilityBanFromTemplate"));
+            BatchRuntime.Log(
+                $"Ban trapping abilities: {changed} Shadow Tag/Arena Trap slot(s) replaced.");
+        }
+
         Invoke(form, "SaveEntry");
 
         for (int i = 0; i < data.Length - 1; i++)

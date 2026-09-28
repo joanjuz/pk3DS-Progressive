@@ -12,7 +12,7 @@ namespace pk3DS.WinForms;
 public sealed class GlobalRandomizationTemplate
 {
     public int Version { get; set; } = 1;
-    public int ActionCoverageVersion { get; set; } = 5;
+    public int ActionCoverageVersion { get; set; } = 6;
     public string Name { get; set; } = "Global ROM template";
     public string Game { get; set; } = "ANY";
     public int Generation { get; set; }
@@ -81,6 +81,14 @@ public static class RandomizationSessionState
         }
 
         Actions[action.Id] = action;
+    }
+
+    public static bool ContainsAction(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+
+        return Actions.ContainsKey(id.Trim());
     }
 
     public static List<GlobalRandomizationAction> ExportActions()
