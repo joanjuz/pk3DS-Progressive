@@ -115,6 +115,9 @@ public sealed class TrainerLevelCapTemplateEntry
     public int LevelCap { get; set; }
     public int CurrentAceLevel { get; set; }
 
+    // Per-trainer Level Caps option: reduce this team to at most 3 Pokémon.
+    public bool NerfTeam { get; set; }
+
     public bool Mega { get; set; }
     public bool ZMove { get; set; }
 }
@@ -234,6 +237,7 @@ public static class TrainerRandomizerTemplateFile
 
                 rule.Enabled = entry.Use;
                 rule.LevelCap = entry.LevelCap;
+                rule.NerfTeam = entry.NerfTeam;
                 rule.GuaranteeMega = entry.Mega;
                 rule.GuaranteeZMove = entry.ZMove;
                 result.LevelCapsApplied++;

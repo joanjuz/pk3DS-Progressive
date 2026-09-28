@@ -62,6 +62,13 @@ public static class TrainerLevelCapDialog
         });
         grid.Columns.Add(new DataGridViewCheckBoxColumn
         {
+            DataPropertyName = nameof(TrainerLevelCapRule.NerfTeam),
+            HeaderText = "Max 3",
+            ToolTipText = "Nerf this trainer to at most 3 Pokémon while preserving its strongest-level ace.",
+            Width = 55,
+        });
+        grid.Columns.Add(new DataGridViewCheckBoxColumn
+        {
             DataPropertyName = nameof(TrainerLevelCapRule.GuaranteeMega),
             HeaderText = "Mega",
             ToolTipText = "Guarantee at least one Mega in this selected important battle.",
@@ -195,7 +202,7 @@ public static class TrainerLevelCapDialog
             Height = 46,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(8, 0, 8, 0),
-            Text = "Positive caps are exact fixed levels. In USUM, LevelCap 0 (Ace) keeps the global trainer scaling for milestone/fallback values, but main-story Important/Boss trainers are placed on the WikiDex-audited story curve while preserving their team level spread. Unmapped/postgame entries fall back to the globally scaled ace. Regular trainers still use the same story curve when scaling is enabled. Move filtering is configured in Trainer Move Rules.",
+            Text = "Positive caps are exact fixed levels. Max 3 nerfs that selected trainer to at most three Pokémon while preserving its strongest-level ace. In USUM, LevelCap 0 (Ace) keeps the global trainer scaling for milestone/fallback values, but main-story Important/Boss trainers are placed on the WikiDex-audited story curve while preserving their team level spread. Unmapped/postgame entries fall back to the globally scaled ace. Regular trainers still use the same story curve when scaling is enabled. Move filtering is configured in Trainer Move Rules.",
         };
 
         var buttons = new FlowLayoutPanel
