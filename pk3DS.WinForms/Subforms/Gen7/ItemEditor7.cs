@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -21,25 +22,38 @@ public partial class ItemEditor7 : Form
 
     private void B_FixEconomy_Click(object sender, EventArgs e)
     {
-        if (DialogResult.Yes != WinFormsUtil.Prompt(
-            MessageBoxButtons.YesNo,
-            "Fix economy?",
-            "This will set all TM/HM buy prices to 1000, Poké Ball to 100, Great Ball to 150, Ultra Ball to 200, and Repel/Super Repel/Max Repel to 50."))
+        SetEntry();
+
+        SortedDictionary<int, int> initialPrices =
+            EconomyFixer.GetEditorInitialPrices(
+                files.Length);
+
+        using var dialog =
+            new EconomyPriceDialog(
+                files,
+                itemlist,
+                initialPrices);
+
+        if (dialog.ShowDialog(this) !=
+            DialogResult.OK)
         {
             return;
         }
 
-        SetEntry();
-        int changed = EconomyFixer.Apply(files);
+        int changed =
+            EconomyFixer.Apply(
+                files,
+                dialog.Prices);
+
+        EconomyFixer.MarkSessionAction(
+            dialog.Prices);
+
         GetEntry();
 
-        // Persist the user's intent in Global Template even when the current
-        // item data already has the target prices and changed == 0.
-        RandomizationSessionState.MarkAction(EconomyFixer.ActionId);
-
         WinFormsUtil.Alert(
-            "Economy fixed!",
-            $"{changed} item prices were updated.");
+            "Economy prices applied!",
+            $"{changed} item prices were updated.",
+            $"{dialog.Prices.Count} item(s) are stored in the Fix Economy table and Global Template action.");
     }
     private readonly byte[][] files;
     private readonly string[] itemlist = Main.Config.GetText(TextName.ItemNames);

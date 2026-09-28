@@ -1019,18 +1019,29 @@ internal static class BatchGen7ActionExecutor
 
     private static void RunItemEconomy(Dictionary<string, GlobalRandomizationAction> actions)
     {
-        if (!Has(actions, EconomyFixer.ActionId))
+        GlobalRandomizationAction action =
+            Get(
+                actions,
+                EconomyFixer.ActionId);
+
+        if (action is null)
             return;
 
         BatchRuntime.Log("Fix Economy...");
         var g = Main.Config.GetGARCData("item");
         byte[][] data = g.Files;
 
-        int changed = EconomyFixer.Apply(data);
+        int changed =
+            EconomyFixer.ApplyAction(
+                data,
+                action,
+                out string mode);
 
         g.Files = data;
         g.Save();
-        BatchRuntime.Log($"Fix Economy: {changed} item prices updated.");
+
+        BatchRuntime.Log(
+            $"Fix Economy ({mode}): {changed} item prices updated.");
     }
 
     private static void RunMarts(Dictionary<string, GlobalRandomizationAction> actions)
