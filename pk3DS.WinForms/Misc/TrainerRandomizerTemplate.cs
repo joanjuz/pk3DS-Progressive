@@ -66,6 +66,10 @@ public sealed class TrainerMoveSettingsTemplate
     public bool? ItemClause { get; set; }
     public bool BetterMovesets { get; set; }
 
+    // When enabled, Better Movesets may also use compatible TMs/HMs from the
+    // current ROM. When disabled, the pool is level-up-only up to current level.
+    public bool BetterMovesetsIncludeTMs { get; set; }
+
     // Gen7 global Better Movesets category selectors.
     // Defaults preserve the behavior of older templates when BetterMovesets is enabled.
     public bool BetterMovesetsNormalTrainers { get; set; } = true;

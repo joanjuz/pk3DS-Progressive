@@ -113,4 +113,22 @@ public class LearnsetRandomizer : IRandomizer
         Array.Resize(ref moves, count);
         return moves;
     }
+
+    /// <summary>
+    /// Returns every distinct level-up move the requested species/form can
+    /// naturally know at or before the supplied level.
+    /// </summary>
+    public int[] GetMovesUpToLevel(int species, int form, int level)
+    {
+        int i = Config.Personal.GetFormIndex(species, form);
+        if ((uint)i >= (uint)Learnsets.Length)
+            return [];
+
+        int maxLevel = Math.Clamp(level, 1, 100);
+        return Learnsets[i]
+            .GetMoves(maxLevel)
+            .Where(move => move > 0)
+            .Distinct()
+            .ToArray();
+    }
 }

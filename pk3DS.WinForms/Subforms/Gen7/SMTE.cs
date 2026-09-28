@@ -21,6 +21,7 @@ public partial class SMTE : Form
     private ComboBox CB_SmartHeldItemModeImportant;
     private ComboBox CB_SmartHeldItemModeBoss;
     private CheckBox CHK_BetterMovesets;
+    private CheckBox CHK_BetterMovesetsIncludeTMs;
     private CheckBox CHK_BetterMovesetsNormalTrainers;
     private CheckBox CHK_BetterMovesetsImportantTrainers;
     private CheckBox CHK_BetterMovesetsBosses;
@@ -1490,6 +1491,7 @@ public partial class SMTE : Form
                 BanBadItems = CHK_BanBadItems?.Checked ?? false,
                 ItemClause = CHK_ItemClause?.Checked ?? false,
                 BetterMovesets = CHK_BetterMovesets.Checked,
+                BetterMovesetsIncludeTMs = CHK_BetterMovesetsIncludeTMs?.Checked ?? false,
                 BetterMovesetsNormalTrainers = CHK_BetterMovesetsNormalTrainers?.Checked ?? true,
                 BetterMovesetsImportantTrainers = CHK_BetterMovesetsImportantTrainers?.Checked ?? true,
                 BetterMovesetsBosses = CHK_BetterMovesetsBosses?.Checked ?? true,
@@ -1589,6 +1591,7 @@ public partial class SMTE : Form
             if (moves.ItemClause.HasValue && CHK_ItemClause is not null)
                 CHK_ItemClause.Checked = moves.ItemClause.Value;
             CHK_BetterMovesets.Checked = moves.BetterMovesets;
+            CHK_BetterMovesetsIncludeTMs.Checked = moves.BetterMovesetsIncludeTMs;
             CHK_BetterMovesetsNormalTrainers.Checked = moves.BetterMovesetsNormalTrainers;
             CHK_BetterMovesetsImportantTrainers.Checked = moves.BetterMovesetsImportantTrainers;
             CHK_BetterMovesetsBosses.Checked = moves.BetterMovesetsBosses;
@@ -2034,6 +2037,14 @@ public partial class SMTE : Form
                 Checked = false,
             };
 
+            CHK_BetterMovesetsIncludeTMs ??= new CheckBox
+            {
+                Name = "CHK_BetterMovesetsIncludeTMs",
+                Text = "Include TMs",
+                AutoSize = true,
+                Checked = false,
+            };
+
             CHK_BetterMovesetsNormalTrainers ??= new CheckBox
             {
                 Name = "CHK_BetterMovesetsNormalTrainers",
@@ -2065,6 +2076,7 @@ public partial class SMTE : Form
             foreach (Control control in new Control[]
             {
                 CHK_BetterMovesets,
+                CHK_BetterMovesetsIncludeTMs,
                 CHK_BetterMovesetsNormalTrainers,
                 CHK_BetterMovesetsImportantTrainers,
                 CHK_BetterMovesetsBosses,
@@ -2078,6 +2090,7 @@ public partial class SMTE : Form
             int y = CB_Moves is not null ? CB_Moves.Top + 2 : 270;
 
             CHK_BetterMovesets.Location = new Point(x, y);
+            CHK_BetterMovesetsIncludeTMs.Location = new Point(x + 125, y);
             CHK_BetterMovesetsNormalTrainers.Location = new Point(x + 20, y + 24);
             CHK_BetterMovesetsImportantTrainers.Location = new Point(x + 135, y + 24);
             CHK_BetterMovesetsBosses.Location = new Point(x + 270, y + 24);
@@ -2086,6 +2099,7 @@ public partial class SMTE : Form
             UpdateBetterMovesetsSubmenuState();
 
             CHK_BetterMovesets.BringToFront();
+            CHK_BetterMovesetsIncludeTMs.BringToFront();
             CHK_BetterMovesetsNormalTrainers.BringToFront();
             CHK_BetterMovesetsImportantTrainers.BringToFront();
             CHK_BetterMovesetsBosses.BringToFront();
@@ -2105,6 +2119,7 @@ public partial class SMTE : Form
 
         foreach (Control control in new Control[]
         {
+            CHK_BetterMovesetsIncludeTMs,
             CHK_BetterMovesetsNormalTrainers,
             CHK_BetterMovesetsImportantTrainers,
             CHK_BetterMovesetsBosses,
@@ -4069,7 +4084,8 @@ public partial class SMTE : Form
                         move.rDMG ? move.rDMGCount : 0,
                         pk.Ability,
                         7,
-                        teamWeatherMask
+                        teamWeatherMask,
+                        CHK_BetterMovesetsIncludeTMs?.Checked ?? false
                     );
                 }
 
@@ -4867,6 +4883,7 @@ public partial class SMTE : Form
             );
 
             MoveToGroup(CHK_BetterMovesets, betterGroup, 10, 19);
+            MoveToGroup(CHK_BetterMovesetsIncludeTMs, betterGroup, 145, 19);
             MoveToGroup(CHK_BetterMovesetsNormalTrainers, betterGroup, 28, 43);
             MoveToGroup(CHK_BetterMovesetsImportantTrainers, betterGroup, 145, 43);
             MoveToGroup(CHK_BetterMovesetsBosses, betterGroup, 280, 43);
