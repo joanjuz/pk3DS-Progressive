@@ -76,6 +76,23 @@ public sealed class TrainerMoveSettingsTemplate
     public bool BetterMovesetsImportantTrainers { get; set; } = true;
     public bool BetterMovesetsBosses { get; set; } = true;
 
+    // Gen7 global Strong Stat settings.
+    // Nullable fields preserve legacy templates that stored Strong Stat per trainer.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StrongStat { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? StrongStatTolerance { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StrongStatNormalTrainers { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StrongStatImportantTrainers { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StrongStatBosses { get; set; }
+
     // Gen7 global Smart Items settings.
     public bool SmartItems { get; set; }
     public bool SmartItemsNormalTrainers { get; set; } = true;
@@ -328,6 +345,9 @@ public static class TrainerRandomizerTemplateFile
                 throw new InvalidDataException("DamagingMoveCount must be between 0 and 4.");
             if (moves.STABMoveCount < 0 || moves.STABMoveCount > 4)
                 throw new InvalidDataException("STABMoveCount must be between 0 and 4.");
+
+            if (moves.StrongStatTolerance is < 0 or > 255)
+                throw new InvalidDataException("StrongStatTolerance must be between 0 and 255.");
 
             if (moves.SmartItemMode < 0 || moves.SmartItemMode > 2)
                 throw new InvalidDataException("SmartItemMode must be 0 (Normal), 1 (Strong), or 2 (Competitive).");
