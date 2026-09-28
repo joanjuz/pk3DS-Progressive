@@ -36,6 +36,8 @@ public partial class PersonalEditor7 : Form
         Setup();
         CB_Species.SelectedIndex = 1;
         RandSettings.GetFormSettings(this, TP_Randomizer.Controls);
+        BanTrappingAbilitiesActive =
+            RandomizationSessionState.ContainsAction(BanTrappingAbilitiesActionId);
         AddPokemonStatsTemplateButton();
     }
     #region Global Variables
@@ -79,6 +81,9 @@ public partial class PersonalEditor7 : Form
     private readonly int[] baseForms, formVal;
     private readonly ushort[] TMs;
     private int entry = -1;
+
+    internal const string BanTrappingAbilitiesActionId = "personal.ban-trapping-abilities";
+    private bool BanTrappingAbilitiesActive;
     #endregion
     private void Setup()
     {
@@ -350,7 +355,105 @@ public partial class PersonalEditor7 : Form
         button.Click += B_PokemonStatsTemplate_Click;
         TP_Randomizer.Controls.Add(button);
         button.BringToFront();
+
+        var banTrapAbilities = new Button
+        {
+            Name = "B_BanTrappingAbilities",
+            Text = "Ban Trap Abilities",
+            Location = new Point(
+                Math.Max(8, TP_Randomizer.ClientSize.Width - 143),
+                button.Bottom + 8),
+            Size = new Size(135, button.Height),
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+            UseVisualStyleBackColor = true,
+        };
+        banTrapAbilities.Click += B_BanTrappingAbilities_Click;
+        TP_Randomizer.Controls.Add(banTrapAbilities);
+        banTrapAbilities.BringToFront();
     }
+
+    private void B_BanTrappingAbilities_Click(object sender, EventArgs e)
+    {
+        if (WinFormsUtil.Prompt(
+                MessageBoxButtons.YesNo,
+                "Ban Shadow Tag and Arena Trap?",
+                "This removes both abilities from every Pokémon ability slot and keeps them excluded from later ability randomization in this session.") != DialogResult.Yes)
+        {
+            return;
+        }
+
+        SaveEntry();
+        BanTrappingAbilitiesActive = true;
+        int changed = ApplyTrappingAbilityBanToPersonalData();
+        WritePersonalStatsToFiles();
+        ReadEntry();
+
+        RandomizationSessionState.MarkAction(BanTrappingAbilitiesActionId);
+
+        WinFormsUtil.Alert(
+            "Trapping abilities banned.",
+            $"{changed} ability slot(s) were replaced. Shadow Tag and Arena Trap will stay excluded from later ability randomization.");
+    }
+
+    private int ApplyTrappingAbilityBanFromTemplate()
+    {
+        BanTrappingAbilitiesActive = true;
+        int changed = ApplyTrappingAbilityBanToPersonalData();
+        WritePersonalStatsToFiles();
+        return changed;
+    }
+
+    private static int ApplyTrappingAbilityBanToPersonalData()
+    {
+        int changed = 0;
+
+        for (int speciesIndex = 1; speciesIndex < Main.SpeciesStat.Length; speciesIndex++)
+        {
+            var personal = Main.SpeciesStat[speciesIndex];
+            if (personal is null || personal.Abilities is not { Length: > 0 })
+                continue;
+
+            int[] abilities = personal.Abilities.ToArray();
+
+            for (int slot = 0; slot < abilities.Length; slot++)
+            {
+                if (!PersonalRandomizer.IsTrappingAbility(abilities[slot]))
+                    continue;
+
+                int replacement = abilities.FirstOrDefault(
+                    ability => ability > 0 &&
+                               !PersonalRandomizer.IsTrappingAbility(ability));
+
+                if (replacement <= 0)
+                    replacement = GetDeterministicSafeAbility(speciesIndex, slot);
+
+                abilities[slot] = replacement;
+                changed++;
+            }
+
+            personal.Abilities = abilities;
+        }
+
+        return changed;
+    }
+
+    private static int GetDeterministicSafeAbility(int speciesIndex, int slot)
+    {
+        int maxAbility = Math.Max(1, Main.Config.Info.MaxAbilityID);
+        int ability = 1 + Math.Abs((speciesIndex * 3) + slot) % maxAbility;
+
+        while (PersonalRandomizer.IsTrappingAbility(ability))
+        {
+            ability++;
+            if (ability > maxAbility)
+                ability = 1;
+        }
+
+        return ability;
+    }
+
+    private void WritePersonalStatsToFiles()
+        => Main.SpeciesStat.Select(z => z.Write()).ToArray().CopyTo(files, 0);
 
     private void B_PokemonStatsTemplate_Click(object sender, EventArgs e)
     {
@@ -419,10 +522,18 @@ public partial class PersonalEditor7 : Form
             SameEggGroupChance = NUD_Egg.Value,
             StatDeviation = NUD_StatDev.Value,
             AllowWonderGuard = CHK_WGuard.Checked,
+            BanTrappingAbilities = BanTrappingAbilitiesActive,
         };
 
         rnd.Execute();
-        Main.SpeciesStat.Select(z => z.Write()).ToArray().CopyTo(files, 0);
+
+        // If the ban was activated before Randomize All (or restored from a
+        // Global Template), sanitize once more after randomization so the
+        // invariant holds even when ability randomization itself was disabled.
+        if (BanTrappingAbilitiesActive)
+            ApplyTrappingAbilityBanToPersonalData();
+
+        WritePersonalStatsToFiles();
 
         ReadEntry();
         RandomizationSessionState.MarkAction("personal.randomize");

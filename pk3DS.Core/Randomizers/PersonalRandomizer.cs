@@ -32,6 +32,16 @@ public class PersonalRandomizer : IRandomizer
     public bool ModifyAbilities = true;
     public bool AllowWonderGuard = true;
 
+    // Optional competitive/QoL rule used by the Gen 7 Personal Editor.
+    // Ability IDs are stable across the generations supported here:
+    // 23 = Shadow Tag, 71 = Arena Trap.
+    public bool BanTrappingAbilities;
+    public const int ShadowTagAbility = 23;
+    public const int ArenaTrapAbility = 71;
+
+    public static bool IsTrappingAbility(int ability)
+        => ability is ShadowTagAbility or ArenaTrapAbility;
+
     public bool ModifyStats = true;
     public bool ShuffleStats = true;
     public decimal StatDeviation = 25;
@@ -300,7 +310,9 @@ public class PersonalRandomizer : IRandomizer
         const int WonderGuard = 25;
         int newabil;
         do newabil = rnd.Next(1, Game.Info.MaxAbilityID + 1);
-        while ((newabil == WonderGuard && !AllowWonderGuard) || BannedAbilities.Contains(newabil));
+        while ((newabil == WonderGuard && !AllowWonderGuard) ||
+               (BanTrappingAbilities && IsTrappingAbility(newabil)) ||
+               BannedAbilities.Contains(newabil));
         return newabil;
     }
 }
