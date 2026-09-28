@@ -1217,7 +1217,7 @@ internal static class BatchGen7ActionExecutor
             if (string.IsNullOrWhiteSpace(Main.ExeFSPath))
                 throw new InvalidDataException("USUM Move Relearner batch replay requires a loaded ExeFS.");
 
-            string report = USUMMoveRelearnerPatcher.Apply(Main.ExeFSPath);
+            string report = USUMMoveRelearnerPatcher.Apply(Main.ExeFSPath, Main.Config);
             foreach (string line in report.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries))
                 BatchRuntime.Log(line);
         }

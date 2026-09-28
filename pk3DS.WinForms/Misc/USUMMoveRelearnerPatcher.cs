@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using pk3DS.Core;
 
 namespace pk3DS.WinForms;
 
@@ -218,8 +219,134 @@ internal static class USUMMoveRelearnerPatcher
     private static readonly byte[] MoonLayoutMarker1 = Hex("F081BDE8");
     private static readonly byte[] MoonLayoutMarker2 = Hex("1BA701EB");
 
+    // Lillie's first Pokémon Center tutorial is StoryText file 77.
+    // Lines 5..7 are the vanilla café/drink explanation. The café itself is
+    // still introduced by line 4; only the obsolete service explanation changes.
+    private const int LillieTutorialFile = 77;
+    private const int LillieTutorialFirstLine = 5;
 
-    public static string Apply(string exefsPath)
+    private static readonly string[][] LillieTutorialOriginal =
+    [
+        [
+            "わたしは　カフェスペースで　のめる\\nモーモーミルクが　すきだったりします[VAR 0114(0006)]",
+            "ガイドブックに　かかれていました\\c\\nポケモンセンターごとに\\nメニューは　ことなるそうです\\r\\nなにか　こだわりが　あるのでしょうね[VAR 0114(0006)]",
+            "のみもの　だけでなく\\nおかしや　しまめぐりに　やくだつ\\r\\nアドバイスも　いただけるそうです[VAR 0114(0006)]",
+        ],
+        [
+            "わたしは　カフェスペースで　飲める\\nモーモーミルクが　好きだったりします[VAR 0114(0006)]",
+            "ガイドブックに　書かれていました\\c\\nポケモンセンターごとに\\nメニューは　異なるそうです\\r\\nなにか　こだわりが　あるのでしょうね[VAR 0114(0006)]",
+            "飲みもの　だけでなく\\nお茶菓子や　島巡りに　役立つ\\r\\nアドバイスも　いただけるそうです[VAR 0114(0006)]",
+        ],
+        [
+            "I like to relax there sometimes with a frosty\\nglass of Moomoo Milk.[VAR 0114(0006)]",
+            "I read something in a travel guide about\\nAlola once...\\c\\nApparently each Pokémon Center in Alola offers\\na different selection of drinks.\\r\\nI wonder how they pick what to serve?[VAR 0114(0006)]",
+            "The cafés may also offer more than just drinks.\\c\\nI’ve heard they also sell special treats and that\\nsometimes the staff have tips for trial-goers.[VAR 0114(0006)]",
+        ],
+        [
+            "Moi, j’adore venir ici pour boire du Lait Meumeu.[VAR 0114(0006)]",
+            "Mais d’après ce que j’ai lu dans des guides\\ntouristiques...\\c\\nChaque Centre Pokémon propose une carte\\ndifférente.\\c\\nChacun a sa spécialité, en quelque sorte.[VAR 0114(0006)]",
+            "De plus, on te propose non seulement\\ndes boissons et des friandises, mais aussi\\r\\ndes conseils fort utiles pour ton Tour des Îles.[VAR 0114(0006)]",
+        ],
+        [
+            "Il loro Latte Mumu è la fine del mondo![VAR 0114(0006)]",
+            "Ho letto in una guida che il menu cambia\\na seconda del Centro Pokémon.\\c\\nChissà in base a cosa decidono le bevande...[VAR 0114(0006)]",
+            "Non offrono solo bibite: danno anche dolcetti\\ne consigli utili a chi fa il giro delle isole![VAR 0114(0006)]",
+        ],
+        [
+            "Hier kann man sich meiner Meinung nach schön\\nbei einem Glas frischer Kuhmuh-Milch erholen.[VAR 0114(0006)]",
+            "Übrigens unterscheidet sich das Angebot im\\nCafé-Bereich von Pokémon-Center zu\\r\\nPokémon-Center.\\c\\nZ-Zumindest steht das so im Reiseführer...[VAR 0114(0006)]",
+            "Du findest dort nicht nur Getränke, sondern\\nauch Süßes. Ich habe gehört, dass die\\r\\nAngestellten auch gute Ratschläge für Trainer\\r\\nauf Inselwanderschaft auf Lager hätten.[VAR 0114(0006)]",
+        ],
+        [
+            "A veces me gusta pasarme por ahí y tomarme\\nuna Leche Mu-mu para relajarme.[VAR 0114(0006)]",
+            "En una guía de viajes leí que las bebidas varían\\nde un Centro Pokémon a otro, así que vale la\\r\\npena pasarse siempre para ver qué tienen.[VAR 0114(0006)]",
+            "Puede que tengan algún dulce para acompañar\\ntu bebida e incluso algún que otro consejo para\\r\\ntu recorrido insular.[VAR 0114(0006)]",
+        ],
+        [
+            "저는 카페스페이스에서 마실 수 있는\\n튼튼밀크를 좋아해요[VAR 0114(0006)]",
+            "가이드북에 적혀 있었어요\\c\\n포켓몬센터마다\\n메뉴가 다르다고 해요\\r\\n각각 특색이 있는 거겠죠[VAR 0114(0006)]",
+            "음료수뿐만 아니라\\n과자를 받거나 섬 순례에 도움이\\r\\n되는 어드바이스도 들을 수 있대요[VAR 0114(0006)]",
+        ],
+        [
+            "我很喜欢在咖啡区里\\n可以喝到的哞哞鲜奶。[VAR 0114(0006)]",
+            "按照指南手册上的说法，\\c\\n每个宝可梦中心提供的\\n菜单好像都不一样。\\r\\n应该是有着各自的想法吧。[VAR 0114(0006)]",
+            "听说在那里不但有饮料可以喝，\\n还有茶点可以吃，而且还能得到\\r\\n一些有助于诸岛巡礼的建议。[VAR 0114(0006)]",
+        ],
+        [
+            "我很喜歡在咖啡區裡\\n可以喝到的哞哞鮮奶。[VAR 0114(0006)]",
+            "按照導覽手冊的說法，\\c\\n每間寶可夢中心的咖啡區\\n提供的飲料種類好像都不一樣。\\r\\n大概每間店有自己講究的地方吧。[VAR 0114(0006)]",
+            "另外不只是飲料，\\n好像也會提供茶點\\r\\n和一些對諸島巡禮有幫助的建議。[VAR 0114(0006)]",
+        ],
+    ];
+
+    private static readonly string[][] LillieTutorialPatched =
+    [
+        [
+            "カフェの　てんいんさんは\\nポケモンが　いまのレベルまでに\\r\\nおぼえられる　わざを\\nおもいださせてくれます[VAR 0114(0006)]",
+            "わすれてしまった　わざが　あれば\\nてんいんさんに　はなしかけてみてください[VAR 0114(0006)]",
+            "このサービスは　アローラじゅうの\\nポケモンセンターの　カフェで\\r\\nりようできます[VAR 0114(0006)]",
+        ],
+        [
+            "カフェの 店員さんは\\nポケモンが 今のレベルまでに\\r\\n覚えられる 技を\\n思い出させてくれます[VAR 0114(0006)]",
+            "忘れてしまった 技が あれば\\n店員さんに 話しかけてみてください[VAR 0114(0006)]",
+            "このサービスは アローラ中の\\nポケモンセンターの カフェで\\r\\n利用できます[VAR 0114(0006)]",
+        ],
+        [
+            "The café staff can help your Pokémon remember\\nmoves they could have learned by their current\\r\\nlevel.[VAR 0114(0006)]",
+            "If one of your Pokémon has forgotten a useful\\nmove, just ask the staff for help.[VAR 0114(0006)]",
+            "You can use this service at Pokémon Center\\ncafés all across Alola.[VAR 0114(0006)]",
+        ],
+        [
+            "Le personnel du café peut aider tes Pokémon à\\nse rappeler des capacités qu’ils auraient pu\\r\\napprendre à leur niveau actuel.[VAR 0114(0006)]",
+            "Si l’un de tes Pokémon a oublié une capacité\\nutile, demande simplement de l’aide au personnel.[VAR 0114(0006)]",
+            "Ce service est disponible dans les cafés des\\nCentres Pokémon de toute la région d’Alola.[VAR 0114(0006)]",
+        ],
+        [
+            "Il personale della caffetteria può aiutare i tuoi\\nPokémon a ricordare mosse che avrebbero potuto\\r\\nimparare al loro livello attuale.[VAR 0114(0006)]",
+            "Se un Pokémon ha dimenticato una mossa utile,\\nchiedi aiuto al personale.[VAR 0114(0006)]",
+            "Troverai questo servizio nelle caffetterie dei\\nCentri Pokémon di tutta Alola.[VAR 0114(0006)]",
+        ],
+        [
+            "Das Personal im Café kann deinen Pokémon\\nAttacken wieder beibringen, die sie auf ihrem\\r\\naktuellen Level bereits lernen könnten.[VAR 0114(0006)]",
+            "Hat eines deiner Pokémon eine nützliche Attacke\\nvergessen, sprich einfach das Personal an.[VAR 0114(0006)]",
+            "Diesen Service gibt es in den Café-Bereichen der\\nPokémon-Center in ganz Alola.[VAR 0114(0006)]",
+        ],
+        [
+            "El encargado de la cafetería puede ayudar a tus\\nPokémon a recordar movimientos que ya podrían\\r\\nhaber aprendido a su nivel actual.[VAR 0114(0006)]",
+            "Si alguno ha olvidado un movimiento útil,\\nhabla con el encargado para que pueda recordarlo.[VAR 0114(0006)]",
+            "Encontrarás este servicio en las cafeterías de\\nlos Centros Pokémon de toda Alola.[VAR 0114(0006)]",
+        ],
+        [
+            "카페 직원에게 부탁하면 포켓몬이\\n현재 레벨까지 배울 수 있는 기술을\\r\\n다시 떠올리게 할 수 있어요[VAR 0114(0006)]",
+            "유용한 기술을 잊어버린 포켓몬이 있다면\\n직원에게 말을 걸어보세요[VAR 0114(0006)]",
+            "이 서비스는 알로라의 모든 포켓몬센터\\n카페스페이스에서 이용할 수 있어요[VAR 0114(0006)]",
+        ],
+        [
+            "咖啡区的工作人员可以帮助宝可梦\\n回忆起在当前等级前本来可以学会的\\r\\n招式。[VAR 0114(0006)]",
+            "如果宝可梦忘记了有用的招式，\\n就去找工作人员帮忙吧。[VAR 0114(0006)]",
+            "阿罗拉各地宝可梦中心的咖啡区\\n都提供这项服务。[VAR 0114(0006)]",
+        ],
+        [
+            "咖啡區的工作人員可以幫助寶可夢\\n回想起在目前等級前原本可以學會的\\r\\n招式。[VAR 0114(0006)]",
+            "如果寶可夢忘記了有用的招式，\\n就去找工作人員幫忙吧。[VAR 0114(0006)]",
+            "阿羅拉各地寶可夢中心的咖啡區\\n都提供這項服務。[VAR 0114(0006)]",
+        ],
+    ];
+
+    public static string Apply(string exefsPath, GameConfig config)
+    {
+        // Validate every localized StoryText bank before touching code.bin. This
+        // prevents the gameplay patch from being written if the tutorial text is
+        // from an unknown revision or was already customized by another mod.
+        ValidateLillieTutorial(config);
+
+        string codeReport = ApplyCode(exefsPath);
+        string textReport = ApplyLillieTutorial(config);
+
+        return codeReport + Environment.NewLine + textReport;
+    }
+
+    private static string ApplyCode(string exefsPath)
     {
         string codePath = FindCodeBinary(exefsPath);
         var info = new FileInfo(codePath);
@@ -273,6 +400,135 @@ internal static class USUMMoveRelearnerPatcher
             "Future level-up moves are filtered out; only moves available at the Pokémon's current level or earlier are offered." +
             Environment.NewLine + Environment.NewLine +
             "Backup: " + backupPath;
+    }
+
+    private static void ValidateLillieTutorial(GameConfig config)
+    {
+        if (config?.USUM != true)
+            throw new NotSupportedException("Lillie's Move Relearner tutorial patch is available only for USUM.");
+        if (string.IsNullOrWhiteSpace(config.RomFS) || !Directory.Exists(config.RomFS))
+            throw new DirectoryNotFoundException("The loaded USUM RomFS folder could not be found.");
+
+        int originalLanguage = config.Language;
+
+        try
+        {
+            for (int language = 0; language < LillieTutorialOriginal.Length; language++)
+            {
+                config.Language = language;
+                var story = config.GetGARCData("storytext");
+                byte[][] files = story.Files;
+
+                if ((uint)LillieTutorialFile >= (uint)files.Length)
+                {
+                    throw new InvalidDataException(
+                        $"USUM StoryText language offset {language} does not contain file {LillieTutorialFile}.");
+                }
+
+                string[] lines = TextFile.GetStrings(config, files[LillieTutorialFile]);
+
+                if (!MatchesLillieTutorial(lines, LillieTutorialOriginal[language]) &&
+                    !MatchesLillieTutorial(lines, LillieTutorialPatched[language]))
+                {
+                    string actual =
+                        lines.Length > LillieTutorialFirstLine + 2
+                            ? string.Join(
+                                " | ",
+                                Enumerable.Range(LillieTutorialFirstLine, 3)
+                                    .Select(index => $"{index}: {lines[index]}"))
+                            : $"line count {lines.Length}";
+
+                    throw new InvalidDataException(
+                        $"Lillie tutorial text does not match the validated vanilla/already-patched text " +
+                        $"for language offset {language}, StoryText file {LillieTutorialFile}. " +
+                        $"Actual: {actual}. Nothing was changed.");
+                }
+            }
+        }
+        finally
+        {
+            config.Language = originalLanguage;
+        }
+    }
+
+    private static string ApplyLillieTutorial(GameConfig config)
+    {
+        int originalLanguage = config.Language;
+        int changedBanks = 0;
+
+        try
+        {
+            for (int language = 0; language < LillieTutorialOriginal.Length; language++)
+            {
+                config.Language = language;
+
+                var story = config.GetGARCData("storytext");
+                byte[][] files = story.Files;
+                string[] lines = TextFile.GetStrings(config, files[LillieTutorialFile]);
+
+                if (MatchesLillieTutorial(lines, LillieTutorialPatched[language]))
+                    continue;
+
+                string storyPath =
+                    Path.Combine(
+                        config.RomFS,
+                        config.GetGARCFileName("storytext"));
+
+                string backupPath =
+                    storyPath + ".pk3ds-usum-relearner-lillie.bak";
+
+                if (!File.Exists(backupPath))
+                    File.Copy(storyPath, backupPath);
+
+                for (int line = 0; line < LillieTutorialPatched[language].Length; line++)
+                {
+                    lines[LillieTutorialFirstLine + line] =
+                        LillieTutorialPatched[language][line];
+                }
+
+                files[LillieTutorialFile] =
+                    TextFile.GetBytes(
+                        config,
+                        lines);
+
+                story.Files = files;
+                story.Save();
+                changedBanks++;
+            }
+        }
+        finally
+        {
+            config.Language = originalLanguage;
+        }
+
+        return changedBanks == 0
+            ? "Lillie's early Pokémon Center tutorial already explains the café Move Relearner service."
+            : $"Updated Lillie's early Pokémon Center tutorial in {changedBanks} StoryText language bank(s).";
+    }
+
+    private static bool MatchesLillieTutorial(
+        string[] lines,
+        string[] expected)
+    {
+        if (lines is null ||
+            expected is null ||
+            lines.Length < LillieTutorialFirstLine + expected.Length)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < expected.Length; index++)
+        {
+            if (!string.Equals(
+                    lines[LillieTutorialFirstLine + index],
+                    expected[index],
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsUltraMoonLayout(byte[] code)
