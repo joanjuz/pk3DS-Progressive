@@ -36,9 +36,9 @@ partial class ItemEditor7
         this.B_Table = new System.Windows.Forms.Button();
         this.B_FixEconomy = new System.Windows.Forms.Button();
         this.SuspendLayout();
-        // 
+        //
         // CB_Item
-        // 
+        //
         this.CB_Item.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
         this.CB_Item.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
         this.CB_Item.DropDownWidth = 120;
@@ -48,19 +48,19 @@ partial class ItemEditor7
         this.CB_Item.Size = new System.Drawing.Size(144, 21);
         this.CB_Item.TabIndex = 1;
         this.CB_Item.SelectedIndexChanged += new System.EventHandler(this.ChangeEntry);
-        // 
+        //
         // L_Item
-        // 
+        //
         this.L_Item.Location = new System.Drawing.Point(12, 10);
         this.L_Item.Name = "L_Item";
         this.L_Item.Size = new System.Drawing.Size(51, 21);
         this.L_Item.TabIndex = 2;
         this.L_Item.Text = "Item:";
         this.L_Item.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-        // 
+        //
         // RTB
-        // 
-        this.RTB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+        //
+        this.RTB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
                                                                 | System.Windows.Forms.AnchorStyles.Right)));
         this.RTB.Location = new System.Drawing.Point(11, 37);
         this.RTB.Name = "RTB";
@@ -68,29 +68,29 @@ partial class ItemEditor7
         this.RTB.Size = new System.Drawing.Size(316, 51);
         this.RTB.TabIndex = 38;
         this.RTB.Text = "";
-        // 
+        //
         // L_Index
-        // 
+        //
         this.L_Index.AutoSize = true;
         this.L_Index.Location = new System.Drawing.Point(221, 14);
         this.L_Index.Name = "L_Index";
         this.L_Index.Size = new System.Drawing.Size(39, 13);
         this.L_Index.TabIndex = 46;
         this.L_Index.Text = "Index: ";
-        // 
+        //
         // Grid
-        // 
-        this.Grid.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-                                                                  | System.Windows.Forms.AnchorStyles.Left) 
+        //
+        this.Grid.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                                                                  | System.Windows.Forms.AnchorStyles.Left)
                                                                  | System.Windows.Forms.AnchorStyles.Right)));
         this.Grid.LineColor = System.Drawing.SystemColors.ControlDark;
         this.Grid.Location = new System.Drawing.Point(12, 123);
         this.Grid.Name = "Grid";
         this.Grid.Size = new System.Drawing.Size(316, 251);
         this.Grid.TabIndex = 47;
-        // 
+        //
         // B_Table
-        // 
+        //
         this.B_Table.Location = new System.Drawing.Point(170, 94);
         this.B_Table.Name = "B_Table";
         this.B_Table.Size = new System.Drawing.Size(158, 23);
@@ -98,9 +98,9 @@ partial class ItemEditor7
         this.B_Table.Text = "Export Table";
         this.B_Table.UseVisualStyleBackColor = true;
         this.B_Table.Click += new System.EventHandler(this.B_Table_Click);
-        // 
+        //
         // B_FixEconomy
-        // 
+        //
         this.B_FixEconomy.Location = new System.Drawing.Point(12, 94);
         this.B_FixEconomy.Name = "B_FixEconomy";
         this.B_FixEconomy.Size = new System.Drawing.Size(154, 23);
@@ -108,9 +108,9 @@ partial class ItemEditor7
         this.B_FixEconomy.Text = "Fix Economy";
         this.B_FixEconomy.UseVisualStyleBackColor = true;
         this.B_FixEconomy.Click += new System.EventHandler(this.B_FixEconomy_Click);
-        // 
+        //
         // ItemEditor7
-        // 
+        //
         this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
         this.ClientSize = new System.Drawing.Size(339, 381);
