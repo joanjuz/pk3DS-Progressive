@@ -657,7 +657,7 @@ public partial class StaticEncounterEditor7 : Form
             LB_Trade.SelectedIndex = Math.Min(Math.Max(tEntry, 0), LB_Trade.Items.Count - 1);
         GetTrade();
 
-        RandomizationSessionState.MarkAction("trades.randomize-offers");
+        MarkSpeciesRandomizationAction("trades.randomize-offers");
         WinFormsUtil.Alert("Trades randomized!", $"{Trades.Length} in-game trades are set to accept any Pokemon and give randomized Pokemon. Click Save to apply the USUM selector patch.");
     }
 
@@ -1241,6 +1241,17 @@ public partial class StaticEncounterEditor7 : Form
     private bool BlockSpecialPlayerReceived =>
         CHK_BlockSpecialPlayerReceived?.Checked ?? true;
 
+    private void MarkSpeciesRandomizationAction(string actionId)
+    {
+        // RandSettings still stores the full form state, but this option directly
+        // changes which species can be selected. Persist it with the operation so
+        // Global Template / Batch replay does not depend on an external or stale
+        // randsettings.txt snapshot.
+        RandomizationSessionState.MarkAction(
+            actionId,
+            ("randomizeByBST", CHK_BST.Checked.ToString()));
+    }
+
     private SpeciesRandomizer GetRandomizer() =>
         CreateRandomizer(
             allowLegendaryAndUltraBeast: true,
@@ -1408,7 +1419,7 @@ public partial class StaticEncounterEditor7 : Form
         GetListBoxEntries();
         GetGift();
 
-        RandomizationSessionState.MarkAction("starters.randomize");
+        MarkSpeciesRandomizationAction("starters.randomize");
         WinFormsUtil.Alert("Randomized Starters according to specification!");
     }
 
@@ -1575,7 +1586,7 @@ public partial class StaticEncounterEditor7 : Form
         GetEncounter();
         GetTrade();
 
-        RandomizationSessionState.MarkAction("static-encounters.randomize");
+        MarkSpeciesRandomizationAction("static-encounters.randomize");
         WinFormsUtil.Alert("Randomized Static Encounters according to specification!");
     }
 

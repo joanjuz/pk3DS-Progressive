@@ -949,10 +949,33 @@ internal static class BatchGen7ActionExecutor
         var g = Main.Config.GetGARCData("encounterstatic");
         byte[][] data = g.Files;
         using var form = new StaticEncounterEditor7(data);
-        if (Has(actions, "starters.randomize")) InvokeEvent(form, "B_Starters_Click");
-        if (Has(actions, "static-encounters.randomize")) InvokeEvent(form, "B_RandAll_Click");
-        if (Has(actions, "trades.accept-any")) InvokeEvent(form, "B_TradeAnyRequest_Click");
-        if (Has(actions, "trades.randomize-offers")) InvokeEvent(form, "B_TradeAcceptAnyRandomOffer_Click");
+
+        if (Has(actions, "starters.randomize"))
+        {
+            ApplyStaticSpeciesRandomizationParameters(
+                form,
+                Get(actions, "starters.randomize"));
+            InvokeEvent(form, "B_Starters_Click");
+        }
+
+        if (Has(actions, "static-encounters.randomize"))
+        {
+            ApplyStaticSpeciesRandomizationParameters(
+                form,
+                Get(actions, "static-encounters.randomize"));
+            InvokeEvent(form, "B_RandAll_Click");
+        }
+
+        if (Has(actions, "trades.accept-any"))
+            InvokeEvent(form, "B_TradeAnyRequest_Click");
+
+        if (Has(actions, "trades.randomize-offers"))
+        {
+            ApplyStaticSpeciesRandomizationParameters(
+                form,
+                Get(actions, "trades.randomize-offers"));
+            InvokeEvent(form, "B_TradeAcceptAnyRandomOffer_Click");
+        }
         if (Has(actions, "trades.hide-species-names")) Invoke(form, "ApplyHideTradeSpeciesNames");
         if (Has(actions, "static-encounters.modify-levels")) InvokeEvent(form, "ModifyLevels");
         if (Has(actions, "static-encounters.totem-bst"))
@@ -962,6 +985,25 @@ internal static class BatchGen7ActionExecutor
         InvokeEvent(form, "B_Save_Click");
         g.Files = data;
         g.Save();
+    }
+
+    private static void ApplyStaticSpeciesRandomizationParameters(
+        Form form,
+        GlobalRandomizationAction action)
+    {
+        if (action?.Parameters is null)
+            return;
+
+        if (action.Parameters.TryGetValue(
+                "randomizeByBST",
+                out string rawBST) &&
+            bool.TryParse(rawBST, out bool randomizeByBST))
+        {
+            SetCheckBox(
+                form,
+                "CHK_BST",
+                randomizeByBST);
+        }
     }
 
     private static void RunPickup(Dictionary<string, GlobalRandomizationAction> actions)
