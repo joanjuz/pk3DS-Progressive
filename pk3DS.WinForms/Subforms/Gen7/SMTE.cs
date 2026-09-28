@@ -118,7 +118,7 @@ public partial class SMTE : Form
     private bool ApplyCapsToPreviousTrainers = true;
     private int PreviousTrainerGap = 2;
     private decimal RegularTrainerCurvePower = 1.6m;
-    private const int MinimumTrainerLevel = 5;
+    private const int MinimumTrainerLevel = 1;
     private bool GuaranteeMegaInImportantBattles = false;
     // The Rules tab temporarily expands the randomizer workspace.
     // Other randomizer tabs keep their original dimensions.
