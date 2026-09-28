@@ -9,7 +9,11 @@ namespace pk3DS.WinForms;
 
 public static class TrainerMoveRulesDialog
 {
-    public static bool Edit(IWin32Window owner, ref List<TrainerMoveRule> rules, bool showPerTrainerBetterSmart = true)
+    public static bool Edit(
+        IWin32Window owner,
+        ref List<TrainerMoveRule> rules,
+        bool showPerTrainerBetterSmart = true,
+        bool showPerTrainerStrongStat = true)
     {
         using var form = new Form
         {
@@ -135,15 +139,20 @@ public static class TrainerMoveRulesDialog
 
         grid.DataError += (_, e) => e.ThrowException = false;
 
-        if (!showPerTrainerBetterSmart)
+        foreach (DataGridViewColumn column in grid.Columns)
         {
-            foreach (DataGridViewColumn column in grid.Columns)
+            if (!showPerTrainerBetterSmart &&
+                (column.DataPropertyName == nameof(TrainerMoveRule.BetterMovesets) ||
+                 column.DataPropertyName == nameof(TrainerMoveRule.SmartItems)))
             {
-                if (column.DataPropertyName == nameof(TrainerMoveRule.BetterMovesets) ||
-                    column.DataPropertyName == nameof(TrainerMoveRule.SmartItems))
-                {
-                    column.Visible = false;
-                }
+                column.Visible = false;
+            }
+
+            if (!showPerTrainerStrongStat &&
+                (column.DataPropertyName == nameof(TrainerMoveRule.UseStrongestAttackStat) ||
+                 column.DataPropertyName == nameof(TrainerMoveRule.MixedTolerance)))
+            {
+                column.Visible = false;
             }
         }
 

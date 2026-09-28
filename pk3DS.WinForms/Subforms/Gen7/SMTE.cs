@@ -26,6 +26,14 @@ public partial class SMTE : Form
     private CheckBox CHK_BetterMovesetsImportantTrainers;
     private CheckBox CHK_BetterMovesetsBosses;
 
+    private CheckBox CHK_StrongStat;
+    private Label L_StrongStatTolerance;
+    private NumericUpDown NUD_StrongStatTolerance;
+    private CheckBox CHK_StrongStatNormalTrainers;
+    private CheckBox CHK_StrongStatImportantTrainers;
+    private CheckBox CHK_StrongStatBosses;
+    private bool LegacyPerTrainerStrongStatMode;
+
     private CheckBox CHK_SmartItemsNormalTrainers;
     private CheckBox CHK_SmartItemsImportantTrainers;
     private CheckBox CHK_SmartItemsBosses;
@@ -174,6 +182,7 @@ public partial class SMTE : Form
         NUD_Shiny.Width = 64;
         AddSmartHeldItemControls();
         AddBetterMovesetControls();
+        AddStrongStatControls();
         AddProgressiveBSTControls();
 
         mnuView.Click += ClickView;
@@ -1495,6 +1504,15 @@ public partial class SMTE : Form
                 BetterMovesetsNormalTrainers = CHK_BetterMovesetsNormalTrainers?.Checked ?? true,
                 BetterMovesetsImportantTrainers = CHK_BetterMovesetsImportantTrainers?.Checked ?? true,
                 BetterMovesetsBosses = CHK_BetterMovesetsBosses?.Checked ?? true,
+
+                // Legacy templates keep their historical per-trainer Strong Stat
+                // values until the user explicitly switches to the new global control.
+                StrongStat = LegacyPerTrainerStrongStatMode ? null : CHK_StrongStat?.Checked ?? false,
+                StrongStatTolerance = LegacyPerTrainerStrongStatMode ? null : (int)(NUD_StrongStatTolerance?.Value ?? 15),
+                StrongStatNormalTrainers = LegacyPerTrainerStrongStatMode ? null : CHK_StrongStatNormalTrainers?.Checked ?? true,
+                StrongStatImportantTrainers = LegacyPerTrainerStrongStatMode ? null : CHK_StrongStatImportantTrainers?.Checked ?? true,
+                StrongStatBosses = LegacyPerTrainerStrongStatMode ? null : CHK_StrongStatBosses?.Checked ?? true,
+
                 SmartItems = CHK_SmartHeldItems?.Checked ?? false,
                 SmartItemsNormalTrainers = CHK_SmartItemsNormalTrainers?.Checked ?? true,
                 SmartItemsImportantTrainers = CHK_SmartItemsImportantTrainers?.Checked ?? true,
@@ -1596,6 +1614,29 @@ public partial class SMTE : Form
             CHK_BetterMovesetsImportantTrainers.Checked = moves.BetterMovesetsImportantTrainers;
             CHK_BetterMovesetsBosses.Checked = moves.BetterMovesetsBosses;
 
+            bool legacyStrongStatMode = !moves.StrongStat.HasValue;
+            if (!legacyStrongStatMode)
+            {
+                CHK_StrongStat.Checked = moves.StrongStat.Value;
+                SetTemplateNumericValue(NUD_StrongStatTolerance, moves.StrongStatTolerance ?? 15);
+                CHK_StrongStatNormalTrainers.Checked = moves.StrongStatNormalTrainers ?? true;
+                CHK_StrongStatImportantTrainers.Checked = moves.StrongStatImportantTrainers ?? true;
+                CHK_StrongStatBosses.Checked = moves.StrongStatBosses ?? true;
+            }
+            else
+            {
+                CHK_StrongStat.Checked = false;
+                SetTemplateNumericValue(NUD_StrongStatTolerance, 15);
+                CHK_StrongStatNormalTrainers.Checked = true;
+                CHK_StrongStatImportantTrainers.Checked = true;
+                CHK_StrongStatBosses.Checked = true;
+            }
+
+            // Control events intentionally switch legacy mode off when the user
+            // edits the new global settings. Restore the detected template mode
+            // after programmatic assignment.
+            LegacyPerTrainerStrongStatMode = legacyStrongStatMode;
+
             CHK_SmartHeldItems.Checked = moves.SmartItems;
             CHK_SmartItemsNormalTrainers.Checked = moves.SmartItemsNormalTrainers;
             CHK_SmartItemsImportantTrainers.Checked = moves.SmartItemsImportantTrainers;
@@ -1618,6 +1659,7 @@ public partial class SMTE : Form
                     : legacySmartItemMode;
 
             UpdateBetterMovesetsSubmenuState();
+            UpdateStrongStatSubmenuState();
             UpdateSmartItemsSubmenuState();
             CHK_ForceHighPower.Checked = moves.ForceHighPower;
             SetTemplateNumericValue(NUD_ForceHighPower, moves.HighPowerLevel);
@@ -1686,7 +1728,11 @@ public partial class SMTE : Form
             return;
         }
 
-        TrainerMoveRulesDialog.Edit(this, ref MoveRules, showPerTrainerBetterSmart: false);
+        TrainerMoveRulesDialog.Edit(
+            this,
+            ref MoveRules,
+            showPerTrainerBetterSmart: false,
+            showPerTrainerStrongStat: false);
     }
 
     private int GetSlot(object sender)
@@ -2131,6 +2177,147 @@ public partial class SMTE : Form
             control.Visible = showSubmenu;
             control.Enabled = showSubmenu;
         }
+    }
+
+    private void AddStrongStatControls()
+    {
+        try
+        {
+            CHK_StrongStat ??= new CheckBox
+            {
+                Name = "CHK_StrongStat",
+                Text = "Strong Stat",
+                AutoSize = true,
+                Checked = false,
+            };
+
+            L_StrongStatTolerance ??= new Label
+            {
+                Name = "L_StrongStatTolerance",
+                Text = "Tolerance:",
+                AutoSize = true,
+            };
+
+            NUD_StrongStatTolerance ??= new NumericUpDown
+            {
+                Name = "NUD_StrongStatTolerance",
+                Minimum = 0,
+                Maximum = 255,
+                Value = 15,
+                Width = 56,
+            };
+
+            CHK_StrongStatNormalTrainers ??= new CheckBox
+            {
+                Name = "CHK_StrongStatNormalTrainers",
+                Text = "Normal Trainers",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CHK_StrongStatImportantTrainers ??= new CheckBox
+            {
+                Name = "CHK_StrongStatImportantTrainers",
+                Text = "Important Trainers",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            CHK_StrongStatBosses ??= new CheckBox
+            {
+                Name = "CHK_StrongStatBosses",
+                Text = "Bosses",
+                AutoSize = true,
+                Checked = true,
+            };
+
+            Control parent = CB_Moves?.Parent;
+            parent ??= Tab_Rand;
+            parent ??= this;
+
+            foreach (Control control in new Control[]
+            {
+                CHK_StrongStat,
+                L_StrongStatTolerance,
+                NUD_StrongStatTolerance,
+                CHK_StrongStatNormalTrainers,
+                CHK_StrongStatImportantTrainers,
+                CHK_StrongStatBosses,
+            })
+            {
+                if (!parent.Controls.Contains(control))
+                    parent.Controls.Add(control);
+            }
+
+            void SwitchToGlobalStrongStat()
+            {
+                LegacyPerTrainerStrongStatMode = false;
+                UpdateStrongStatSubmenuState();
+            }
+
+            CHK_StrongStat.CheckedChanged += (_, _) => SwitchToGlobalStrongStat();
+            NUD_StrongStatTolerance.ValueChanged += (_, _) => SwitchToGlobalStrongStat();
+            CHK_StrongStatNormalTrainers.CheckedChanged += (_, _) => SwitchToGlobalStrongStat();
+            CHK_StrongStatImportantTrainers.CheckedChanged += (_, _) => SwitchToGlobalStrongStat();
+            CHK_StrongStatBosses.CheckedChanged += (_, _) => SwitchToGlobalStrongStat();
+
+            UpdateStrongStatSubmenuState();
+        }
+        catch
+        {
+            // UI-only helper.
+        }
+    }
+
+    private void UpdateStrongStatSubmenuState()
+    {
+        if (CHK_StrongStat is null)
+            return;
+
+        bool showSubmenu = CHK_StrongStat.Checked;
+
+        foreach (Control control in new Control[]
+        {
+            L_StrongStatTolerance,
+            NUD_StrongStatTolerance,
+            CHK_StrongStatNormalTrainers,
+            CHK_StrongStatImportantTrainers,
+            CHK_StrongStatBosses,
+        })
+        {
+            if (control is null)
+                continue;
+
+            control.Visible = showSubmenu;
+            control.Enabled = showSubmenu;
+        }
+    }
+
+    private bool IsStrongStatCategoryEnabled(string trainerGroup)
+    {
+        if (CHK_StrongStat is null || !CHK_StrongStat.Checked)
+            return false;
+
+        return trainerGroup switch
+        {
+            "Boss" => CHK_StrongStatBosses?.Checked ?? true,
+            "Important" => CHK_StrongStatImportantTrainers?.Checked ?? true,
+            _ => CHK_StrongStatNormalTrainers?.Checked ?? true,
+        };
+    }
+
+    private TrainerMoveRule GetEffectiveTrainerMoveRule(TrainerMoveRule rule, string trainerGroup)
+    {
+        var effective = rule?.Clone() ?? new TrainerMoveRule();
+
+        // Old templates remain exact: their per-trainer Strong Stat/Tolerance
+        // values continue to work until the new global setting is edited.
+        if (LegacyPerTrainerStrongStatMode)
+            return effective;
+
+        effective.UseStrongestAttackStat = IsStrongStatCategoryEnabled(trainerGroup);
+        effective.MixedTolerance = (int)(NUD_StrongStatTolerance?.Value ?? 15);
+        return effective;
     }
 
     private bool UseBetterMovesets()
@@ -3934,6 +4121,7 @@ public partial class SMTE : Form
             bool forceMega = ShouldGuaranteeMega(tr.ID, trainerAce, levelCapStages);
             bool forceZMove = ShouldGuaranteeZMove(tr.ID, levelCapStages);
             var moveRule = GetTrainerMoveRule(tr.ID);
+            var effectiveMoveRule = GetEffectiveTrainerMoveRule(moveRule, trainerGroup);
             int trainerEVOverride = GetTrainerEVOverride(tr.ID);
 
             int heldItemMode = GetSmartTrainerItemMode(trainerGroup);
@@ -4103,7 +4291,7 @@ public partial class SMTE : Form
                         pk.Moves,
                         move,
                         learn,
-                        moveRule,
+                        effectiveMoveRule,
                         move.rDMG ? move.rDMGCount : 0,
                         pk.Ability,
                         7,
@@ -4112,8 +4300,8 @@ public partial class SMTE : Form
                     );
                 }
 
-                if (ShouldApplyMoveRule(moveRule) && CB_Moves.SelectedIndex != 3)
-                    pk.Moves = ApplyTrainerMoveRule(pk.Moves, pk.Species, moveRule, move, move.rDMG ? move.rDMGCount : 0);
+                if (ShouldApplyMoveRule(effectiveMoveRule) && CB_Moves.SelectedIndex != 3)
+                    pk.Moves = ApplyTrainerMoveRule(pk.Moves, pk.Species, effectiveMoveRule, move, move.rDMG ? move.rDMGCount : 0);
 
                 if (forceZMove && p == zMoveSlot)
                     EnsureZMove(pk, move);
@@ -4823,6 +5011,11 @@ public partial class SMTE : Form
                 if (width > 0 || height > 0)
                     control.Size = new Size(width > 0 ? width : control.Width, height > 0 ? height : control.Height);
 
+                // Controls moved into the Rules tab must stay pinned to the top.
+                // Some designer controls (notably Max IVs / Max Trainer AI)
+                // retain bottom anchoring otherwise and drift downward when the
+                // Rules workspace grows.
+                control.Anchor = AnchorStyles.Top | AnchorStyles.Left;
                 control.Location = new Point(x, y);
                 control.BringToFront();
             }
@@ -4900,7 +5093,7 @@ public partial class SMTE : Form
                 "GB_GlobalBetterMovesets",
                 "Better Movesets",
                 8,
-                72,
+                92,
                 groupWidth,
                 72
             );
@@ -4911,11 +5104,27 @@ public partial class SMTE : Form
             MoveToGroup(CHK_BetterMovesetsImportantTrainers, betterGroup, 145, 43);
             MoveToGroup(CHK_BetterMovesetsBosses, betterGroup, 280, 43);
 
+            var strongStatGroup = GetOrCreateRulesGroup(
+                "GB_GlobalStrongStat",
+                "Strong Stat",
+                8,
+                170,
+                groupWidth,
+                72
+            );
+
+            MoveToGroup(CHK_StrongStat, strongStatGroup, 10, 19);
+            MoveToGroup(L_StrongStatTolerance, strongStatGroup, 145, 22);
+            MoveToGroup(NUD_StrongStatTolerance, strongStatGroup, 205, 18, 56, 23);
+            MoveToGroup(CHK_StrongStatNormalTrainers, strongStatGroup, 28, 43);
+            MoveToGroup(CHK_StrongStatImportantTrainers, strongStatGroup, 145, 43);
+            MoveToGroup(CHK_StrongStatBosses, strongStatGroup, 280, 43);
+
             var itemsGroup = GetOrCreateRulesGroup(
                 "GB_GlobalHeldItems",
                 "Held Items",
                 8,
-                150,
+                248,
                 groupWidth,
                 136
             );
@@ -4940,12 +5149,13 @@ public partial class SMTE : Form
             rulesTab.AutoScroll = false;
             rulesTab.MinimumSize = new Size(
                 Math.Max(rulesTab.MinimumSize.Width, 420),
-                Math.Max(rulesTab.MinimumSize.Height, 290)
+                Math.Max(rulesTab.MinimumSize.Height, 370)
             );
 
             ConfigureGen7RulesWorkspace(rulesTab);
             // Refresh dependencies/visibility after the controls move.
             UpdateBetterMovesetsSubmenuState();
+            UpdateStrongStatSubmenuState();
             UpdateSmartItemsSubmenuState();
 
             if (randomItems is not null)
@@ -4953,7 +5163,7 @@ public partial class SMTE : Form
 
             // Give the Rules tab enough room so nothing gets clipped.
             rulesTab.AutoScroll = true;
-            rulesTab.MinimumSize = new Size(Math.Max(rulesTab.MinimumSize.Width, 420), Math.Max(rulesTab.MinimumSize.Height, 270));
+            rulesTab.MinimumSize = new Size(Math.Max(rulesTab.MinimumSize.Width, 420), Math.Max(rulesTab.MinimumSize.Height, 370));
             ConfigureGen7RulesWorkspace(rulesTab);
         }
         catch
@@ -4999,8 +5209,11 @@ public partial class SMTE : Form
 
         bool rulesSelected = TC_rand.SelectedTab == Gen7RulesTab;
 
+        // Rules now contains Better Movesets + Strong Stat + Held Items.
+        // Grow the whole randomizer workspace while Rules is selected; the
+        // existing delta logic below moves Team down by the exact same amount.
         int targetRandomizerHeight = rulesSelected
-            ? 325
+            ? 455
             : Gen7BaseRandomizerHeight;
 
         int delta = targetRandomizerHeight - Gen7BaseRandomizerHeight;
