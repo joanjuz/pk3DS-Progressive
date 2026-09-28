@@ -1173,15 +1173,16 @@ public sealed partial class Main : Form
             "This applies both supplied ASM behaviors to code.bin:",
             "- Pokémon Center café NPCs open the Move Relearner.",
             "- The relearner only offers level-up moves the Pokémon could already know at its current level.",
+            "- Lillie's first Pokémon Center tutorial is updated to explain the new café service.",
             "",
-            "A backup of code.bin is created the first time the patch is applied."))
+            "Backups are created the first time code.bin and the affected StoryText banks are changed."))
         {
             return;
         }
 
         try
         {
-            string report = USUMMoveRelearnerPatcher.Apply(ExeFSPath);
+            string report = USUMMoveRelearnerPatcher.Apply(ExeFSPath, Config);
             RandomizationSessionState.MarkAction(USUMMoveRelearnerPatcher.ActionId);
             WinFormsUtil.Alert("USUM Move Relearner patch applied!", report);
         }
