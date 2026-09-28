@@ -33,6 +33,10 @@ public partial class ItemEditor7 : Form
         int changed = EconomyFixer.Apply(files);
         GetEntry();
 
+        // Persist the user's intent in Global Template even when the current
+        // item data already has the target prices and changed == 0.
+        RandomizationSessionState.MarkAction(EconomyFixer.ActionId);
+
         WinFormsUtil.Alert(
             "Economy fixed!",
             $"{changed} item prices were updated.");

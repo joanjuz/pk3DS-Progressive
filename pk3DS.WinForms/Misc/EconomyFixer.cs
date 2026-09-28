@@ -5,6 +5,8 @@ namespace pk3DS.WinForms;
 
 internal static class EconomyFixer
 {
+    internal const string ActionId = "items.fix-economy";
+
     // Item IDs are stable in Gen 6/7 item data.
     private const int UltraBall = 2;
     private const int GreatBall = 3;

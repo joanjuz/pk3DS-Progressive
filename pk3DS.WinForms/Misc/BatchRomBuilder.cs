@@ -639,6 +639,7 @@ internal static class BatchGen7ActionExecutor
         "trades.randomize-offers",
         "trades.hide-species-names",
         "pickup.randomize",
+        EconomyFixer.ActionId,
         "marts.randomize",
         "marts.randomize-bp",
         "marts.expanded-layout",
@@ -681,9 +682,16 @@ internal static class BatchGen7ActionExecutor
         RunLevelUpMoves(actions);
         RunEggMoves(actions);
         RunTMs(actions);
+
+        // Story progression invariant:
+        // Totem Level Caps are applied and saved inside RunStaticEncounters
+        // before trainer randomization. RunTrainers later reads those effective
+        // static levels through USUMStoryMilestoneResolver.
         RunStaticEncounters(actions);
+
         RunWildEncounters(actions, template.Wild);
         RunPickup(actions);
+        RunItemEconomy(actions);
         RunMarts(actions);
         RunTutors(actions);
         RunFieldItems(actions);
@@ -948,6 +956,22 @@ internal static class BatchGen7ActionExecutor
         using var form = new PickupEditor7(pickup);
         InvokeEvent(form, "B_Randomize_Click");
         InvokeEvent(form, "B_Save_Click");
+    }
+
+    private static void RunItemEconomy(Dictionary<string, GlobalRandomizationAction> actions)
+    {
+        if (!Has(actions, EconomyFixer.ActionId))
+            return;
+
+        BatchRuntime.Log("Fix Economy...");
+        var g = Main.Config.GetGARCData("item");
+        byte[][] data = g.Files;
+
+        int changed = EconomyFixer.Apply(data);
+
+        g.Files = data;
+        g.Save();
+        BatchRuntime.Log($"Fix Economy: {changed} item prices updated.");
     }
 
     private static void RunMarts(Dictionary<string, GlobalRandomizationAction> actions)
