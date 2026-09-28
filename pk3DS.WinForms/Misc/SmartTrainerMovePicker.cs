@@ -66,14 +66,22 @@ internal static class SmartTrainerMovePicker
         int minimumDamagingMoves,
         int abilitySlot,
         int generation,
-        int teamWeatherMask = 0)
+        int teamWeatherMask = 0,
+        bool includeTMs = false)
     {
         // Only confirmed weather should enable weather-dependent attacks.
         // Do not trust the incoming currentMoves here: those moves are only a pre-Better-Moveset seed
         // and may contain Rain Dance/Sunny Day/etc. that will not survive the final selection.
         teamWeatherMask |= GetWeatherAbilityMask(species, abilitySlot);
 
-        var pool = BuildMovePool(species, form, level, currentMoves, move, learn, generation);
+        var pool = BuildMovePool(
+            species,
+            form,
+            level,
+            move,
+            learn,
+            generation,
+            includeTMs);
         if (pool.Count == 0)
             return currentMoves?.Take(4).Concat(Enumerable.Repeat(0, 4)).Take(4).ToArray() ?? new int[4];
 
@@ -148,26 +156,28 @@ internal static class SmartTrainerMovePicker
             .ToArray();
     }
 
-    private static HashSet<int> BuildMovePool(int species, int form, int level, IEnumerable<int> currentMoves, MoveRandomizer move, LearnsetRandomizer learn, int generation)
+    private static HashSet<int> BuildMovePool(
+        int species,
+        int form,
+        int level,
+        MoveRandomizer move,
+        LearnsetRandomizer learn,
+        int generation,
+        bool includeTMs)
     {
         var pool = new HashSet<int>();
 
-        AddMoves(pool, currentMoves);
-        AddMoves(pool, SafeGetCurrentMoves(learn, species, form, level));
-        AddMoves(pool, SafeGetHighPoweredMoves(learn, species, form));
-        AddMoves(pool, GetTMMoves(species, form, generation));
-        AddMoves(pool, GetTutorMoves(species, form, generation));
-        AddMoves(pool, GetEggMoves(species, form, generation));
+        // Base Better Movesets is intentionally progression-safe:
+        // only level-up moves the CURRENT species/form can learn at or before
+        // its final trainer level are eligible. Do not pull future level-up
+        // moves, egg moves, tutor moves, pre-evolution-only moves, or arbitrary
+        // random moves into the candidate pool.
+        AddMoves(pool, SafeGetMovesUpToLevel(learn, species, form, level));
 
-        foreach (int prevo in GetPreEvolutions(species, generation))
-        {
-            AddMoves(pool, SafeGetCurrentMoves(learn, prevo, 0, level));
-            AddMoves(pool, SafeGetHighPoweredMoves(learn, prevo, 0));
-            AddMoves(pool, GetEggMoves(prevo, 0, generation));
-        }
-
-        if (pool.Count < 4)
-            AddMoves(pool, SafeGetRandomMoves(move, species));
+        // Optional expansion: compatible TMs/HMs from the CURRENT ROM.
+        // This respects randomized TM lists and the species' current TMHM flags.
+        if (includeTMs)
+            AddMoves(pool, GetTMMoves(species, form, generation));
 
         pool.RemoveWhere(m => m <= 0 || m >= Main.Config.Moves.Length || move.BannedMoves.Contains(m));
         return pool;
@@ -1100,6 +1110,12 @@ internal static class SmartTrainerMovePicker
     private static int[] SafeGetCurrentMoves(LearnsetRandomizer learn, int species, int form, int level)
     {
         try { return learn.GetCurrentMoves(species, form, level, 4); }
+        catch { return []; }
+    }
+
+    private static int[] SafeGetMovesUpToLevel(LearnsetRandomizer learn, int species, int form, int level)
+    {
+        try { return learn.GetMovesUpToLevel(species, form, level); }
         catch { return []; }
     }
 
