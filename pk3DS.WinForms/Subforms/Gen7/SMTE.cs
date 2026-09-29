@@ -2772,7 +2772,7 @@ public partial class SMTE : Form
     private static readonly Dictionary<int, (USUMTrainerStoryStage Stage, int Order)> USUMTrainerStoryPoints = new()
     {
         // ============================================================
-        // 0 - Start -> Ilima / first Normal Trial
+        // 0 - Start -> First Totem / Normal Trial
         // v7: WikiDex chronology audit; optional content is mapped but
         // excluded from the mainline progress denominator.
         // ============================================================
@@ -2802,22 +2802,25 @@ public partial class SMTE : Form
         [215] = (USUMTrainerStoryStage.StartToFirstTotem, 900),
         [216] = (USUMTrainerStoryStage.StartToFirstTotem, 900),
 
+        // Route 2 / Hau'oli Cemetery / Big Wave Beach / Verdant Cavern
+        // all occur before the first Totem battle.
+        [472] = (USUMTrainerStoryStage.StartToFirstTotem, 1000),
+        [469] = (USUMTrainerStoryStage.StartToFirstTotem, 1010),
+        [633] = (USUMTrainerStoryStage.StartToFirstTotem, 1020),
+        [40] = (USUMTrainerStoryStage.StartToFirstTotem, 1100),
+        [468] = (USUMTrainerStoryStage.StartToFirstTotem, 1110),
+        [41] = (USUMTrainerStoryStage.StartToFirstTotem, 1120),
+        [19] = (USUMTrainerStoryStage.StartToFirstTotem, 1200),
+        [42] = (USUMTrainerStoryStage.StartToFirstTotem, 1300),
+        [2] = (USUMTrainerStoryStage.StartToFirstTotem, 1310),
+        [30] = (USUMTrainerStoryStage.StartToFirstTotem, 1320),
+        [43] = (USUMTrainerStoryStage.StartToFirstTotem, 1400),
+
         // ============================================================
-        // 1 - Ilima -> Hala
-        // v7: WikiDex chronology audit; optional content is mapped but
-        // excluded from the mainline progress denominator.
+        // 1 - First Totem -> Hala
+        // v8: first-Totem boundary corrected. Route 3 and later remain
+        // after the Normal Trial.
         // ============================================================
-        [472] = (USUMTrainerStoryStage.FirstTotemToHala, 100),
-        [469] = (USUMTrainerStoryStage.FirstTotemToHala, 110),
-        [633] = (USUMTrainerStoryStage.FirstTotemToHala, 120),
-        [40] = (USUMTrainerStoryStage.FirstTotemToHala, 200),
-        [468] = (USUMTrainerStoryStage.FirstTotemToHala, 210),
-        [41] = (USUMTrainerStoryStage.FirstTotemToHala, 220),
-        [19] = (USUMTrainerStoryStage.FirstTotemToHala, 300),
-        [42] = (USUMTrainerStoryStage.FirstTotemToHala, 400),
-        [2] = (USUMTrainerStoryStage.FirstTotemToHala, 410),
-        [30] = (USUMTrainerStoryStage.FirstTotemToHala, 420),
-        [43] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
         [648] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
         [649] = (USUMTrainerStoryStage.FirstTotemToHala, 500),
         [31] = (USUMTrainerStoryStage.FirstTotemToHala, 600),
@@ -3660,7 +3663,21 @@ public partial class SMTE : Form
     {
         forceExactLevel = false;
 
-        if (!CHK_LevelCaps.Checked || stages.Count == 0)
+        if (!CHK_LevelCaps.Checked)
+            return null;
+
+        // USUM story scaling can be driven by Static/Totem milestones even when
+        // the trainer template contains no enabled explicit Trainer Level Cap rows.
+        // Batch applies Totem Level Caps before Trainers, so the effective static
+        // encounter levels are already available through USUMStaticEncounterLevels.
+        bool hasUSUMStaticMilestone =
+            Main.Config.USUM &&
+            USUMRegularScalingMilestoneStaticEntryIDs.Values.Any(entryIDs =>
+                USUMStoryMilestoneResolver.HasEnabledStaticEntry(
+                    USUMTotemLevelCapsAction,
+                    entryIDs));
+
+        if (stages.Count == 0 && !hasUSUMStaticMilestone)
             return null;
 
         var exactRule = LevelCapRules.FirstOrDefault(
