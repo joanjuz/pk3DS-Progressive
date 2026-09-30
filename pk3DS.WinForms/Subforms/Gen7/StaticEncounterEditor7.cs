@@ -1423,11 +1423,6 @@ public partial class StaticEncounterEditor7 : Form
         WinFormsUtil.Alert("Randomized Starters according to specification!");
     }
 
-    // These USUM Static Encounter entries are scripted early-story encounters.
-    // Randomize All must leave the complete entries untouched; their ROM species
-    // are not a safe BST baseline for the actual scripted encounter seen in game.
-    private static bool IsProtectedEarlyStoryStaticEncounter(int encounterIndex) =>
-        encounterIndex is 151 or 152 or 153 or 154;
 
     private void B_RandAll_Click(object sender, EventArgs e)
     {
@@ -1497,9 +1492,6 @@ public partial class StaticEncounterEditor7 : Form
         }
         for (int encounterIndex = 0; encounterIndex < Encounters.Length; encounterIndex++)
         {
-            if (IsProtectedEarlyStoryStaticEncounter(encounterIndex))
-                continue;
-
             EncounterStatic7 t = Encounters[encounterIndex];
 
             // Legendary-for-Legendary
